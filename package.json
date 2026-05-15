@@ -1,7 +1,7 @@
 {
   "name": "gamedesign-app",
   "version": "1.0.0",
-  "description": "Game Design as Art — Dark Souls vs Ubisoft presentation",
+  "description": "Game Design — Eine Präsentation von Viktor Pagels",
   "type": "module",
   "scripts": {
     "dev": "vite",
