@@ -1,114 +1,149 @@
 # Project Memory
 
-Last updated: 2026-05-15 20:30:00 +02:00
+Last updated: 2026-05-16 01:55:00 +02:00
 
 ## Project Objective
 
-Create an **interactive browser-based 2D game** that teaches game design principles through gameplay, centered on a Dark Souls case study, hosted on a secure Proxmox/LXC VPS infrastructure.
+Create an **interactive browser-based 2D game** ("Gameron") that teaches game design principles
+through gameplay, centered on a Dark Souls case study and dark-pattern critique.
+Hosted on a secure Proxmox/LXC VPS infrastructure.
 
 ---
 
-## Presentation Direction — PIVOT: Interactive Game
+## Gameron — World & Narrative
 
-The presentation is no longer slide-based. It is a **playable 2D game running in the browser**.
+- **World**: Gameron — a land of good games corrupted by "Gacha Gals" (demonic anime succubus
+  symbols of predatory game design dark patterns)
+- **Player**: grief-driven warrior (gender chosen at start) seeking revenge for their destroyed village
+- **Tone**: dark fantasy gothic; Soulslike aesthetic (DS3); copper/amber palette
+- **Arc**: 8 scenes, each teaching a game design principle by having the player face a dark-pattern
+  obstacle. Final outcome (good/bad ending) depends on `GameState.gachaScore`.
 
 ### Game Flow
 
 ```
-[Title Screen]
-     ↓ PRESS START
-[Character Creation]  ← 3 slots (head/body/legs) + gender + 3 colors
-     ↓
-[Narrative Intro]     ← ex-soldier, lost family to "demonic gacha army from the east"
-     ↓
-[Game Rooms]          ← side-scrolling 2D rooms, left→right progression
-     ↓
-[Credits]             ← rolling end credits + sources + thank you
+[CharacterSelect]  ← two DS3-style cards: male / female warrior
+      ↓
+[WorldBuildingScene]  ← Scene 1: burning village, steppe portraits, storm, FOMO Widow
+      ↓
+[PlayerGuidanceScene] ← Scene 2: torch puzzle (player guidance / level design)
+      ↓
+[GalleryScene]        ← Scene 3: painting gallery + media overlay
+      ↓
+[CreditsScene]        ← Scene 4: rolling credits, end music
 ```
 
-### Game Mechanics
+### Scene Design Principles
 
-- **Input**: Keyboard+Mouse or Xbox Controller (HTML5 Gamepad API)
-- **Navigation**: Player physically walks to screen edges to trigger scene transition
-- **Camera**: Follows player; rooms can be wider than the viewport (scrolling)
-- **Room transitions**: Always at left/right edges; general progression left→right (3D sections excepted)
-
-### Planned Rooms
-
-| Room                  | Concept demonstrated         | Notes                                          |
-|-----------------------|------------------------------|------------------------------------------------|
-| Player Guidance Room  | Player guidance / level design | Two exits right (one with torch=correct, one without=loops back) |
-| Gallery Room          | Multimedia exhibit           | 3 paintings + pedestals; press button → image or video (e.g. Banjo-Kazooie music notes video) |
-| (more TBD)            | Other design principles      | Each room teaches one design concept           |
-
-### Character Creation
-
-- 3 body part slots: head, body, legs
-- Gender selector (female adds breast pixels — intentional gag)
-- 3 color choices (palette swap)
-- Character is then controlled through the game
-
-### Narrative
-
-- Player is an ex-soldier
-- Lost family to the "demonic gacha army from the east" (represented as attractive anime pixel girls)
-- Short intro sequence after character creation
-
-### Credits
-
-- Rolling end credits (bottom to top), game-style
-- Lists sources / citations
-- Thank you message to audience for playing
-- End credit music
+| Scene                 | Concept                          | Dark pattern obstacle             |
+|-----------------------|----------------------------------|-----------------------------------|
+| WorldBuildingScene    | Freedom of movement              | FOMO Widow (pay or fight)         |
+| PlayerGuidanceScene   | Player guidance / level design   | Torch puzzle (no handholding)     |
+| GalleryScene          | Multimedia exhibit               | Gallery locked until E-interact   |
+| CreditsScene          | Credits / attribution            | —                                 |
 
 ---
 
-## Planned Tech Stack — Game Engine
+## Current Code State
 
-| Layer               | Technology                        | Reason                                               |
-|---------------------|-----------------------------------|------------------------------------------------------|
-| Game world / rooms  | **Phaser 3** (latest)             | 2D rendering, physics, camera, gamepad, tilemaps     |
-| UI screens          | **React** (existing)              | CharacterCreate, StartScreen, video overlays, dialogs|
-| Pixel character     | Canvas (inside React)             | Small pixel sprite grid, color palette swap          |
-| 3D sections (future)| **Three.js** (optional)           | Only if 3D scenes are added later                    |
-| Styling             | Cinzel / CSS (existing)           | DS3 aesthetic                                        |
+### Completed (Phase 4 — commit `546c61f`)
 
-### Architecture
+- `CharacterSelect.jsx` + `characterselect.css`: DS3 two-card gender selection
+- `GameState.js`: singleton `{ gender, gachaScore, recordChoice(), isGachaDemon(), reset() }`
+- `WorldBuildingScene.js`: 4-zone scrolling world (W×14); fire particles, portrait fade,
+  rain+lightning, FOMO Widow encounter trigger
+- `EncounterOverlay.jsx` + `encounter.css`: React fight/pay modal
+- `GachaStoreOverlay.jsx` + `gacha.css`: parody diamond shop (timer, FOMO nudge, bundles)
+- `manifest.js`: full asset registry; all worldbuilding assets currently `'missing'` → placeholders
+- `GameEngine.js`: `pixelArt: true`; registers WorldBuildingScene; writes gender to GameState
+- `PlayerController.js`: MOVE_SPEED 380, setOffset(45,40), SPAWN_Y_OFFSET 60
+- `index.html`: capture-phase contextmenu listener (right-click fix on canvas)
+- `App.jsx`: CharacterSelect → GameScreen with gender state
+- `GameScreen.jsx`: gender prop → createGame; encounter event listeners
+- `PreloadScene.js`: starts WorldBuildingScene; loads wb_ assets from manifest when 'loaded'
 
-```
-App.jsx
-├── StartScreen          (React) — current, Cinzel font, DS3 oval glow
-├── CharacterCreate      (React + canvas) — pixel art character builder
-├── GameScreen           (Phaser 3 canvas, full screen)
-│   ├── BootScene        — asset loading
-│   ├── IntroScene       — narrative cutscene
-│   ├── RoomGuidance     — torch puzzle (player guidance room)
-│   ├── RoomGallery      — paintings + media pedestal
-│   └── CreditsScene     — rolling credits
-└── VideoOverlay         (React DOM over Phaser canvas) — media player
-```
+### Previous (Phase 3 — commit `5801470`)
 
-### Implementation Phases
-
-1. **Phase 1 (now/next):** Start Screen done. Add Phaser 3. Build CharacterCreate screen.
-2. **Phase 2:** Basic player movement + camera in one room. Room transition at edges.
-3. **Phase 3:** Player Guidance Room (torch puzzle). Gallery Room + media overlay.
-4. **Phase 4:** Narrative intro. Credits. Sound/music. Polish.
-5. **Phase 5 (optional):** 3D scene via Three.js.
+- `animConfig.js`: HERO_ATLAS, HERO_ANIMS (19 states), registerAnimations()
+- `PlayerController.js`: full state machine (idle/run/jump/fall/land/doubleJump/light1-3/heavy/airLight)
+  3-hit combo, double-jump, interactJustDown getter, halt(), destroy()
+- `PreloadScene.js`, `GameScene.js`, `PlayerGuidanceScene.js`, `GalleryScene.js`, `CreditsScene.js`
+- `public/assets/dark_fantasy_hero_sprite_sheet.png` (1024×1536, 8×12, 128×128 frames)
 
 ---
 
-## Current Infrastructure State
+## Rendering & Feel — Fixes Applied (Phase 4)
 
-- netcup VPS, `152.53.117.246`, Proxmox VE 9.1 on Debian trixie, KVM guest
-- SSH: key-only (`id_ed25519` for `viktor@Stealth-17-VP`). Password auth disabled.
-- Proxmox web UI `:8006` restricted to Tailscale IPs via `/etc/default/pveproxy`
-- `fail2ban`: sshd + proxmox jails, 10 retries / 1h ban
-- Tailscale on VPS, Surface, Laptop. MagicDNS active on `tail484da1.ts.net`
-- Internal bridge `vmbr1` (`10.10.10.1/24`) with IPv4 forwarding
-- Host NAT/DNAT via `presentation-nat.service`: `80/443` → `10.10.10.10`, `iifname "vmbr0"` restricted
+| Issue                     | Fix                                                     |
+|---------------------------|---------------------------------------------------------|
+| Halo/transparency artifacts | `render: { pixelArt: true, antialias: false }` in GameEngine |
+| Body offset / foot placement | setOffset(45,40), SPAWN_Y_OFFSET=60                  |
+| Sluggish movement          | MOVE_SPEED 220 → 380                                   |
+| Browser right-click on canvas | Capture-phase contextmenu listener in index.html   |
 
-## Tailnet
+---
+
+## Asset System
+
+All assets tracked in `src/game/assets/manifest.js`.
+
+- Status `'loaded'`: file in `public/assets/`, PreloadScene loads it
+- Status `'missing'`: file not yet generated; scenes show colored placeholder rect + `"missing_id:<key>"` text
+
+**To add a new asset**: drop file → update status to `'loaded'` in manifest → rebuild.
+
+### Asset folders
+
+```
+public/assets/                    global (hero sheet, audio, logo)
+public/assets/scenes/wb/          WorldBuildingScene
+public/assets/scenes/guidance/    PlayerGuidanceScene (future)
+public/assets/scenes/gallery/     GalleryScene (future)
+```
+
+### Missing (need AI generation)
+
+| Key                        | Description                                        |
+|----------------------------|----------------------------------------------------|
+| `wb_bg_village`            | Zone 1 burning village BG, dark fantasy, fire glow |
+| `wb_bg_steppe`             | Zone 2 barren steppe at dusk, copper tones         |
+| `wb_bg_storm`              | Zone 3 stormy plain with lightning sky             |
+| `wb_bg_widow`              | Zone 4 ruined shrine, lavender glow                |
+| `wb_portrait_male_1/2/3`   | Male backstory portraits, copper engraving style   |
+| `wb_portrait_female_1/2/3` | Female backstory portraits, copper engraving style |
+| `wb_fomo_widow`            | FOMO Widow sprite; demonic anime succubus, lavender |
+| `wb_fire_sfx`              | Ambient fire crackle loop MP3                      |
+| `wb_rain_sfx`              | Rain + thunder ambient loop MP3                    |
+| `wb_widow_music`           | Boss encounter music MP3                           |
+| CharacterSelect portraits  | Male / female warrior portrait cards               |
+
+---
+
+## Encounter System
+
+`game:encounterChoice { id, hp }` → React `EncounterOverlay`:
+- **KÄMPFEN** → `GameState.recordChoice('fight')` → widow fades → game continues
+- **DIAMANTEN ZAHLEN** → `GachaStoreOverlay` (parody shop) → on close:
+  `GameState.recordChoice('gacha')` → `game:encounterDecision { decision: 'pay' }` → game continues
+
+`game:encounterDecision` received by `WorldBuildingScene._onEncounterDecision()`.
+
+**gachaScore threshold**: `>= 5` → `GameState.isGachaDemon()` returns true → triggers bad ending
+(not yet wired to CreditsScene — follow-up item).
+
+---
+
+## Infrastructure
+
+- netcup VPS `152.53.117.246`, Proxmox VE 9.1 on Debian trixie
+- SSH key-only (`id_ed25519` for `viktor@Stealth-17-VP`)
+- Proxmox web `:8006` locked to Tailscale IPs
+- `fail2ban`: sshd + proxmox jails
+- Tailscale on VPS, Surface, Laptop. Tailnet `tail484da1.ts.net`
+- `vmbr1` bridge `10.10.10.1/24`; NAT/DNAT via `presentation-nat.service`
+- DNAT rules use `iifname "vmbr0"` — never remove
+
+### Tailnet
 
 | Device         | Tailscale IP      |
 |----------------|-------------------|
@@ -116,82 +151,70 @@ App.jsx
 | Surface-Viktor | `100.65.232.37`   |
 | Stealth-17-VP  | `100.109.133.95`  |
 
-## Container Map
+### Container Map
 
-| CT ID | Name     | IP           | Role                                      | Status     |
-|-------|----------|--------------|-------------------------------------------|------------|
-| 201   | gd-proxy | 10.10.10.10  | Caddy reverse proxy (public HTTPS)        | Active     |
-| 202   | gd-dev   | 10.10.10.21  | Dev server (Vite, port 3000)              | Active     |
-| 203   | gd-test  | 10.10.10.22  | Testing / CI (not yet configured)         | Standby    |
-| 204   | gd-build | 10.10.10.23  | Build pipeline (not yet configured)       | Standby    |
-| 205   | gd-prod  | 10.10.10.24  | Production (vite preview, port 4173)      | Active     |
+| CT ID | Name     | IP           | Role                                      | Status  |
+|-------|----------|--------------|-------------------------------------------|---------|
+| 201   | gd-proxy | 10.10.10.10  | Caddy reverse proxy (public HTTPS)        | Active  |
+| 202   | gd-dev   | 10.10.10.21  | Dev server (Vite, port 3000)              | Active  |
+| 203   | gd-test  | 10.10.10.22  | Testing / CI (not yet configured)         | Standby |
+| 204   | gd-build | 10.10.10.23  | Build pipeline (not yet configured)       | Standby |
+| 205   | gd-prod  | 10.10.10.24  | Production (vite preview, port 4173)      | Active  |
 
-All containers: Debian 13, Node v22.22.2, npm 10.9.7, Python 3.13.5, git 2.47.3
+All containers: Debian 13, Node v22.22.2, npm 10.9.7
 
-## Public Entry Point
+### Public Entry Point
 
 - **Current URL**: `https://gamedesign.152.53.117.246.sslip.io`
 - Caddy (CT 201) → `10.10.10.24:4173` (gd-prod, production build)
-- Temporary until domain `crysiscreations.de` is purchased
+- Target domain: `crysiscreations.de` (not yet purchased)
 
-## Deploy Pipeline
+### Deploy Pipeline
 
 ```
-GitHub main branch (canonical source)
-  ├─ gd-dev  (CT 202): git-watcher every 5min → pull → npm install → restart gamedesign-dev.service (Vite dev :3000)
-  └─ gd-prod (CT 205): git-watcher every 5min → pull → npm install → npm run build → restart gamedesign-prod.service (vite preview :4173)
+GitHub main branch (canonical)
+  ├─ gd-dev  (CT 202): git-watcher every 5min → pull → npm install → restart Vite dev :3000
+  └─ gd-prod (CT 205): git-watcher every 5min → pull → npm install → npm run build → restart vite preview :4173
 ```
 
-## Current App State (React)
-
-- `src/components/StartScreen.jsx` — Cinzel font, DS3 oval glow, logo image, any-key/gamepad support
-- Old slide system (`SlideEngine`, `slides.js`, etc.) still present — will be removed when game is built
-- `public/assets/logo.jpg` — **MISSING, must be added** (image 2 — the "Game Design" artwork)
-- `public/assets/menu-sfx.mp3` — **MISSING, must be added** (DS3 menu sound effect)
-- `public/assets/menu-ost.mp3` — **MISSING** (background music for title screen)
-
-## Assets Required
-
-| File                          | Description                              | Status  |
-|-------------------------------|------------------------------------------|---------|
-| `public/assets/logo.jpg`      | Image 2 ("Game Design" art) — the logo   | MISSING |
-| `public/assets/menu-sfx.mp3`  | DS3 menu confirm SFX                     | MISSING |
-| `public/assets/menu-ost.mp3`  | Title screen background music            | MISSING |
-| `public/assets/bg.jpg`        | Background image (if separate from logo) | MISSING |
-| End credit music              | Credits scene music                      | MISSING |
-
-## Open / Blocked Items
-
-- No real domain yet; using `sslip.io`
-- Asset files missing (logo, SFX, OST)
-- Phaser 3 not yet installed
-- Character creation not yet built
-- Game rooms not yet built
-- Old slide system still in codebase (to be removed)
-- gd-test and gd-build not wired into pipeline
-- OpenCode CLI not on containers
-- Telegram bot not implemented
-- StableDiffusion / ComfyUI not set up
+---
 
 ## Working Conventions
 
-- Workspace: `docs/`, `game-design-presentation/`, `vps-architecture/`
-- Milestone logs under `docs/milestones/` with `YYYY-MM-DD_HHMMSS_short-title.md`
+- Milestone logs: `docs/milestones/YYYY-MM-DD_HHMMSS_short-title.md`
 - Context7 MCP before any library/framework code
 - Snapshots only on explicit "mach einen snapshot"
-- Heredocs over SSH+PowerShell unreliable — use `scp`/`pct push`
+- SSH heredocs over PowerShell unreliable — use `scp`/`pct push`
 - `pct exec` with `nohup &` drops jobs — use `systemd-run` or service units
 
 ## Critical Config
 
 - Vite 8 requires `allowedHosts: true` behind reverse proxy
-- DNAT rules use `iifname "vmbr0"` — do not remove
+- `iifname "vmbr0"` DNAT rules — do not remove
 - `/etc/caddy/Caddyfile` on CT 201: `reverse_proxy 10.10.10.24:4173`
 - GitHub CLI authenticated as `CryseXIII`
+- `pixelArt: true` in Phaser config is critical — without it, sprite edges have halo artifacts
 
-## Open Questions
+---
 
-- What exact rooms / design principles will be covered (beyond guidance + gallery)?
-- Is the narrative intro text-box style (RPG) or animated cutscene?
-- Should character creation use custom pixel art sprites, or placeholder colored shapes first?
-- Which 3D scenes are planned, and what engine (Three.js / CSS 3D / pure Phaser 2.5D)?
+## Open / Blocked Items
+
+- No real domain yet; using `sslip.io`
+- All worldbuilding art assets missing (need AI generation)
+- CharacterSelect portrait cards: emoji placeholder until art generated
+- FOMO Widow fight combat: instant defeat — real combat (4 hits × 25 dmg) not yet implemented
+- Bad ending in CreditsScene not yet wired to `GameState.isGachaDemon()`
+- gd-test and gd-build not wired into pipeline
+- Telegram bot not implemented
+- StableDiffusion / ComfyUI not set up
+
+## Next Steps
+
+1. Generate art assets: backgrounds (4), portraits (6), FOMO Widow sprite — output full AI prompt
+2. Generate audio: fire crackle, rain/thunder, widow music
+3. Once assets ready: place in `public/assets/scenes/wb/`, update manifest status, rebuild
+4. Implement real combat in FOMO Widow encounter (J-key attacks deal 25 HP each)
+5. Wire `GameState.isGachaDemon()` into CreditsScene for bad vs. good ending
+6. Add CharacterSelect portrait images once generated
+7. Consider zone ambient music (fire crackle auto-play in zone 1, rain in zone 3)
+8. gd-test / gd-build pipeline wiring
