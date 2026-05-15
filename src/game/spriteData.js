@@ -124,11 +124,35 @@ export const HEAD_NAMES = ['HELM', 'HOOD', 'BARE']
 export const BODY_NAMES = ['PLATE', 'LEATHER', 'ROBE']
 export const LEGS_NAMES = ['GREAVES', 'PANTS', 'SKIRT']
 
+// ─── Shared game constants ────────────────────────────────────────────────
+export const GAME_SCALE = 4
+export const PLAYER_W   = SPRITE_W * GAME_SCALE   // 48 px
+export const PLAYER_H   = SPRITE_H * GAME_SCALE   // 80 px
+export const FLOOR_H    = 80
+export const MOVE_SPEED = 220
+export const JUMP_VEL   = -570
+
 // ─── Utilities ────────────────────────────────────────────────────────────
 
 /**
- * Returns a copy of a body array with the female chest modification applied.
+ * Creates (or re-creates) the shared 'player_tex' canvas texture on any scene.
+ * Call this at the top of create() before spawning the player sprite.
  */
+export function buildPlayerTexture(scene, charConfig) {
+  if (scene.textures.exists('player_tex')) {
+    scene.textures.remove('player_tex')
+  }
+  const tex = scene.textures.createCanvas('player_tex', PLAYER_W, PLAYER_H)
+  const ctx = tex.context
+  ctx.imageSmoothingEnabled = false
+  if (charConfig) {
+    drawSprite(ctx, charConfig, GAME_SCALE)
+  } else {
+    ctx.fillStyle = '#c8b89a'
+    ctx.fillRect(8, 0, PLAYER_W - 16, PLAYER_H)
+  }
+  tex.refresh()
+}
 export function applyFemaleMod(body, bodyIdx) {
   const out = [...body]
   for (const [row, col, val] of FEMALE_MODS[bodyIdx]) {

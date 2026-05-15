@@ -1,13 +1,8 @@
 import Phaser from 'phaser'
-import { drawSprite, SPRITE_W, SPRITE_H } from '../spriteData.js'
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-const GAME_SCALE  = 4
-const PLAYER_W    = SPRITE_W * GAME_SCALE   // 48 px
-const PLAYER_H    = SPRITE_H * GAME_SCALE   // 80 px
-const FLOOR_H     = 80
-const MOVE_SPEED  = 220
-const JUMP_VEL    = -570
+import {
+  buildPlayerTexture,
+  PLAYER_W, PLAYER_H, FLOOR_H, MOVE_SPEED, JUMP_VEL,
+} from '../spriteData.js'
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -19,11 +14,13 @@ export default class GameScene extends Phaser.Scene {
     this.wasd            = null
     this.gamepad         = null
     this.padJumpWasDown  = false
+    this.transitioning   = false
   }
 
-  // ─── init: receives data from game.scene.add(…, true, data) ─────────────
+  // ─── init: receives data from game.scene.add(…, true, data) or scene.start() ──
   init(data) {
-    this.charConfig = data?.charConfig ?? null
+    this.charConfig    = data?.charConfig ?? null
+    this.transitioning = false
   }
 
   // ─── create ──────────────────────────────────────────────────────────────
@@ -47,7 +44,7 @@ export default class GameScene extends Phaser.Scene {
     const floor   = this.add.rectangle(
       this.roomWidth / 2, floorY, this.roomWidth, FLOOR_H, 0x16100a
     )
-    this.physics.add.existing(floor, true) // true = static
+    this.physics.add.existing(floor, true)
 
     // Subtle top-edge highlight
     this.add.rectangle(
@@ -55,7 +52,7 @@ export default class GameScene extends Phaser.Scene {
     )
 
     // ── Player texture from pixel-art charConfig ──────────────────────────
-    this.buildPlayerTexture()
+    buildPlayerTexture(this, this.charConfig)
 
     // ── Player sprite ─────────────────────────────────────────────────────
     const startX = 180
@@ -68,6 +65,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, this.roomWidth, H + 600)
     this.cameras.main.setBounds(0, 0, this.roomWidth, H)
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
+    this.cameras.main.fadeIn(600, 0, 0, 0)
 
     // ── "Next area" marker at the far right ───────────────────────────────
     this.add.text(
@@ -91,30 +89,9 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // ─── Build player canvas texture from sprite data ─────────────────────────
-  buildPlayerTexture() {
-    if (this.textures.exists('player_tex')) {
-      this.textures.remove('player_tex')
-    }
-
-    const tex = this.textures.createCanvas('player_tex', PLAYER_W, PLAYER_H)
-    const ctx = tex.context            // Phaser CanvasTexture exposes .context
-    ctx.imageSmoothingEnabled = false
-
-    if (this.charConfig) {
-      drawSprite(ctx, this.charConfig, GAME_SCALE)
-    } else {
-      // Fallback silhouette when launched without char creation
-      ctx.fillStyle = '#c8b89a'
-      ctx.fillRect(8, 0, PLAYER_W - 16, PLAYER_H)
-    }
-
-    tex.refresh()
-  }
-
   // ─── update ──────────────────────────────────────────────────────────────
   update() {
-    if (!this.player || !this.cursors) return
+    if (!this.player || !this.cursors || this.transitioning) return
 
     const onGround = this.player.body.blocked.down
 
@@ -141,10 +118,13 @@ export default class GameScene extends Phaser.Scene {
     if (goRight) { this.player.setVelocityX( MOVE_SPEED); this.player.setFlipX(false) }
     if (jumpJust && onGround) this.player.setVelocityY(JUMP_VEL)
 
-    // ── Room exit: loop back to start (placeholder until Room 2 exists) ───
+    // ── Room exit → PlayerGuidanceScene ───────────────────────────────────
     if (this.player.x >= this.roomWidth - 200) {
-      this.player.setX(180)
-      this.cameras.main.pan(180, this.scale.height / 2, 500, 'Power2')
+      this.transitioning = true
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('PlayerGuidanceScene', { charConfig: this.charConfig })
+      })
+      this.cameras.main.fadeOut(600, 0, 0, 0)
     }
   }
 }

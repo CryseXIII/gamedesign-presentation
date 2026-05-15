@@ -23,7 +23,7 @@ export default function App() {
   }
 
   if (screen === 'game') {
-    return <GameScreen charConfig={charConfig} />
+    return <GameScreen charConfig={charConfig} onExit={() => setScreen('title')} />
   }
 
   return null
