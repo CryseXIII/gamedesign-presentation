@@ -1,13 +1,30 @@
 import { useState } from 'react'
 import StartScreen from './components/StartScreen.jsx'
-import SlideEngine from './components/SlideEngine.jsx'
+import CharacterCreate from './components/CharacterCreate.jsx'
+import GameScreen from './components/GameScreen.jsx'
 
 export default function App() {
-  const [started, setStarted] = useState(false)
+  const [screen,     setScreen]     = useState('title')
+  const [charConfig, setCharConfig] = useState(null)
 
-  return started ? (
-    <SlideEngine />
-  ) : (
-    <StartScreen onStart={() => setStarted(true)} />
-  )
+  if (screen === 'title') {
+    return <StartScreen onStart={() => setScreen('create')} />
+  }
+
+  if (screen === 'create') {
+    return (
+      <CharacterCreate
+        onConfirm={(config) => {
+          setCharConfig(config)
+          setScreen('game')
+        }}
+      />
+    )
+  }
+
+  if (screen === 'game') {
+    return <GameScreen charConfig={charConfig} />
+  }
+
+  return null
 }

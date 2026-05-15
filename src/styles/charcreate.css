@@ -1,0 +1,191 @@
+/* ─── CHARACTER CREATION ─────────────────────────────────────────────────── */
+.charcreate {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.2rem, 2.5vh, 2.4rem);
+  padding: 2rem;
+  animation: cc-fadein 0.5s ease;
+}
+
+@keyframes cc-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Title ──────────────────────────────────────────────────────────────── */
+.charcreate__title {
+  font-family: var(--font-cinzel);
+  font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  text-shadow: 0 0 24px rgba(212, 175, 55, 0.28);
+}
+
+/* ─── Main layout ────────────────────────────────────────────────────────── */
+.charcreate__layout {
+  display: flex;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+}
+
+/* ─── Canvas preview ─────────────────────────────────────────────────────── */
+.charcreate__canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #050505;
+  border: 1px solid #2a1e0a;
+  box-shadow:
+    0 0 28px rgba(0, 0, 0, 0.85),
+    0 0 8px rgba(0, 0, 0, 0.6) inset;
+  /* slight warm glow to match DS3 palette */
+  filter: drop-shadow(0 0 6px rgba(100, 70, 10, 0.25));
+}
+
+/* ─── Options list ───────────────────────────────────────────────────────── */
+.charcreate__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: min(52vw, 400px);
+}
+
+/* ─── Single row ─────────────────────────────────────────────────────────── */
+.charcreate__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 2.2rem;
+  cursor: pointer;
+  opacity: 0.42;
+  transition: opacity 0.15s ease;
+}
+
+/* DS3 oval glow pseudo-element */
+.charcreate__row::before {
+  content: '';
+  position: absolute;
+  inset: -6px -28px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(130, 95, 18, 0.38) 0%,
+    rgba(100, 72, 12, 0.18) 50%,
+    transparent 72%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.charcreate__row--active {
+  opacity: 1;
+}
+
+.charcreate__row--active::before {
+  opacity: 1;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(210, 160, 35, 0.52) 0%,
+    rgba(170, 125, 25, 0.30) 50%,
+    transparent 72%
+  );
+}
+
+/* ─── Row label ──────────────────────────────────────────────────────────── */
+.charcreate__label {
+  position: relative;
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.65rem, 1.3vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  min-width: 6.5em;
+  transition: color 0.15s;
+}
+
+.charcreate__row--active .charcreate__label {
+  color: var(--color-gold);
+}
+
+/* ─── Selector (arrows + value) ──────────────────────────────────────────── */
+.charcreate__selector {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.charcreate__arrow {
+  background: none;
+  border: none;
+  font-family: var(--font-cinzel);
+  font-size: 1.15rem;
+  color: #5a4520;
+  padding: 0 0.2rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.charcreate__row--active .charcreate__arrow {
+  color: #9a7030;
+}
+
+.charcreate__arrow:hover {
+  color: var(--color-gold);
+}
+
+.charcreate__value {
+  position: relative;
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.65rem, 1.3vw, 0.9rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  min-width: 9em;
+  text-align: center;
+  transition: color 0.15s;
+}
+
+.charcreate__row--active .charcreate__value {
+  color: #e0d0b0;
+}
+
+/* ─── Confirm row ────────────────────────────────────────────────────────── */
+.charcreate__row--confirm {
+  justify-content: center;
+  margin-top: 0.9rem;
+}
+
+.charcreate__confirm-text {
+  position: relative;
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.8rem, 1.7vw, 1.2rem);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #5a4520;
+  transition: color 0.2s;
+}
+
+.charcreate__row--active.charcreate__row--confirm .charcreate__confirm-text {
+  color: var(--color-gold);
+  text-shadow: 0 0 18px rgba(212, 175, 55, 0.4);
+}
+
+/* ─── Hint ───────────────────────────────────────────────────────────────── */
+.charcreate__hint {
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.55rem, 1vw, 0.75rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2e2010;
+}
