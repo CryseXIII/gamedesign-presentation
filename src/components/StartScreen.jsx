@@ -1,43 +1,77 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import '../styles/startscreen.css'
 
 export default function StartScreen({ onStart }) {
   const audioRef = useRef(null)
+  const firedRef = useRef(false)
+  const [hovered, setHovered] = useState(false)
 
   function handleStart() {
-    // Play transition SFX if available
+    if (firedRef.current) return
+    firedRef.current = true
+
     if (audioRef.current) {
       audioRef.current.currentTime = 0
       audioRef.current.play().catch(() => {})
     }
-    setTimeout(onStart, 600)
+    setTimeout(onStart, 700)
   }
 
+  // Keyboard: any non-modifier key
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Enter' || e.key === ' ') handleStart()
+      const ignored = ['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'CapsLock']
+      if (!ignored.includes(e.key)) handleStart()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // Gamepad: poll for any button press
+  useEffect(() => {
+    const id = setInterval(() => {
+      for (const gp of navigator.getGamepads()) {
+        if (gp && gp.buttons.some(b => b.pressed)) {
+          handleStart()
+          clearInterval(id)
+          return
+        }
+      }
+    }, 100)
+    return () => clearInterval(id)
+  }, [])
+
   return (
-    <div className="start-screen">
-      {/* Background image — replace /assets/bg.jpg when available */}
+    <div className="start-screen" onClick={handleStart}>
+      {/* Background stays black — logo image sits on top */}
       <div className="start-bg" />
 
       <div className="start-content">
-        <p className="start-subtitle">A Presentation</p>
-        <h1 className="start-title">Game Design<br />as Art</h1>
-        <p className="start-meta">Dark Souls vs. Ubisoft</p>
+        {/* Logo: image 2 — save as public/assets/logo.jpg */}
+        <div className="start-logo-wrap">
+          <img
+            className="start-logo"
+            src="/assets/logo.jpg"
+            alt="Game Design"
+            draggable={false}
+          />
+        </div>
 
-        <button className="start-btn" onClick={handleStart}>
-          PRESS START
+        {/* DS3-style prompt with oval glow */}
+        <button
+          className={`start-btn${hovered ? ' start-btn--lit' : ''}`}
+          onClick={e => { e.stopPropagation(); handleStart() }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+        >
+          <span className="start-btn-oval" />
+          <span className="start-btn-text">PRESS START</span>
         </button>
-        <p className="start-hint">or press Enter</p>
+
+        <p className="start-hint">Press any key · click · or any controller button</p>
       </div>
 
-      {/* SFX — src replaced with real file when available */}
+      {/* DS3 menu SFX — place file at public/assets/menu-sfx.mp3 */}
       <audio ref={audioRef} src="/assets/menu-sfx.mp3" preload="auto" />
     </div>
   )

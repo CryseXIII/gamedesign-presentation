@@ -7,83 +7,139 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: #000;
+  cursor: pointer;
 }
 
+/* Subtle vignette overlay */
 .start-bg {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.8) 100%),
-    url('/assets/bg.jpg') center/cover no-repeat;
-  background-color: #0a0508;
-  filter: brightness(0.7) saturate(0.6);
+  background: radial-gradient(
+    ellipse 80% 80% at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.65) 100%
+  );
   z-index: 0;
+  pointer-events: none;
 }
 
 .start-content {
   position: relative;
   z-index: 1;
-  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: clamp(1.5rem, 3vh, 3rem);
+  padding: 2rem;
+  text-align: center;
 }
 
-.start-subtitle {
-  font-family: var(--font-pixel);
-  font-size: 0.55rem;
-  color: var(--color-text-dim);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
+/* ─── LOGO IMAGE ─────────────────────────────────────────────────────────── */
+.start-logo-wrap {
+  width: min(72vw, 900px);
+  max-height: 58vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.start-title {
-  font-family: var(--font-pixel);
-  font-size: clamp(1.2rem, 4vw, 2.2rem);
-  color: var(--color-gold);
-  line-height: 1.6;
-  text-shadow: 0 0 20px rgba(212,175,55,0.4), 0 2px 4px rgba(0,0,0,0.8);
+.start-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  /* Slight desaturation to match dark atmospheric look */
+  filter: saturate(0.88) brightness(0.95);
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.start-meta {
-  font-family: var(--font-pixel);
-  font-size: 0.6rem;
-  color: var(--color-text);
-  letter-spacing: 0.1em;
+/* Fallback when image is missing: show title text */
+.start-logo-wrap:not(:has(img[src])) .start-logo,
+.start-logo[src=""],
+.start-logo:not([src]) {
+  display: none;
 }
 
+/* ─── DS3-STYLE PRESS START BUTTON ───────────────────────────────────────── */
 .start-btn {
-  font-family: var(--font-pixel);
-  font-size: 0.7rem;
-  color: var(--color-bg);
-  background: var(--color-gold);
+  position: relative;
+  background: transparent;
   border: none;
-  padding: 0.9em 2em;
-  letter-spacing: 0.1em;
   cursor: pointer;
-  animation: blink-btn 1.2s step-end infinite;
-  transition: background 0.2s, transform 0.1s;
+  padding: clamp(0.6rem, 1.5vh, 1rem) clamp(2rem, 5vw, 4.5rem);
+  outline: none;
 }
 
-.start-btn:hover {
-  background: #e8c84a;
-  transform: scale(1.04);
+/* The oval glow element — DS3 warm amber oval behind the text */
+.start-btn-oval {
+  position: absolute;
+  inset: -8px -24px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(130, 95, 18, 0.48) 0%,
+    rgba(100, 72, 12, 0.28) 48%,
+    transparent 72%
+  );
+  transition: opacity 0.25s ease, background 0.25s ease;
+  pointer-events: none;
+}
+
+/* Hover / lit state: brighter oval */
+.start-btn--lit .start-btn-oval,
+.start-btn:focus-visible .start-btn-oval {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(210, 160, 35, 0.62) 0%,
+    rgba(170, 125, 25, 0.38) 48%,
+    transparent 72%
+  );
+}
+
+.start-btn-text {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-family: var(--font-cinzel);
+  font-size: clamp(1.6rem, 3.6vw, 3.2rem);
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: #c9a84c;
+  text-shadow:
+    0 0 18px rgba(201, 168, 76, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.9);
+  animation: blink-prompt 2.4s ease-in-out infinite;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.start-btn--lit .start-btn-text,
+.start-btn:focus-visible .start-btn-text {
+  color: #e2c060;
+  text-shadow:
+    0 0 28px rgba(226, 192, 96, 0.65),
+    0 1px 3px rgba(0, 0, 0, 0.9);
   animation: none;
 }
 
-.start-btn:active {
-  transform: scale(0.97);
-}
-
+/* ─── HINT TEXT ─────────────────────────────────────────────────────────── */
 .start-hint {
-  font-family: var(--font-pixel);
-  font-size: 0.45rem;
-  color: var(--color-text-dim);
-  letter-spacing: 0.15em;
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.7rem, 1.4vw, 1rem);
+  color: #6a5830;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-@keyframes blink-btn {
+/* ─── ANIMATIONS ────────────────────────────────────────────────────────── */
+@keyframes blink-prompt {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.15; }
+  48%       { opacity: 1; }
+  52%       { opacity: 0.22; }
+  56%       { opacity: 1; }
+  58%       { opacity: 0.22; }
+  62%       { opacity: 1; }
 }

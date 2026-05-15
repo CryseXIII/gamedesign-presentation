@@ -18,6 +18,8 @@
   --color-visited: #5a7a3a;
   --font-pixel: 'Press Start 2P', monospace;
   --font-mono: 'VT323', monospace;
+  --font-cinzel: 'Cinzel', 'Georgia', serif;
+  --font-cinzel-deco: 'Cinzel Decorative', 'Georgia', serif;
 }
 
 html, body, #root {
