@@ -1,24 +1,31 @@
 import Phaser from 'phaser'
 import PreloadScene         from './scenes/PreloadScene.js'
+import WorldBuildingScene   from './scenes/WorldBuildingScene.js'
 import GameScene            from './scenes/GameScene.js'
 import PlayerGuidanceScene  from './scenes/PlayerGuidanceScene.js'
 import GalleryScene         from './scenes/GalleryScene.js'
 import CreditsScene         from './scenes/CreditsScene.js'
+import GameState            from './GameState.js'
 
 /**
  * Creates and returns a Phaser.Game instance mounted inside `container`.
  *
  * Boot order:
- *   1. PreloadScene (auto-starts) — loads all shared assets (hero spritesheet,
- *      audio).  Shows a minimal loading bar.
- *   2. GameScene — started by PreloadScene on load complete.
+ *   1. PreloadScene (auto-starts) — loads all shared assets.
+ *      Shows a minimal loading bar.
+ *   2. WorldBuildingScene — started by PreloadScene. Scene 1.
  *   3. Remaining scenes — registered but idle; started via scene.start().
  *
  * @param {HTMLElement}  container   React ref element (100 vw × 100 vh div)
- * @param {object|null} _charConfig  Unused — Gameron uses a fixed hero sprite
+ * @param {object|null} _charConfig  Unused — kept for API compat
+ * @param {'male'|'female'} gender   Player gender, stored in GameState before
+ *                                   Phaser starts so scenes can read it freely.
  * @returns {Phaser.Game}
  */
-export function createGame(container, _charConfig) {
+export function createGame(container, _charConfig, gender = 'male') {
+  // Write gender into singleton BEFORE any scene runs.
+  GameState.gender = gender
+
   const w = container.clientWidth  || window.innerWidth
   const h = container.clientHeight || window.innerHeight
 
@@ -28,6 +35,10 @@ export function createGame(container, _charConfig) {
     width: w,
     height: h,
     backgroundColor: '#000000',
+    render: {
+      pixelArt: true,
+      antialias: false,
+    },
     input: {
       gamepad: true,
     },
@@ -45,11 +56,12 @@ export function createGame(container, _charConfig) {
 
   game.events.once('ready', () => {
     // Register all scenes so they can start each other freely
+    game.scene.add('WorldBuildingScene', WorldBuildingScene, false)
     game.scene.add('GameScene',           GameScene,           false)
     game.scene.add('PlayerGuidanceScene', PlayerGuidanceScene, false)
     game.scene.add('GalleryScene',        GalleryScene,        false)
     game.scene.add('CreditsScene',        CreditsScene,        false)
-    // PreloadScene auto-starts and kicks off the whole chain
+    // PreloadScene auto-starts → WorldBuildingScene
     game.scene.add('PreloadScene',        PreloadScene,        true)
   })
 

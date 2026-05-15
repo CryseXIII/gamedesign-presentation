@@ -1,0 +1,275 @@
+/* ─── CHARACTER SELECT SCREEN ──────────────────────────────────────────────── */
+
+.charsel-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050402;
+  gap: clamp(1rem, 2.5vh, 2.5rem);
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Dark radial vignette */
+.charsel-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 90% at 50% 50%, transparent 30%, rgba(0,0,0,0.75) 100%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,255,255,0.012) 3px,
+      rgba(255,255,255,0.012) 4px
+    );
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ─── HEADER ──────────────────────────────────────────────────────────────── */
+.charsel-header {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.charsel-world {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.65rem, 1.2vw, 0.9rem);
+  font-weight: 700;
+  letter-spacing: 0.6em;
+  color: #5a4218;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.charsel-title {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #c9a84c;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 0 22px rgba(201, 168, 76, 0.3), 0 2px 6px rgba(0,0,0,0.9);
+}
+
+.charsel-hint {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.55rem, 1vw, 0.75rem);
+  letter-spacing: 0.15em;
+  color: #3a2e18;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* ─── CARDS CONTAINER ─────────────────────────────────────────────────────── */
+.charsel-cards {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: stretch;
+  justify-content: center;
+}
+
+/* ─── SINGLE CARD ─────────────────────────────────────────────────────────── */
+.charsel-card {
+  position: relative;
+  width: clamp(200px, 28vw, 340px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+  border: 1px solid #2a1f0e;
+  background: linear-gradient(175deg, #0e0b06 0%, #17120a 60%, #0a0806 100%);
+  padding: 0 0 1rem 0;
+  transition:
+    border-color 0.25s ease,
+    box-shadow   0.25s ease,
+    transform    0.2s ease;
+  user-select: none;
+}
+
+/* Active / hovered card */
+.charsel-card--active {
+  border-color: #7a5c18;
+  box-shadow:
+    0 0 28px rgba(150, 110, 25, 0.35),
+    inset 0 0 18px rgba(120, 90, 20, 0.1);
+  transform: translateY(-4px);
+}
+
+/* Chosen (locked in) card */
+.charsel-card--chosen {
+  border-color: #c9a84c;
+  box-shadow:
+    0 0 44px rgba(201, 168, 76, 0.55),
+    inset 0 0 24px rgba(180, 145, 40, 0.18);
+  transform: translateY(-6px);
+}
+
+/* ─── PORTRAIT AREA ───────────────────────────────────────────────────────── */
+.charsel-portrait {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(180deg, #1a1408 0%, #0d0a05 100%);
+  border-bottom: 1px solid #2a1f0e;
+}
+
+.charsel-card--active .charsel-portrait {
+  border-bottom-color: #7a5c18;
+}
+
+.charsel-portrait__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: #2a1f0e;
+  /* Will be replaced by a real portrait <img> once assets are generated */
+}
+
+.charsel-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  filter: saturate(0.75) brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+.charsel-card--active .charsel-portrait img {
+  filter: saturate(0.95) brightness(0.95);
+}
+
+/* ─── CARD BODY ───────────────────────────────────────────────────────────── */
+.charsel-card-body {
+  width: 100%;
+  padding: 0.9rem 1.1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  box-sizing: border-box;
+}
+
+.charsel-card-name {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #c9a84c;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 0 14px rgba(201, 168, 76, 0.22);
+}
+
+.charsel-card--active .charsel-card-name {
+  text-shadow: 0 0 20px rgba(201, 168, 76, 0.55);
+}
+
+.charsel-card-epithet {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.55rem, 0.9vw, 0.72rem);
+  letter-spacing: 0.08em;
+  color: #5a4520;
+  font-style: italic;
+  margin: 0;
+}
+
+.charsel-card-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #3a2e18, transparent);
+  margin: 0.2rem 0;
+}
+
+.charsel-card-lore {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.charsel-card-lore p {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.52rem, 0.85vw, 0.68rem);
+  color: #6a5830;
+  line-height: 1.55;
+  margin: 0;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+.charsel-card--active .charsel-card-lore p {
+  color: #8a7240;
+}
+
+.charsel-card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.charsel-card-stats p {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.38rem, 0.65vw, 0.52rem);
+  color: #4a3820;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.charsel-card--active .charsel-card-stats p {
+  color: #7a6030;
+}
+
+/* ─── SELECT HINT ─────────────────────────────────────────────────────────── */
+.charsel-card-select-hint {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.55rem, 0.9vw, 0.7rem);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #c9a84c;
+  text-transform: uppercase;
+  padding: 0.3rem 1rem;
+  background: #0d0a05;
+  border: 1px solid #5a4218;
+  border-bottom: none;
+  animation: blink-prompt 2.4s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.charsel-card-select-hint--chosen {
+  color: #e2c060;
+  border-color: #c9a84c;
+  animation: none;
+  text-shadow: 0 0 16px rgba(226, 192, 96, 0.5);
+}
+
+/* Reuse from startscreen */
+@keyframes blink-prompt {
+  0%, 100% { opacity: 1; }
+  48%       { opacity: 1; }
+  52%       { opacity: 0.22; }
+  56%       { opacity: 1; }
+  58%       { opacity: 0.22; }
+  62%       { opacity: 1; }
+}

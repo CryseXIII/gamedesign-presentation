@@ -1,0 +1,145 @@
+/* ─── ENCOUNTER OVERLAY ────────────────────────────────────────────────────── */
+
+.encounter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.encounter-panel {
+  width: min(540px, 90vw);
+  background: linear-gradient(170deg, #0d0a06 0%, #110d08 100%);
+  border: 1px solid #5a3c12;
+  padding: 2.2rem 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: 0 0 48px rgba(180, 100, 20, 0.25), 0 8px 32px rgba(0,0,0,0.8);
+  animation: fadeSlideIn 0.35s ease forwards;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.encounter-who {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: #bb44ff;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 0 24px rgba(187, 68, 255, 0.5);
+}
+
+/* HP bar */
+.encounter-hp-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: #220033;
+  border: 1px solid #440055;
+}
+
+.encounter-hp-bar {
+  height: 100%;
+  background: linear-gradient(to right, #8800cc, #cc44ff);
+  transition: width 0.4s ease;
+}
+
+.encounter-speech {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.7rem, 1.3vw, 0.95rem);
+  color: #8a6a9a;
+  font-style: italic;
+  line-height: 1.7;
+  text-align: center;
+  margin: 0;
+}
+
+/* Choice buttons */
+.encounter-choices {
+  display: flex;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+.encounter-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem 0.8rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.encounter-btn:hover {
+  transform: translateY(-3px);
+}
+
+.encounter-btn--fight {
+  border-color: #5a3c12;
+  background: linear-gradient(160deg, #110d06 0%, #1a1008 100%);
+}
+.encounter-btn--fight:hover {
+  border-color: #c9a84c;
+  box-shadow: 0 0 18px rgba(201, 168, 76, 0.28);
+}
+
+.encounter-btn--pay {
+  border-color: #330044;
+  background: linear-gradient(160deg, #0d0812 0%, #12081a 100%);
+}
+.encounter-btn--pay:hover {
+  border-color: #bb44ff;
+  box-shadow: 0 0 18px rgba(187, 68, 255, 0.28);
+}
+
+.encounter-btn-icon {
+  font-size: 1.6rem;
+}
+
+.encounter-btn-label {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.7rem, 1.3vw, 0.9rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #c9a84c;
+  text-transform: uppercase;
+}
+
+.encounter-btn--pay .encounter-btn-label {
+  color: #bb44ff;
+}
+
+.encounter-btn-sub {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.5rem, 0.9vw, 0.65rem);
+  color: #4a3820;
+  font-style: italic;
+  text-align: center;
+}
+
+.encounter-btn--pay .encounter-btn-sub {
+  color: #5a3a7a;
+}
+
+.encounter-hint {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.5rem, 0.9vw, 0.65rem);
+  color: #3a2e18;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+}

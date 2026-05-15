@@ -6,9 +6,9 @@
  * frame.  Scenes own collision registration and camera follow.
  *
  * Sprite sheet physics body:
- *   setSize(38, 84)   setOffset(45, 34)   origin (0.5, 0.5)
- *   body top    = sprite.y − 64 + 34 = sprite.y − 30
- *   body bottom = sprite.y − 30 + 84 = sprite.y + 54
+ *   setSize(38, 84)   setOffset(45, 40)   origin (0.5, 0.5)
+ *   body top    = sprite.y − 64 + 40 = sprite.y − 24
+ *   body bottom = sprite.y − 24 + 84 = sprite.y + 60
  *
  * Spawn Y:   H − FLOOR_H − SPAWN_Y_OFFSET  (places body just above floor)
  *
@@ -26,10 +26,14 @@ import { registerAnimations } from './animConfig.js'
 
 // ─── Exported constants ────────────────────────────────────────────────────────
 export const FLOOR_H        = 80
-export const MOVE_SPEED     = 220
+export const MOVE_SPEED     = 380
 export const JUMP_VEL       = -570
-/** Spawn sprite.y this many px above floor top so the body rests cleanly. */
-export const SPAWN_Y_OFFSET = 64
+/**
+ * Spawn sprite.y this many px above floor top so the body rests cleanly.
+ * Derived from: body bottom offset = setOffset.y + setSize.height - frameH/2
+ *               = 40 + 84 − 64 = 60  → SPAWN_Y_OFFSET = 60
+ */
+export const SPAWN_Y_OFFSET = 60
 
 // ─── State keys ───────────────────────────────────────────────────────────────
 const S = {
@@ -60,7 +64,7 @@ export default class PlayerController {
     this.sprite = scene.physics.add.sprite(x, y, 'hero')
     this.sprite.setOrigin(0.5, 0.5)
     this.sprite.body.setSize(38, 84)
-    this.sprite.body.setOffset(45, 34)
+    this.sprite.body.setOffset(45, 40)
     this.sprite.setCollideWorldBounds(true)
 
     // ── Animations ────────────────────────────────────────────────────────
