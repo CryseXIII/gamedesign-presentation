@@ -43,21 +43,26 @@ export default function StartScreen({ onStart }) {
 
   return (
     <div className="start-screen" onClick={handleStart}>
-      {/* Background stays black — logo image sits on top */}
       <div className="start-bg" />
 
       <div className="start-content">
-        {/* Logo: image 2 — save as public/assets/logo.png */}
+        {/* Logo */}
         <div className="start-logo-wrap">
           <img
             className="start-logo"
             src="/assets/logo.png"
-            alt="Game Design"
+            alt="Gameron"
             draggable={false}
           />
         </div>
 
-        {/* DS3-style prompt with oval glow */}
+        {/* Gameron world subtitle */}
+        <p className="start-world-title">GAMERON</p>
+        <p className="start-world-subtitle">
+          Wie Spiele Freiheit geben — oder sie nehmen
+        </p>
+
+        {/* DS3-style CTA with oval glow */}
         <button
           className={`start-btn${hovered ? ' start-btn--lit' : ''}`}
           onClick={e => { e.stopPropagation(); handleStart() }}
@@ -65,13 +70,13 @@ export default function StartScreen({ onStart }) {
           onMouseLeave={() => setHovered(false)}
         >
           <span className="start-btn-oval" />
-          <span className="start-btn-text">PRESS START</span>
+          <span className="start-btn-text">RACHE BEGINNEN</span>
         </button>
 
-        <p className="start-hint">Press any key · click · or any controller button</p>
+        <p className="start-hint">Beliebige Taste · Klick · oder Gamepad-Taste</p>
       </div>
 
-      {/* DS3 menu SFX — place file at public/assets/menu-sfx.mp3 */}
+      {/* DS3 menu SFX */}
       <audio ref={audioRef} src="/assets/menu-sfx.mp3" preload="auto" />
     </div>
   )

@@ -46,12 +46,7 @@ export default class CreditsScene extends Phaser.Scene {
     this._exited = false
   }
 
-  preload() {
-    // Load only if not already cached
-    if (!this.cache.audio.has('endcredits')) {
-      this.load.audio('endcredits', '/assets/endcredits.mp3')
-    }
-  }
+  // preload() removed — 'endcredits' is loaded by PreloadScene
 
   create() {
     const W = this.scale.width

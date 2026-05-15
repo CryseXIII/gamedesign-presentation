@@ -63,6 +63,26 @@
   display: none;
 }
 
+/* ─── GAMERON WORLD TITLE ────────────────────────────────────────────────── */
+.start-world-title {
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.85rem, 1.8vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 0.55em;
+  text-transform: uppercase;
+  color: #8a6c24;
+  margin: 0;
+}
+
+.start-world-subtitle {
+  font-family: var(--font-cinzel);
+  font-size: clamp(0.65rem, 1.2vw, 0.95rem);
+  letter-spacing: 0.12em;
+  color: #4a3820;
+  margin: -0.6rem 0 0;
+  font-style: italic;
+}
+
 /* ─── DS3-STYLE PRESS START BUTTON ───────────────────────────────────────── */
 .start-btn {
   position: relative;
