@@ -47,11 +47,11 @@ export default function StartScreen({ onStart }) {
       <div className="start-bg" />
 
       <div className="start-content">
-        {/* Logo: image 2 — save as public/assets/logo.jpg */}
+        {/* Logo: image 2 — save as public/assets/logo.png */}
         <div className="start-logo-wrap">
           <img
             className="start-logo"
-            src="/assets/logo.jpg"
+            src="/assets/logo.png"
             alt="Game Design"
             draggable={false}
           />
