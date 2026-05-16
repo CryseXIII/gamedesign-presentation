@@ -2,10 +2,11 @@
  * EncounterOverlay
  *
  * React overlay shown when Phaser dispatches 'game:encounterChoice'.
- * Presents two choices: FIGHT or PAY (gacha).
- * Dispatches 'game:encounterDecision' back to Phaser on choice.
  *
- * Also optionally shows the GachaStoreOverlay if the player pays.
+ * Choices:
+ *   KAUFEN  → opens GachaStoreOverlay; on close dispatches { decision: 'pay' }
+ *   ABBRECHEN → dispatches { decision: 'cancel' }; Phaser then shows a J-prompt
+ *               so the player can fight organically or just walk past.
  *
  * Props:
  *   encounter  — { id, hp } from the window event detail, or null
@@ -24,8 +25,9 @@ export default function EncounterOverlay({ encounter, onClose }) {
   function decide(decision) {
     if (decision === 'pay') {
       setShowGacha(true)
-      return   // wait for gacha store to close
+      return   // wait for gacha store to close before dispatching
     }
+    // 'cancel'
     window.dispatchEvent(new CustomEvent('game:encounterDecision', {
       detail: { decision },
     }))
@@ -55,32 +57,32 @@ export default function EncounterOverlay({ encounter, onClose }) {
         </div>
 
         <p className="encounter-speech">
-          „Tapferer Krieger… wieso kämpfen?
+          „Tapferer Krieger… Blut ist so unnötig.
           <br />
-          Ein paar Diamanten genügen, und ich lasse dich gehen."
+          Ein paar Diamanten — und ich öffne dir den Weg."
         </p>
 
         <div className="encounter-choices">
-          <button
-            className="encounter-btn encounter-btn--fight"
-            onClick={() => decide('fight')}
-          >
-            <span className="encounter-btn-icon">⚔</span>
-            <span className="encounter-btn-label">KÄMPFEN</span>
-            <span className="encounter-btn-sub">Kein Preis. Nur Stahl.</span>
-          </button>
-
           <button
             className="encounter-btn encounter-btn--pay"
             onClick={() => decide('pay')}
           >
             <span className="encounter-btn-icon">💎</span>
             <span className="encounter-btn-label">10 DIAMANTEN ZAHLEN</span>
-            <span className="encounter-btn-sub">Zeit sparen. Einfacher Weg.</span>
+            <span className="encounter-btn-sub">Schnell. Einfach. Nur einmal.</span>
+          </button>
+
+          <button
+            className="encounter-btn encounter-btn--cancel"
+            onClick={() => decide('cancel')}
+          >
+            <span className="encounter-btn-icon">✕</span>
+            <span className="encounter-btn-label">ABBRECHEN</span>
+            <span className="encounter-btn-sub">Ich entscheide selbst.</span>
           </button>
         </div>
 
-        <p className="encounter-hint">Wähle sorgfältig — jede Entscheidung zählt.</p>
+        <p className="encounter-hint">Du kannst jederzeit zurückkehren.</p>
       </div>
     </div>
   )

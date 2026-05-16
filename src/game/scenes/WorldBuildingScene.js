@@ -1,50 +1,46 @@
 /**
- * WorldBuildingScene — Scene 1 (replaces GameScene)
+ * WorldBuildingScene — Scene 1
  *
- * Teaching concept: freedom vs. constraint.  The world establishes stakes
- * before any game-design lesson is taught.
+ * World width: W * 11
  *
- * World width: W * 14
+ *   Zone 1  (0    → W*2 ):  Burning village. Fire+smoke particles.
+ *                            Fire wall blocks the left edge.
+ *   Zone 2  (W*2  → W*8 ):  Steppe path. Backstory portrait stations 3/5/7.
+ *                            Storm overlays this zone:
+ *                              – rain starts as soon as player enters (stormProgress > 0)
+ *                              – lightning adds when stormProgress > 0.5
+ *   Widow   (W*8  → W*11):  FOMO Widow stands at W*9.
+ *                            Approaching within 220px → encounter overlay fires.
+ *                            KAUFEN  → GachaStoreOverlay → recordChoice('gacha')
+ *                            ABBRECHEN → cancel → J-prompt shown near widow;
+ *                              each new J/K attack state while within 180px = 25 HP;
+ *                              4 hits → recordChoice('fight') → widow defeated.
+ *                            Walking past without encountering = neutral (no score).
  *
- *   Zone 1  (0     → W*2 ):  Burning village.  Smoke + fire particles.
- *                             Fire wall blocks the left edge so player can
- *                             only go right.
- *   Zone 2  (W*2   → W*8 ):  Steppe path.  Fading copper-portrait backstory
- *                             images (male or female, driven by GameState.gender).
- *                             Three portrait stations, each fades in/out as
- *                             the player passes through.
- *   Zone 3  (W*8   → W*11):  Storm.  Rain particles, periodic lightning flash
- *                             on the camera.
- *   Zone 4  (W*11  → W*14):  FOMO Widow encounter.  Enemy stands at W*12.
- *                             Player collides → encounter window event fires →
- *                             React overlay shows "Fight / Pay" choice →
- *                             result comes back via 'game:encounterDecision'.
- *                             After decision the player continues to the exit.
- *
- * Exit: player.x >= roomWidth − 180  →  fade → PlayerGuidanceScene
+ * Exit: player.x >= roomWidth − 180 → fade → PlayerGuidanceScene
  *
  * Window events dispatched (→ React):
  *   'game:encounterChoice'   { id: 'fomo_widow', hp: 100 }
  *
  * Window events received (← React):
- *   'game:encounterDecision' { decision: 'fight' | 'pay' }
+ *   'game:encounterDecision' { decision: 'pay' | 'cancel' }
  */
 
 import Phaser from 'phaser'
 import PlayerController, { FLOOR_H, SPAWN_Y_OFFSET } from '../PlayerController.js'
 import GameState from '../GameState.js'
-import { MANIFEST } from '../assets/manifest.js'
 
 // ─── Zone X boundaries (multiples of scene width W) ──────────────────────────
-const ZONE = { Z1: 0, Z2: 2, Z3: 8, Z4: 11, END: 14 }
+const ZONE = { Z1: 0, Z2: 2, WIDOW: 8, END: 11 }
 
-// ─── Portrait stations (Zone 2) ───────────────────────────────────────────────
-// xFactor = center_x / W;  fade starts at ±1 W around center
-const PORTRAIT_STATIONS = [3, 5, 7]   // in W units
+// ─── Portrait stations in Zone 2 (W units) ───────────────────────────────────
+const PORTRAIT_STATIONS = [3, 5, 7]
 
 // ─── Widow encounter ──────────────────────────────────────────────────────────
-const WIDOW_X_FACTOR = 12   // x = W * 12
-const WIDOW_HP       = 100
+const WIDOW_X_FACTOR  = 9
+const WIDOW_HP        = 100
+const HIT_DAMAGE      = 25
+const ATTACK_STATES   = ['light1', 'light2', 'light3', 'heavy']
 
 export default class WorldBuildingScene extends Phaser.Scene {
   constructor() {
@@ -54,18 +50,22 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._floor         = null
 
     // encounter state
-    this._encounterDone    = false
-    this._encounterActive  = false
-    this._widowHp          = WIDOW_HP
-    this._decisionHandler  = null
+    this._encounterDone   = false
+    this._encounterActive = false
+    this._widowCancelled  = false
+    this._widowHp         = WIDOW_HP
+    this._decisionHandler = null
+    this._lastPlayerState = null
 
-    // particles + emitters
+    // particles
     this._fireEmitters  = []
     this._smokeEmitters = []
     this._rainEmitter   = null
+    this._stormProgress = 0
+    this._lightningActive = false
 
     // portraits
-    this._portraits = []     // { img, centerX, visible }
+    this._portraits = []
 
     // lightning
     this._lightningTimer = null
@@ -76,59 +76,56 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._transitioning   = false
     this._encounterDone   = false
     this._encounterActive = false
+    this._widowCancelled  = false
     this._widowHp         = WIDOW_HP
+    this._stormProgress   = 0
+    this._lightningActive = false
+    this._lastPlayerState = null
   }
 
   // ─── create ────────────────────────────────────────────────────────────────
   create() {
-    const W = this.scale.width
-    const H = this.scale.height
-    this._W = W
-    this._H = H
+    const W  = this.scale.width
+    const H  = this.scale.height
+    this._W  = W
+    this._H  = H
     const RW = W * ZONE.END
     this._roomWidth = RW
 
-    // ── World & camera setup ──────────────────────────────────────────────
+    // ── World & camera ────────────────────────────────────────────────────
     this.physics.world.setBounds(0, 0, RW, H + 600)
     this.cameras.main.setBounds(0, 0, RW, H)
 
-    // ── Background gradient per zone ─────────────────────────────────────
+    // ── Backgrounds ───────────────────────────────────────────────────────
     this._buildBackgrounds(W, H, RW)
 
-    // ── Floor (static physics body) ───────────────────────────────────────
+    // ── Floor ─────────────────────────────────────────────────────────────
     const floorRect = this.add.rectangle(RW / 2, H - FLOOR_H / 2, RW, FLOOR_H, 0x16100a)
     this.physics.add.existing(floorRect, true)
     this._floor = floorRect
-    // Floor edge line
     this.add.rectangle(RW / 2, H - FLOOR_H, RW, 2, 0x38260e)
 
-    // ── Zone 1: Fire wall (left edge) + particles ─────────────────────────
+    // ── Zones ─────────────────────────────────────────────────────────────
     this._buildZone1(W, H)
-
-    // ── Zone 2: Steppe portraits ──────────────────────────────────────────
     this._buildZone2(W, H)
-
-    // ── Zone 3: Rain + lightning ──────────────────────────────────────────
-    this._buildZone3(W, H)
-
-    // ── Zone 4: FOMO Widow ────────────────────────────────────────────────
-    this._buildZone4(W, H)
+    this._buildStormOverlay(W, H)
+    this._buildWidowZone(W, H)
 
     // ── Player ────────────────────────────────────────────────────────────
     this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET)
     this.physics.add.collider(this._player.sprite, floorRect)
+    this.physics.add.collider(this._player.sprite, this._fireWall)
     this.cameras.main.startFollow(this._player.sprite, true, 0.08, 0.08)
     this.cameras.main.fadeIn(800, 0, 0, 0)
 
-    // ── Zone label (debug / narrative) ───────────────────────────────────
+    // ── Zone label ────────────────────────────────────────────────────────
     this._zoneLabel = this.add.text(W / 2, 40, '', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize:   '14px',
       color:      '#7a5c18',
-      alpha:      0.7,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(20)
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(20).setAlpha(0.7)
 
-    // ── Listen for encounter decision ─────────────────────────────────────
+    // ── Encounter decision listener ───────────────────────────────────────
     this._decisionHandler = (e) => this._onEncounterDecision(e.detail)
     window.addEventListener('game:encounterDecision', this._decisionHandler)
   }
@@ -138,18 +135,21 @@ export default class WorldBuildingScene extends Phaser.Scene {
     // Zone 1: deep orange-black
     this._zoneRect(0, W * ZONE.Z2, W, H, 0x120803)
     // Zone 2: muted steppe dusk
-    this._zoneRect(W * ZONE.Z2, W * ZONE.Z3, W, H, 0x0d0c08)
-    // Zone 3: stormy blue-black
-    this._zoneRect(W * ZONE.Z3, W * ZONE.Z4, W, H, 0x060810)
-    // Zone 4: dark shrine, purple-black
-    this._zoneRect(W * ZONE.Z4, W * ZONE.END, W, H, 0x08040e)
+    this._zoneRect(W * ZONE.Z2, W * ZONE.WIDOW, W, H, 0x0d0c08)
+    // Widow area: dark purple-black
+    this._zoneRect(W * ZONE.WIDOW, W * ZONE.END, W, H, 0x08040e)
 
-    // Asset backgrounds (shown when available, fallback already is the rect)
     const zones = [
-      { key: 'wb_bg_village', x: W * (ZONE.Z1 + (ZONE.Z2 - ZONE.Z1) / 2), zoneW: W * (ZONE.Z2 - ZONE.Z1) },
-      { key: 'wb_bg_steppe',  x: W * (ZONE.Z2 + (ZONE.Z3 - ZONE.Z2) / 2), zoneW: W * (ZONE.Z3 - ZONE.Z2) },
-      { key: 'wb_bg_storm',   x: W * (ZONE.Z3 + (ZONE.Z4 - ZONE.Z3) / 2), zoneW: W * (ZONE.Z4 - ZONE.Z3) },
-      { key: 'wb_bg_widow',   x: W * (ZONE.Z4 + (ZONE.END - ZONE.Z4) / 2), zoneW: W * (ZONE.END - ZONE.Z4) },
+      {
+        key:   'wb_bg_village',
+        x:     W * (ZONE.Z1 + (ZONE.Z2 - ZONE.Z1) / 2),
+        zoneW: W * (ZONE.Z2 - ZONE.Z1),
+      },
+      {
+        key:   'wb_bg_steppe',
+        x:     W * (ZONE.Z2 + (ZONE.END - ZONE.Z2) / 2),
+        zoneW: W * (ZONE.END - ZONE.Z2),
+      },
     ]
     for (const z of zones) {
       if (this.textures.exists(z.key)) {
@@ -167,12 +167,12 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   // ─── Zone 1: Burning Village ────────────────────────────────────────────────
   _buildZone1(W, H) {
-    // Fire wall on the left edge — invisible static body, prevents going left
+    // Fire wall — blocks left edge
     const fireWall = this.add.rectangle(10, H / 2, 20, H, 0xff4400).setAlpha(0)
     this.physics.add.existing(fireWall, true)
     this._fireWall = fireWall
 
-    // Ruined building silhouettes (colored rectangles as placeholders)
+    // Ruined building silhouettes
     const ruins = [
       { x: 200, w: 80,  h: 200 },
       { x: 380, w: 55,  h: 160 },
@@ -180,67 +180,56 @@ export default class WorldBuildingScene extends Phaser.Scene {
       { x: 680, w: 60,  h: 180 },
     ]
     for (const r of ruins) {
-      this.add.rectangle(r.x, H - FLOOR_H - r.h / 2, r.w, r.h, 0x0d0804)
-        .setDepth(-5)
-    }
-
-    // Fire particle emitters on ruin tops
-    for (const r of ruins) {
+      this.add.rectangle(r.x, H - FLOOR_H - r.h / 2, r.w, r.h, 0x0d0804).setDepth(-5)
       this._spawnFireColumn(r.x, H - FLOOR_H - r.h, 18)
-    }
-
-    // Floating smoke drifting up-right
-    for (const r of ruins) {
       this._spawnSmokeColumn(r.x, H - FLOOR_H - r.h)
     }
 
-    // Ambient orange glow overlay on Zone 1
+    // Ambient orange glow over Zone 1
     this.add.rectangle(W, H / 2, W * ZONE.Z2, H, 0xff2200)
       .setAlpha(0.04)
       .setDepth(-1)
   }
 
   _spawnFireColumn(x, y, size) {
-    // Phaser particle emitter (Phaser 3 style)
-    const particles = this.add.particles(x, y, undefined, {
-      lifespan:   { min: 350, max: 650 },
-      speed:      { min: 20,  max: 55 },
-      angle:      { min: 260, max: 280 },
-      scale:      { start: size / 8, end: 0 },
-      alpha:      { start: 0.85, end: 0 },
-      tint:       [0xff6600, 0xff3300, 0xffaa00],
-      quantity:   1,
-      frequency:  60,
-      blendMode:  'ADD',
+    const em = this.add.particles(x, y, undefined, {
+      lifespan:  { min: 350, max: 650 },
+      speed:     { min: 20,  max: 55 },
+      angle:     { min: 260, max: 280 },
+      scale:     { start: size / 8, end: 0 },
+      alpha:     { start: 0.85, end: 0 },
+      tint:      [0xff6600, 0xff3300, 0xffaa00],
+      quantity:  1,
+      frequency: 60,
+      blendMode: 'ADD',
     })
-    particles.setDepth(2)
-    this._fireEmitters.push(particles)
+    em.setDepth(2)
+    this._fireEmitters.push(em)
   }
 
   _spawnSmokeColumn(x, y) {
-    const particles = this.add.particles(x, y, undefined, {
-      lifespan:   { min: 1200, max: 2200 },
-      speed:      { min: 15,   max: 35 },
-      angle:      { min: 250,  max: 270 },
-      gravityY:   -20,
-      scale:      { start: 1.2, end: 3.5 },
-      alpha:      { start: 0.22, end: 0 },
-      tint:       0x222222,
-      quantity:   1,
-      frequency:  120,
+    const em = this.add.particles(x, y, undefined, {
+      lifespan:  { min: 1200, max: 2200 },
+      speed:     { min: 15,   max: 35 },
+      angle:     { min: 250,  max: 270 },
+      gravityY:  -20,
+      scale:     { start: 1.2, end: 3.5 },
+      alpha:     { start: 0.22, end: 0 },
+      tint:      0x222222,
+      quantity:  1,
+      frequency: 120,
     })
-    particles.setDepth(3)
-    this._smokeEmitters.push(particles)
+    em.setDepth(3)
+    this._smokeEmitters.push(em)
   }
 
   // ─── Zone 2: Steppe Portraits ───────────────────────────────────────────────
   _buildZone2(W, H) {
-    const gender = GameState.gender   // 'male' | 'female'
+    const gender = GameState.gender
 
     for (let i = 0; i < PORTRAIT_STATIONS.length; i++) {
-      const centerX  = W * PORTRAIT_STATIONS[i]
-      const keyBase  = `wb_portrait_${gender}_${i + 1}`
-
+      const centerX = W * PORTRAIT_STATIONS[i]
+      const keyBase = `wb_portrait_${gender}_${i + 1}`
       let portraitObj
 
       if (this.textures.exists(keyBase)) {
@@ -249,7 +238,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
           .setDepth(1)
           .setAlpha(0)
       } else {
-        // Placeholder rectangle + label
         portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, W * 0.55, H * 0.6, 0x1a1208)
           .setDepth(1)
           .setAlpha(0)
@@ -258,59 +246,56 @@ export default class WorldBuildingScene extends Phaser.Scene {
           fontSize:   '11px',
           color:      '#4a3820',
         }).setOrigin(0.5).setDepth(2).setAlpha(0)
-          ._placeholderParent = portraitObj   // keep ref so we can fade together
       }
 
       this._portraits.push({ obj: portraitObj, centerX, fadeRadius: W * 1.2 })
     }
   }
 
-  // ─── Zone 3: Rain + Lightning ───────────────────────────────────────────────
-  _buildZone3(W, H) {
-    const zoneX  = W * ZONE.Z3
-    const zoneW  = W * (ZONE.Z4 - ZONE.Z3)
-
-    // Rain overlay rect
-    this._rainOverlay = this.add.rectangle(zoneX + zoneW / 2, H / 2, zoneW, H, 0x080a12)
+  // ─── Storm overlay (covers Zone 2 progressively) ───────────────────────────
+  _buildStormOverlay(W, H) {
+    // Full-screen dark overlay fixed to camera
+    this._stormOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x080a12)
+      .setScrollFactor(0)
       .setAlpha(0)
-      .setDepth(-1)
+      .setDepth(4)
 
-    // Rain particles
-    this._rainEmitter = this.add.particles(zoneX, -20, undefined, {
-      lifespan:   { min: 400, max: 700 },
-      speedY:     { min: 300, max: 500 },
-      speedX:     { min: 20,  max: 60 },
-      scaleX:     0.04,
-      scaleY:     { min: 0.4, max: 0.8 },
-      alpha:      { start: 0.55, end: 0 },
-      tint:       0x8899cc,
-      quantity:   3,
-      frequency:  16,
-      emitZone:   { type: 'random', source: new Phaser.Geom.Rectangle(0, 0, zoneW, 10) },
+    // Rain emitter in world space — position updated each frame to follow camera
+    this._rainEmitter = this.add.particles(0, -30, undefined, {
+      lifespan:  { min: 400, max: 700 },
+      speedY:    { min: 300, max: 500 },
+      speedX:    { min: 20,  max: 60 },
+      scaleX:    0.04,
+      scaleY:    { min: 0.4, max: 0.8 },
+      alpha:     { start: 0.55, end: 0 },
+      tint:      0x8899cc,
+      quantity:  3,
+      frequency: 16,
+      emitZone:  { type: 'random', source: new Phaser.Geom.Rectangle(0, 0, W, 10) },
     })
-    this._rainEmitter.setDepth(5).setActive(false)
+    this._rainEmitter.setDepth(5).setActive(false).setVisible(false)
 
-    // Lightning timer — fires every 4-8 seconds while in zone
+    // Lightning timer — fires every 4-8 s; only triggers when _lightningActive
     this._lightningTimer = this.time.addEvent({
-      delay:     Phaser.Math.Between(4000, 8000),
-      loop:      true,
-      callback:  this._flashLightning,
+      delay:         Phaser.Math.Between(4000, 8000),
+      loop:          true,
+      callback:      this._flashLightning,
       callbackScope: this,
     })
   }
 
   _flashLightning() {
-    if (!this._inZone(this._W * ZONE.Z3, this._W * ZONE.Z4)) return
+    if (!this._lightningActive) return
     this.cameras.main.flash(120, 200, 220, 255, true)
-    // Reschedule with random delay
     this._lightningTimer.delay = Phaser.Math.Between(4000, 8000)
   }
 
-  // ─── Zone 4: FOMO Widow ─────────────────────────────────────────────────────
-  _buildZone4(W, H) {
+  // ─── Widow zone ─────────────────────────────────────────────────────────────
+  _buildWidowZone(W, H) {
     const widowX = W * WIDOW_X_FACTOR
+    this._widowTriggerX = widowX
 
-    // Eerie glow under widow position
+    // Eerie glow
     this.add.circle(widowX, H - FLOOR_H - 80, 120, 0x7700cc, 0.18).setDepth(0)
     this.add.circle(widowX, H - FLOOR_H - 80, 60,  0xbb44ff, 0.12).setDepth(0)
 
@@ -338,19 +323,21 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     // HP bar
     const hpBgW = 140
-    this._widowHpBg   = this.add.rectangle(widowX, H - FLOOR_H - 230, hpBgW, 8, 0x220033).setDepth(5)
-    this._widowHpBar  = this.add.rectangle(widowX - hpBgW / 2, H - FLOOR_H - 230, hpBgW, 8, 0xaa00ff)
+    this._widowHpBg  = this.add.rectangle(widowX, H - FLOOR_H - 230, hpBgW, 8, 0x220033).setDepth(5)
+    this._widowHpBar = this.add.rectangle(widowX - hpBgW / 2, H - FLOOR_H - 230, hpBgW, 8, 0xaa00ff)
       .setOrigin(0, 0.5).setDepth(6)
     this._widowHpBarW = hpBgW
 
-    // Collision trigger zone (invisible rect)
-    const triggerW  = 200
-    const trigger   = this.add.rectangle(widowX, H - FLOOR_H - 60, triggerW, H * 0.8, 0xffffff).setAlpha(0)
-    this.physics.add.existing(trigger, true)
-    this._widowTrigger   = trigger
-    this._widowTriggerX  = widowX
+    // J-prompt — hidden until player cancels the overlay
+    this._jPrompt = this.add.text(widowX, H - FLOOR_H - 290, '[ J ]  ANGREIFEN', {
+      fontFamily:      '"Cinzel", Georgia, serif',
+      fontSize:        '18px',
+      color:           '#ffcc44',
+      stroke:          '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(10).setAlpha(0)
 
-    // Exit area marker
+    // Exit label
     this.add.text(
       this._roomWidth - 250,
       H - FLOOR_H - 20,
@@ -359,37 +346,71 @@ export default class WorldBuildingScene extends Phaser.Scene {
     ).setOrigin(0.5, 1).setAlpha(0.5)
   }
 
-  // ─── Encounter decision callback ────────────────────────────────────────────
+  // ─── Encounter decision ─────────────────────────────────────────────────────
   _onEncounterDecision(detail) {
     if (!this._encounterActive) return
     this._encounterActive = false
 
-    const decision = detail?.decision ?? 'fight'
+    const decision = detail?.decision ?? 'cancel'
 
-    if (decision === 'fight') {
-      GameState.recordChoice('fight')
-      // Simple fight: widow takes damage from hits; for now: instant defeat
+    if (decision === 'pay') {
+      // Player chose the gacha store
+      GameState.recordChoice('gacha')
       this._defeatWidow()
     } else {
-      GameState.recordChoice('gacha')
-      // Player paid — widow disappears, gachaScore goes up
+      // Player cancelled — show J-prompt; organic combat or walk past
+      this._widowCancelled = true
+      this._showJPrompt()
+    }
+  }
+
+  _showJPrompt() {
+    if (!this._jPrompt) return
+    this._jPrompt.setAlpha(1)
+    this.tweens.add({
+      targets:  this._jPrompt,
+      alpha:    0.2,
+      duration: 700,
+      yoyo:     true,
+      repeat:   -1,
+      ease:     'Sine.easeInOut',
+    })
+  }
+
+  _hideJPrompt() {
+    if (!this._jPrompt) return
+    this.tweens.killTweensOf(this._jPrompt)
+    this._jPrompt.setAlpha(0)
+  }
+
+  _applyHitToWidow() {
+    this._widowHp = Math.max(0, this._widowHp - HIT_DAMAGE)
+
+    // Update HP bar width
+    if (this._widowHpBar) {
+      const frac = this._widowHp / WIDOW_HP
+      this._widowHpBar.setDisplaySize(this._widowHpBarW * frac, 8)
+    }
+
+    // Flash widow
+    if (this._widowSprite) {
+      this.tweens.add({ targets: this._widowSprite, alpha: 0.3, duration: 80, yoyo: true })
+    }
+
+    if (this._widowHp <= 0) {
+      GameState.recordChoice('fight')
       this._defeatWidow()
     }
   }
 
   _defeatWidow() {
     this._encounterDone = true
-    // Fade widow out
-    if (this._widowSprite) this.tweens.add({ targets: this._widowSprite,    alpha: 0, duration: 600 })
-    if (this._widowLabel)  this.tweens.add({ targets: this._widowLabel,     alpha: 0, duration: 400 })
-    if (this._widowHpBg)   this.tweens.add({ targets: this._widowHpBg,      alpha: 0, duration: 400 })
-    if (this._widowHpBar)  this.tweens.add({ targets: this._widowHpBar,     alpha: 0, duration: 400 })
-  }
-
-  // ─── Zone helpers ───────────────────────────────────────────────────────────
-  _inZone(xMin, xMax) {
-    const cam = this.cameras.main
-    return cam.scrollX >= xMin - cam.width && cam.scrollX <= xMax
+    this._hideJPrompt()
+    const fade = (t) => { if (t) this.tweens.add({ targets: t, alpha: 0, duration: 500 }) }
+    fade(this._widowSprite)
+    fade(this._widowLabel)
+    fade(this._widowHpBg)
+    fade(this._widowHpBar)
   }
 
   // ─── Portrait fading ────────────────────────────────────────────────────────
@@ -401,29 +422,54 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }
   }
 
-  // ─── Zone label helper ──────────────────────────────────────────────────────
+  // ─── Storm progress (overlays Zone 2, lerped) ───────────────────────────────
+  _updateStormAndRain(playerX) {
+    const W       = this._W
+    const z2Start = W * ZONE.Z2
+    const z2End   = W * ZONE.WIDOW
+    const raw     = (playerX - z2Start) / (z2End - z2Start)
+    const target  = Phaser.Math.Clamp(raw, 0, 1)
+    this._stormProgress = Phaser.Math.Linear(this._stormProgress, target, 0.03)
+
+    // Storm overlay alpha
+    if (this._stormOverlay) {
+      this._stormOverlay.setAlpha(this._stormProgress * 0.55)
+    }
+
+    // Rain active once storm has started
+    const rainActive = this._stormProgress > 0.02
+    if (this._rainEmitter) {
+      this._rainEmitter.setActive(rainActive).setVisible(rainActive)
+      // Follow camera so rain always covers the viewport
+      const cam = this.cameras.main
+      this._rainEmitter.setPosition(cam.scrollX, -30)
+    }
+
+    // Lightning unlocks after 50% stormProgress
+    this._lightningActive = this._stormProgress > 0.5
+  }
+
+  // ─── Zone label ─────────────────────────────────────────────────────────────
   _updateZoneLabel(playerX) {
     const W = this._W
     let label = ''
-    if (playerX < W * ZONE.Z2)       label = 'I — Das brennende Dorf'
-    else if (playerX < W * ZONE.Z3)  label = 'II — Die Steppe des Verlustes'
-    else if (playerX < W * ZONE.Z4)  label = 'III — Der Sturm'
-    else                              label = 'IV — Die FOMO-Witwe'
+    if      (playerX < W * ZONE.Z2)    label = 'I — Das brennende Dorf'
+    else if (playerX < W * ZONE.WIDOW) label = 'II — Die Steppe des Verlustes'
+    else                               label = 'III — Die FOMO-Witwe'
     if (this._zoneLabel) this._zoneLabel.setText(label)
   }
 
-  // ─── Rain zone activation ───────────────────────────────────────────────────
-  _updateRain(playerX) {
-    const W = this._W
-    const inStorm = playerX >= W * ZONE.Z3 && playerX < W * ZONE.Z4
-    if (this._rainEmitter) this._rainEmitter.setActive(inStorm).setVisible(inStorm)
-    if (this._rainOverlay) {
-      const targetAlpha = inStorm ? 0.15 : 0
-      if (Math.abs((this._rainOverlay.alpha ?? 0) - targetAlpha) > 0.005) {
-        this._rainOverlay.setAlpha(
-          Phaser.Math.Linear(this._rainOverlay.alpha, targetAlpha, 0.04)
-        )
-      }
+  // ─── J-hit detection ────────────────────────────────────────────────────────
+  _updateWidowCombat(playerX, playerState) {
+    if (!this._widowCancelled || this._encounterDone) return
+    if (Math.abs(playerX - this._widowTriggerX) > 180) return
+
+    // Register a hit only when the player transitions INTO a new attack state
+    if (
+      ATTACK_STATES.includes(playerState) &&
+      playerState !== this._lastPlayerState
+    ) {
+      this._applyHitToWidow()
     }
   }
 
@@ -431,7 +477,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
   update() {
     if (!this._player || this._transitioning) return
 
-    // Block player input during active encounter
     if (!this._encounterActive) {
       this._player.update()
     } else {
@@ -439,25 +484,26 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }
 
     const px = this._player.x
-
-    // Fire-wall collider (zone 1 only)
-    if (this._fireWall) {
-      this.physics.add.collider(this._player.sprite, this._fireWall)
-    }
+    const ps = this._player.state
 
     this._updatePortraits(px)
     this._updateZoneLabel(px)
-    this._updateRain(px)
+    this._updateStormAndRain(px)
+    this._updateWidowCombat(px, ps)
+
+    // Must update AFTER combat check so we detect state transitions
+    this._lastPlayerState = ps
 
     // ── FOMO Widow trigger ──────────────────────────────────────────────────
     if (
       !this._encounterDone &&
       !this._encounterActive &&
+      !this._widowCancelled &&
       Math.abs(px - this._widowTriggerX) < 220
     ) {
       this._encounterActive = true
       window.dispatchEvent(new CustomEvent('game:encounterChoice', {
-        detail: { id: 'fomo_widow', hp: WIDOW_HP }
+        detail: { id: 'fomo_widow', hp: WIDOW_HP },
       }))
     }
 
@@ -475,11 +521,11 @@ export default class WorldBuildingScene extends Phaser.Scene {
   shutdown() {
     window.removeEventListener('game:encounterDecision', this._decisionHandler)
     if (this._player) this._player.destroy()
-    this._player       = null
-    this._fireEmitters = []
+    this._player        = null
+    this._fireEmitters  = []
     this._smokeEmitters = []
-    this._rainEmitter  = null
-    this._portraits    = []
+    this._rainEmitter   = null
+    this._portraits     = []
     if (this._lightningTimer) this._lightningTimer.remove()
   }
 }
