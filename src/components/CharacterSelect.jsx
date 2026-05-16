@@ -13,10 +13,15 @@ import '../styles/characterselect.css'
  * @param {{ onStart: (gender: 'male'|'female') => void }} props
  */
 export default function CharacterSelect({ onStart }) {
-  const [focused, setFocused]   = useState('male')   // keyboard focus
-  const [selected, setSelected] = useState(null)     // locked-in choice
+  const [focused, setFocused]         = useState('male')   // keyboard focus
+  const [selected, setSelected]       = useState(null)     // locked-in choice
+  const [imgFailed, setImgFailed]     = useState({})       // { male: true } if img 404
   const audioRef = useRef(null)
   const firedRef = useRef(false)
+
+  function handleImgError(gender) {
+    setImgFailed(prev => prev[gender] ? prev : { ...prev, [gender]: true })
+  }
 
   function choose(gender) {
     if (firedRef.current) return
@@ -71,6 +76,7 @@ export default function CharacterSelect({ onStart }) {
       stat1: 'Stärke ████████░░',
       stat2: 'Tempo  ██████░░░░',
       stat3: 'Wille  █████████░',
+      portrait: '/assets/charsel_portrait_male.png',
     },
     {
       gender: 'female',
@@ -84,6 +90,7 @@ export default function CharacterSelect({ onStart }) {
       stat1: 'Stärke ███████░░░',
       stat2: 'Tempo  ████████░░',
       stat3: 'Wille  █████████░',
+      portrait: '/assets/charsel_portrait_female.png',
     },
   ]
 
@@ -112,11 +119,17 @@ export default function CharacterSelect({ onStart }) {
               onMouseEnter={() => setFocused(card.gender)}
               onClick={() => choose(card.gender)}
             >
-              {/* Portrait placeholder — replaced by asset once generated */}
               <div className="charsel-portrait">
-                <div className="charsel-portrait__placeholder">
-                  {card.gender === 'male' ? '⚔' : '⚔'}
-                </div>
+                {imgFailed[card.gender] ? (
+                  <div className="charsel-portrait__placeholder">⚔</div>
+                ) : (
+                  <img
+                    src={card.portrait}
+                    alt={card.name}
+                    draggable="false"
+                    onError={() => handleImgError(card.gender)}
+                  />
+                )}
               </div>
 
               <div className="charsel-card-body">

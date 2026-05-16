@@ -4,11 +4,16 @@
  * Black screen. Credits scroll upward. End-credits music plays.
  * Press any key (after 1 s) to skip.
  * On complete (or skip) → fires 'game:exit' window event → React returns to title.
+ *
+ * Ending branch (read from GameState at create() time):
+ *   isGachaDemon() === true  (gachaScore >= 5) → BAD  ending: "DU BIST GEFALLEN"
+ *   isGachaDemon() === false                   → GOOD ending: "DU HAST WIDERSTANDEN"
  */
 
 import Phaser from 'phaser'
+import GameState from '../GameState.js'
 
-const CREDITS = [
+const CREDITS_BASE = [
   { text: 'GAME DESIGN AS ART',              size: 34, color: '#d4af37', gap: 18 },
   { text: '',                                 size: 10, color: '',        gap:  8 },
   { text: 'A PRESENTATION',                  size: 18, color: '#8a7040', gap: 60 },
@@ -29,9 +34,17 @@ const CREDITS = [
 
   { text: 'PRESENTED BY',                    size: 13, color: '#3a2a10', gap:  8 },
   { text: 'Viktor',                          size: 30, color: '#d4af37', gap: 100 },
+]
 
-  { text: 'YOU DIED',                        size: 44, color: '#8b0000', gap: 18 },
-  { text: '— and learned something.',        size: 18, color: '#5a4520', gap:  0 },
+const ENDING_BAD = [
+  { text: 'DU BIST GEFALLEN',                          size: 44, color: '#8b0000', gap: 18 },
+  { text: '— und wurdest, was du bekämpfst.',           size: 18, color: '#5a4520', gap: 24 },
+  { text: `Gacha-Score: ${0}`,                          size: 13, color: '#3a1010', gap:  0 },
+]
+
+const ENDING_GOOD = [
+  { text: 'DU HAST WIDERSTANDEN',                      size: 44, color: '#c9a84c', gap: 18 },
+  { text: '— und die Lektion verstanden.',              size: 18, color: '#5a4520', gap:  0 },
 ]
 
 const SCROLL_SPEED = 48   // px per second
@@ -51,6 +64,17 @@ export default class CreditsScene extends Phaser.Scene {
   create() {
     const W = this.scale.width
     const H = this.scale.height
+
+    // ── Build ending-specific credits array ────────────────────────────────
+    const isBad  = GameState.isGachaDemon()
+    const ending = isBad
+      ? ENDING_BAD.map(l =>
+          l.text.startsWith('Gacha-Score:')
+            ? { ...l, text: `Gacha-Score: ${GameState.gachaScore}` }
+            : l
+        )
+      : ENDING_GOOD
+    const CREDITS = [...CREDITS_BASE, ...ending]
 
     this.cameras.main.setBackgroundColor(0x000000)
     this.cameras.main.fadeIn(1200, 0, 0, 0)
