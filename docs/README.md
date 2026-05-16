@@ -3,6 +3,7 @@
 This folder stores durable project context.
 
 - `project-memory.md` holds the current state of the project.
+- `worldbuilding-asset-spec.md` is the canonical Scene 1 asset generation spec.
 - `milestones/` stores timestamped decision logs.
 - `templates/` stores reusable documentation templates.
 
