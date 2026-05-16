@@ -31,13 +31,13 @@ import PlayerController, { FLOOR_H, SPAWN_Y_OFFSET } from '../PlayerController.j
 import GameState from '../GameState.js'
 
 // ─── Zone X boundaries (multiples of scene width W) ──────────────────────────
-const ZONE = { Z1: 0, Z2: 2, WIDOW: 8, END: 11 }
+const ZONE = { Z1: 0, Z2: 1.5, WIDOW: 5, END: 7 }
 
 // ─── Portrait stations in Zone 2 (W units) ───────────────────────────────────
-const PORTRAIT_STATIONS = [3, 5, 7]
+const PORTRAIT_STATIONS = [2, 3.2, 4.4]
 
 // ─── Widow encounter ──────────────────────────────────────────────────────────
-const WIDOW_X_FACTOR  = 9
+const WIDOW_X_FACTOR  = 6
 const WIDOW_HP        = 100
 const HIT_DAMAGE      = 25
 const ATTACK_STATES   = ['light1', 'light2', 'light3', 'heavy']
@@ -118,13 +118,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this.cameras.main.startFollow(this._player.sprite, true, 0.08, 0.08)
     this.cameras.main.fadeIn(800, 0, 0, 0)
 
-    // ── Zone label ────────────────────────────────────────────────────────
-    this._zoneLabel = this.add.text(W / 2, 40, '', {
-      fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '14px',
-      color:      '#7a5c18',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(20).setAlpha(0.7)
-
     // ── Encounter decision listener ───────────────────────────────────────
     this._decisionHandler = (e) => this._onEncounterDecision(e.detail)
     window.addEventListener('game:encounterDecision', this._decisionHandler)
@@ -186,7 +179,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }
 
     // Ambient orange glow over Zone 1
-    this.add.rectangle(W, H / 2, W * ZONE.Z2, H, 0xff2200)
+    this.add.rectangle(W * ZONE.Z2 / 2, H / 2, W * ZONE.Z2, H, 0xff2200)
       .setAlpha(0.04)
       .setDepth(-1)
   }
@@ -248,7 +241,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(2).setAlpha(0)
       }
 
-      this._portraits.push({ obj: portraitObj, centerX, fadeRadius: W * 1.2 })
+      this._portraits.push({ obj: portraitObj, centerX, fadeRadius: W * 0.8 })
     }
   }
 
@@ -449,16 +442,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._lightningActive = this._stormProgress > 0.5
   }
 
-  // ─── Zone label ─────────────────────────────────────────────────────────────
-  _updateZoneLabel(playerX) {
-    const W = this._W
-    let label = ''
-    if      (playerX < W * ZONE.Z2)    label = 'I — Das brennende Dorf'
-    else if (playerX < W * ZONE.WIDOW) label = 'II — Die Steppe des Verlustes'
-    else                               label = 'III — Die FOMO-Witwe'
-    if (this._zoneLabel) this._zoneLabel.setText(label)
-  }
-
   // ─── J-hit detection ────────────────────────────────────────────────────────
   _updateWidowCombat(playerX, playerState) {
     if (!this._widowCancelled || this._encounterDone) return
@@ -487,7 +470,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     const ps = this._player.state
 
     this._updatePortraits(px)
-    this._updateZoneLabel(px)
     this._updateStormAndRain(px)
     this._updateWidowCombat(px, ps)
 
