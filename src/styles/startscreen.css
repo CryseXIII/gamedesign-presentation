@@ -35,6 +35,13 @@
   text-align: center;
 }
 
+.start-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
 /* ─── LOGO IMAGE ─────────────────────────────────────────────────────────── */
 .start-logo-wrap {
   width: min(72vw, 900px);
@@ -91,6 +98,11 @@
   cursor: pointer;
   padding: clamp(0.6rem, 1.5vh, 1rem) clamp(2rem, 5vw, 4.5rem);
   outline: none;
+}
+
+.start-btn--portal .start-btn-text {
+  font-size: clamp(0.95rem, 2vw, 1.5rem);
+  letter-spacing: 0.3em;
 }
 
 /* The oval glow element — DS3 warm amber oval behind the text */

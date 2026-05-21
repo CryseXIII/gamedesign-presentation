@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import '../styles/startscreen.css'
 
-export default function StartScreen({ onStart }) {
+export default function StartScreen({ onStart, onPortal }) {
   const audioRef = useRef(null)
   const firedRef = useRef(false)
   const [hovered, setHovered] = useState(false)
@@ -63,15 +63,30 @@ export default function StartScreen({ onStart }) {
         </p>
 
         {/* DS3-style CTA with oval glow */}
-        <button
-          className={`start-btn${hovered ? ' start-btn--lit' : ''}`}
-          onClick={e => { e.stopPropagation(); handleStart() }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-        >
-          <span className="start-btn-oval" />
-          <span className="start-btn-text">RACHE BEGINNEN</span>
-        </button>
+        <div className="start-actions">
+          <button
+            className={`start-btn${hovered ? ' start-btn--lit' : ''}`}
+            onClick={e => { e.stopPropagation(); handleStart() }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <span className="start-btn-oval" />
+            <span className="start-btn-text">RACHE BEGINNEN</span>
+          </button>
+
+          {onPortal && (
+            <button
+              className="start-btn start-btn--portal"
+              onClick={e => {
+                e.stopPropagation()
+                onPortal()
+              }}
+            >
+              <span className="start-btn-oval" />
+              <span className="start-btn-text">PORTAL</span>
+            </button>
+          )}
+        </div>
 
         <p className="start-hint">Beliebige Taste · Klick · oder Gamepad-Taste</p>
       </div>

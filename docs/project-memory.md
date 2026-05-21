@@ -1,10 +1,10 @@
 # Project Memory
 
-Last updated: 2026-05-17 00:00:00 +02:00
+Last updated: 2026-05-21 00:00:00 +02:00 (portal hub added with Gameron as a subpage, a snapshot console, and a live Jellyfin route)
 
 ## Project Objective
 
-Create an interactive browser-based 2D game ("Gameron") that teaches game design principles through gameplay, centered on a Dark Souls case study and dark-pattern critique, hosted on a hardened Proxmox/LXC VPS.
+Create a portal-first browser app that exposes Gameron as a subpage, teaches game design principles through gameplay, and also provides a snapshot maintenance console for the hardened Proxmox/LXC VPS stack.
 
 ---
 
@@ -37,6 +37,9 @@ Create an interactive browser-based 2D game ("Gameron") that teaches game design
 
 - Asset integration: all WorldBuildingScene and CharacterSelect image assets placed and wired
 - CharacterSelect now shows real portrait images with `onError` fallback to sword placeholder
+- App.jsx now routes `#/portal`, `#/gameron`, and `#/snapshots`
+- PortalScreen now provides portal URLs, Gameron/Snapshot launchers, Jellyfin, and service cards
+- SnapshotCenter now provides a manual snapshot / restore dashboard with progress and ETA
 - CreditsScene now branches on `GameState.isGachaDemon()`:
   - Good ending: "DU HAST WIDERSTANDEN — und die Lektion verstanden."
   - Bad ending:  "DU BIST GEFALLEN — und wurdest, was du bekämpfst." + Gacha-Score readout
@@ -47,6 +50,8 @@ Create an interactive browser-based 2D game ("Gameron") that teaches game design
 
 - `GameState.js`: `gender`, `gachaScore`, `recordChoice()`, `isGachaDemon()`, `reset()`
 - `CharacterSelect.jsx`: DS3-style male/female selection, real portraits, keyboard + gamepad
+- `PortalScreen.jsx`: VPS control menu with portal URLs, launchers, and service cards
+- `SnapshotCenter.jsx`: maintenance dashboard for snapshots and playback
 - `WorldBuildingScene.js`: compressed layout, portrait fade, storm/rain/lightning, widow encounter
 - `EncounterOverlay.jsx` + `GachaStoreOverlay.jsx`: overlay decision flow
 - `PlayerController.js`: movement/jump/combo/heavy/air attacks

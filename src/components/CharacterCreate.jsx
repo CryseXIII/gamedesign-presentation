@@ -10,11 +10,11 @@ import {
 const PREVIEW_SCALE = 8
 const ROW_COUNT = 6 // head, body, legs, palette, gender, confirm
 
-export default function CharacterCreate({ onConfirm }) {
+export default function CharacterCreate({ onConfirm, defaultIsFemale = false }) {
   const [headIdx,    setHeadIdx]    = useState(0)
   const [bodyIdx,    setBodyIdx]    = useState(0)
   const [legsIdx,    setLegsIdx]    = useState(0)
-  const [isFemale,   setIsFemale]   = useState(false)
+  const [isFemale,   setIsFemale]   = useState(defaultIsFemale)
   const [paletteIdx, setPaletteIdx] = useState(0)
   const [activeRow,  setActiveRow]  = useState(0)
 
