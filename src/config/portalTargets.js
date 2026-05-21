@@ -1,4 +1,4 @@
-const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'http://100.118.216.77:8096/web/').trim()
+const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'https://jellyfin.gamedesign.152.53.117.246.sslip.io/web/').trim()
 
 export const portalUrls = [
   {

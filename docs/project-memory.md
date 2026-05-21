@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-05-21 00:00:00 +02:00 (portal hub added with Gameron as a subpage, a snapshot console, and a live Jellyfin route)
+Last updated: 2026-05-21 00:00:00 +02:00 (portal hub added with Gameron as a subpage, a snapshot console, and a live Jellyfin HTTPS hostname)
 
 ## Project Objective
 
@@ -38,7 +38,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - Asset integration: all WorldBuildingScene and CharacterSelect image assets placed and wired
 - CharacterSelect now shows real portrait images with `onError` fallback to sword placeholder
 - App.jsx now routes `#/portal`, `#/gameron`, and `#/snapshots`
-- PortalScreen now provides portal URLs, Gameron/Snapshot launchers, Jellyfin, and service cards
+- PortalScreen now provides portal URLs, Gameron/Snapshot launchers, Jellyfin HTTPS, and service cards
 - SnapshotCenter now provides a manual snapshot / restore dashboard with progress and ETA
 - CreditsScene now branches on `GameState.isGachaDemon()`:
   - Good ending: "DU HAST WIDERSTANDEN — und die Lektion verstanden."
