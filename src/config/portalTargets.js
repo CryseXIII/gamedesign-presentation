@@ -1,4 +1,8 @@
 const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'https://jellyfin.gamedesign.152.53.117.246.sslip.io/web/').trim()
+const shokoUrl = (import.meta.env.VITE_SHOKO_URL || 'https://shoko.gamedesign.152.53.117.246.sslip.io/').trim()
+const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'https://ooba.gamedesign.152.53.117.246.sslip.io/').trim()
+const oobaApiUrl = (import.meta.env.VITE_OOBA_API_URL || 'https://ooba-api.gamedesign.152.53.117.246.sslip.io/v1/models').trim()
+const sillyTavernUrl = (import.meta.env.VITE_SILLYTAVERN_URL || '').trim()
 
 export const portalUrls = [
   {
@@ -37,6 +41,12 @@ export const serviceGroups = [
         description: 'Media library and playback.',
         fallback: 'Set VITE_JELLYFIN_URL to enable this link.',
       },
+      {
+        label: 'Shoko',
+        url: shokoUrl,
+        description: 'Anime metadata manager for Jellyfin. Public entry.',
+        fallback: 'Set VITE_SHOKO_URL to enable this link.',
+      },
     ],
   },
   {
@@ -59,9 +69,20 @@ export const serviceGroups = [
         description: 'Automation and bot workflows.',
       },
       {
-        label: 'Oobabooga',
-        url: 'http://100.109.133.95:5000',
-        description: 'OpenAI-compatible LLM and vision API.',
+        label: 'Oobabooga API',
+        url: oobaApiUrl,
+        description: 'OpenAI-compatible LLM API models endpoint. Public entry.',
+      },
+      {
+        label: 'Oobabooga Raw Chat',
+        url: oobaChatUrl,
+        description: 'Direct chat UI with less wrapping. Public entry.',
+      },
+      {
+        label: 'SillyTavern',
+        url: sillyTavernUrl,
+        description: 'Roleplay frontend that can point at the Oobabooga API.',
+        fallback: 'Set VITE_SILLYTAVERN_URL to enable this link.',
       },
       {
         label: 'A1111',
