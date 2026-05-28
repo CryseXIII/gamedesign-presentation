@@ -2,7 +2,9 @@ const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'https://jellyfin.game
 const shokoUrl = (import.meta.env.VITE_SHOKO_URL || 'https://shoko.gamedesign.152.53.117.246.sslip.io/').trim()
 const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'https://ooba.gamedesign.152.53.117.246.sslip.io/').trim()
 const oobaApiUrl = (import.meta.env.VITE_OOBA_API_URL || 'https://ooba-api.gamedesign.152.53.117.246.sslip.io/v1/models').trim()
-const sillyTavernUrl = (import.meta.env.VITE_SILLYTAVERN_URL || '').trim()
+const sillyTavernUrl = (import.meta.env.VITE_SILLYTAVERN_URL || 'https://sillytavern.gamedesign.152.53.117.246.sslip.io/').trim()
+const a1111Url = (import.meta.env.VITE_A1111_URL || 'https://a1111.gamedesign.152.53.117.246.sslip.io').trim()
+const comfyUiUrl = (import.meta.env.VITE_COMFYUI_URL || 'https://comfyui.gamedesign.152.53.117.246.sslip.io').trim()
 
 export const portalUrls = [
   {
@@ -82,17 +84,24 @@ export const serviceGroups = [
         label: 'SillyTavern',
         url: sillyTavernUrl,
         description: 'Roleplay frontend that can point at the Oobabooga API.',
-        fallback: 'Set VITE_SILLYTAVERN_URL to enable this link.',
+        fallback: 'Set VITE_SILLYTAVERN_URL to override this link.',
+      },
+      {
+        label: 'Scene Worker',
+        url: 'https://scene-worker.gamedesign.152.53.117.246.sslip.io',
+        description: 'RP excerpt to image worker for SillyTavern.',
       },
       {
         label: 'A1111',
-        url: 'http://100.109.133.95:7860',
-        description: 'Img2img, inpaint, model switch.',
+        url: a1111Url,
+        description: 'Img2img, inpaint, model switch. Public entry.',
+        fallback: 'Set VITE_A1111_URL to override this link.',
       },
       {
         label: 'ComfyUI',
-        url: 'http://100.109.133.95:8189',
-        description: 'Mask, pose, nodes, and complex workflows.',
+        url: comfyUiUrl,
+        description: 'Mask, pose, nodes, and complex workflows. Public entry.',
+        fallback: 'Set VITE_COMFYUI_URL to override this link.',
       },
     ],
   },
