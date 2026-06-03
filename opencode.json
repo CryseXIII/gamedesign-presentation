@@ -2,7 +2,8 @@
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
     "AGENTS.md",
-    "docs/project-memory.md"
+    "docs/project-memory.md",
+    "docs/godmode.md"
   ],
   "mcp": {
     "context7": {

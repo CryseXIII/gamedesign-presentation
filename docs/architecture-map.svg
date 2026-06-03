@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1f2937"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <style>
+      .title { fill: #f8fafc; font: 700 40px Inter, Segoe UI, Arial, sans-serif; }
+      .subtitle { fill: #cbd5e1; font: 400 18px Inter, Segoe UI, Arial, sans-serif; }
+      .h { fill: #f8fafc; font: 700 22px Inter, Segoe UI, Arial, sans-serif; }
+      .t { fill: #e2e8f0; font: 400 16px Inter, Segoe UI, Arial, sans-serif; }
+      .small { fill: #94a3b8; font: 400 14px Inter, Segoe UI, Arial, sans-serif; }
+      .label { fill: #fde68a; font: 700 15px Inter, Segoe UI, Arial, sans-serif; letter-spacing: 0.06em; }
+      .box { fill: url(#panel); stroke: #334155; stroke-width: 1.5; rx: 24; ry: 24; filter: url(#shadow); }
+      .box-accent { fill: url(#panel); stroke: url(#accent); stroke-width: 2.5; rx: 24; ry: 24; filter: url(#shadow); }
+      .arrow { stroke: #fbbf24; stroke-width: 4; fill: none; marker-end: url(#arrow); opacity: 0.95; }
+      .dash { stroke-dasharray: 9 8; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="980" fill="url(#bg)"/>
+
+  <text x="70" y="78" class="title">Remote Control Architecture</text>
+  <text x="70" y="114" class="subtitle">Portal-first access, Open WebUI for chat, orchestrator for service control, ComfyUI/A1111 for image generation, Jellyfin for media.</text>
+
+  <rect x="70" y="170" width="380" height="180" class="box-accent"/>
+  <text x="100" y="212" class="label">REMOTE CLIENT</text>
+  <text x="100" y="248" class="h">Browser / Phone / Desktop</text>
+  <text x="100" y="282" class="t">Portal hub</text>
+  <text x="100" y="306" class="t">Open WebUI chat</text>
+  <text x="100" y="330" class="t">Raw chat / direct UI</text>
+
+  <rect x="515" y="155" width="470" height="210" class="box"/>
+  <text x="545" y="197" class="label">ENTRY HUB</text>
+  <text x="545" y="233" class="h">Portal + Open WebUI</text>
+  <text x="545" y="267" class="t">Portal: Gameron, Snapshots, service links</text>
+  <text x="545" y="291" class="t">Open WebUI: normal assistant experience</text>
+  <text x="545" y="315" class="t">Raw chat: direct model UI with fewer wrappers</text>
+  <text x="545" y="339" class="small">Public HTTPS + Tailscale access routes</text>
+
+  <rect x="1040" y="135" width="500" height="250" class="box-accent"/>
+  <text x="1070" y="177" class="label">CT210 ORCHESTRATOR</text>
+  <text x="1070" y="213" class="h">Control plane and API broker</text>
+  <text x="1070" y="247" class="t">LLM proxy /v1/chat/completions</text>
+  <text x="1070" y="271" class="t">Image generation: /generate, /inpaint, /img2img</text>
+  <text x="1070" y="295" class="t">Vision pipeline: /vision/analyze</text>
+  <text x="1070" y="319" class="t">Jellyfin status / media bridge</text>
+  <text x="1070" y="343" class="t">Model, LoRA, sampler, and download endpoints</text>
+
+  <path class="arrow" d="M 450 260 C 480 260, 490 260, 515 260"/>
+  <text x="450" y="243" class="small">routes</text>
+
+  <path class="arrow" d="M 985 245 C 1010 245, 1020 245, 1040 245"/>
+  <text x="985" y="228" class="small">API calls</text>
+
+  <rect x="1040" y="450" width="245" height="180" class="box"/>
+  <text x="1070" y="492" class="label">LLM STACK</text>
+  <text x="1070" y="528" class="t">Oobabooga API</text>
+  <text x="1070" y="552" class="t">Chat, vision, model switch</text>
+  <text x="1070" y="576" class="t">Raw Chat UI on port 1338</text>
+
+  <rect x="1295" y="450" width="245" height="180" class="box"/>
+  <text x="1325" y="492" class="label">IMAGE STACK</text>
+  <text x="1325" y="528" class="t">ComfyUI on port 8189</text>
+  <text x="1325" y="552" class="t">A1111 on port 7860</text>
+  <text x="1325" y="576" class="t">Multi-mask, pose, inpaint</text>
+
+  <path class="arrow" d="M 1290 315 C 1335 350, 1295 400, 1160 450"/>
+  <path class="arrow" d="M 1305 315 C 1360 360, 1410 400, 1417 450"/>
+
+  <rect x="1040" y="680" width="500" height="200" class="box"/>
+  <text x="1070" y="722" class="label">MEDIA + OPS</text>
+  <text x="1070" y="758" class="t">Jellyfin: movies, music, webm, gif, scan status</text>
+  <text x="1070" y="782" class="t">Shoko: anime metadata sidecar for Jellyfin</text>
+  <text x="1070" y="806" class="t">n8n / Telegram bot: automation and commands</text>
+  <text x="1070" y="830" class="t">Snapshot center: manual backup / restore workflow</text>
+
+  <path class="arrow dash" d="M 750 365 C 750 515, 915 620, 1040 760"/>
+  <path class="arrow dash" d="M 250 350 C 250 560, 700 720, 1040 780"/>
+
+  <rect x="70" y="470" width="880" height="410" class="box"/>
+  <text x="100" y="512" class="label">HOW IT INTERACTS</text>
+  <text x="100" y="552" class="h">1. Open the portal from any remote device.</text>
+  <text x="100" y="588" class="t">Use the portal to jump into Gameron, Snapshots, Jellyfin, or service links.</text>
+  <text x="100" y="628" class="h">2. Use Open WebUI for normal chat and tools.</text>
+  <text x="100" y="664" class="t">It talks to CT210, which proxies the laptop services and keeps the UX clean.</text>
+  <text x="100" y="704" class="h">3. Use raw chat when you want fewer wrappers.</text>
+  <text x="100" y="740" class="t">Direct local UI or API access is better for blunt model steering and experiments.</text>
+  <text x="100" y="780" class="h">4. Use ComfyUI for complex stills.</text>
+  <text x="100" y="816" class="t">One core graph, staged passes, inpaint cleanup, then optional video follow-up.</text>
+
+  <text x="70" y="936" class="small">Current design goal: one control plane, one portal, one image engine, one media hub.</text>
+</svg>
