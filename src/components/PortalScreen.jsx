@@ -1,9 +1,162 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import '../styles/portal.css'
-import { internalPages, portalUrls, serviceGroups, snapshotPolicy } from '../config/portalTargets.js'
+import { internalPages, portalUrls, serviceGroups, snapshotPolicy, launcherConfig } from '../config/portalTargets.js'
 
 function formatLinkCount(count) {
   return `${count} ${count === 1 ? 'item' : 'items'}`
+}
+
+function Dot({ ready }) {
+  return <span className={`svc-dot svc-dot--${ready ? 'ok' : 'off'}`} />
+}
+
+function ServiceStatusPanel() {
+  const [status, setStatus] = useState(null)
+  const [error, setError] = useState(null)
+  const [action, setAction] = useState({})
+  const intervalRef = useRef(null)
+
+  async function fetchStatus() {
+    if (!launcherConfig.token) {
+      setError('VITE_LAUNCHER_TOKEN not set')
+      return
+    }
+    try {
+      const r = await fetch(`${launcherConfig.url}/status`, {
+        headers: { 'X-Secret-Token': launcherConfig.token },
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      setStatus(await r.json())
+      setError(null)
+    } catch (e) {
+      setError(String(e.message || e))
+    }
+  }
+
+  useEffect(() => {
+    fetchStatus()
+    intervalRef.current = setInterval(fetchStatus, 30000)
+    return () => clearInterval(intervalRef.current)
+  }, [])
+
+  async function doAction(endpoint) {
+    setAction(s => ({ ...s, [endpoint]: 'pending' }))
+    try {
+      const r = await fetch(`${launcherConfig.url}${endpoint}`, {
+        method: 'POST',
+        headers: { 'X-Secret-Token': launcherConfig.token },
+      })
+      const data = await r.json()
+      setAction(s => ({ ...s, [endpoint]: data.status || 'ok' }))
+    } catch (e) {
+      setAction(s => ({ ...s, [endpoint]: 'error' }))
+    }
+    setTimeout(() => {
+      setAction(s => ({ ...s, [endpoint]: null }))
+      fetchStatus()
+    }, 2500)
+  }
+
+  function actionLabel(endpoint, fallback) {
+    const st = action[endpoint]
+    if (st === 'pending') return '...'
+    if (st) return st
+    return fallback
+  }
+
+  if (!launcherConfig.token) {
+    return (
+      <section className="portal-panel portal-panel--status">
+        <div className="portal-panel__head">
+          <div>
+            <p className="portal-panel__title">Service Status</p>
+            <p className="portal-panel__note">Set VITE_LAUNCHER_TOKEN to enable live status.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="portal-panel portal-panel--status">
+      <div className="portal-panel__head">
+        <div>
+          <p className="portal-panel__title">Service Status</p>
+          <p className="portal-panel__note">Laptop AI stack — live via Launcher Daemon, polled every 30s.</p>
+        </div>
+        <button className="portal-copy" type="button" onClick={fetchStatus}>Refresh</button>
+      </div>
+
+      {error ? (
+        <p className="portal-status-msg">{error}</p>
+      ) : !status ? (
+        <p className="portal-status-msg">Loading...</p>
+      ) : (
+        <div className="portal-svc-grid">
+          <div className="portal-svc-card">
+            <div className="portal-svc-card__head">
+              <Dot ready={status.sd?.api_ready} />
+              <span className="portal-svc-card__name">A1111</span>
+            </div>
+            <p className="portal-svc-card__detail">
+              {status.sd?.api_ready ? 'API ready' : status.sd?.running ? 'Starting...' : 'Offline'}
+            </p>
+            <div className="portal-svc-card__actions">
+              <button
+                className="portal-svc-btn"
+                type="button"
+                disabled={action['/restart/sd'] === 'pending'}
+                onClick={() => doAction('/restart/sd')}
+              >
+                {actionLabel('/restart/sd', 'Restart')}
+              </button>
+            </div>
+          </div>
+
+          <div className="portal-svc-card">
+            <div className="portal-svc-card__head">
+              <Dot ready={status.llm?.api_ready} />
+              <span className="portal-svc-card__name">Oobabooga</span>
+            </div>
+            <p className="portal-svc-card__detail">
+              {status.llm?.api_ready ? 'API ready' : status.llm?.running ? 'Starting...' : 'Offline'}
+            </p>
+          </div>
+
+          <div className="portal-svc-card">
+            <div className="portal-svc-card__head">
+              <Dot ready={status.kokoro?.api_ready} />
+              <span className="portal-svc-card__name">Kokoro TTS</span>
+            </div>
+            <p className="portal-svc-card__detail">
+              {status.kokoro?.api_ready ? 'API ready' : (status.kokoro?.service_status ?? 'Unknown')}
+            </p>
+            <div className="portal-svc-card__actions">
+              {status.kokoro?.api_ready ? (
+                <button
+                  className="portal-svc-btn"
+                  type="button"
+                  disabled={action['/stop/kokoro'] === 'pending'}
+                  onClick={() => doAction('/stop/kokoro')}
+                >
+                  {actionLabel('/stop/kokoro', 'Stop')}
+                </button>
+              ) : (
+                <button
+                  className="portal-svc-btn"
+                  type="button"
+                  disabled={action['/start/kokoro'] === 'pending'}
+                  onClick={() => doAction('/start/kokoro')}
+                >
+                  {actionLabel('/start/kokoro', 'Start')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
 }
 
 export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
@@ -85,6 +238,8 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
           </div>
         </section>
 
+        <ServiceStatusPanel />
+
         {serviceGroups.map(group => (
           <section className="portal-panel" key={group.title}>
             <div className="portal-panel__head">
@@ -165,3 +320,4 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
     </div>
   )
 }
+

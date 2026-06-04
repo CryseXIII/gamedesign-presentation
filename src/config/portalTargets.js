@@ -1,3 +1,8 @@
+export const launcherConfig = {
+  url: (import.meta.env.VITE_LAUNCHER_URL || 'http://100.109.133.95:8765').trim(),
+  token: (import.meta.env.VITE_LAUNCHER_TOKEN || '').trim(),
+}
+
 const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'https://jellyfin.gamedesign.152.53.117.246.sslip.io/web/').trim()
 const shokoUrl = (import.meta.env.VITE_SHOKO_URL || 'https://shoko.gamedesign.152.53.117.246.sslip.io/').trim()
 const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'https://ooba.gamedesign.152.53.117.246.sslip.io/').trim()
