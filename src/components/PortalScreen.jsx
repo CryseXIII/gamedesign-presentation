@@ -121,6 +121,27 @@ function ServiceStatusPanel() {
             <p className="portal-svc-card__detail">
               {status.llm?.api_ready ? 'API ready' : status.llm?.running ? 'Starting...' : 'Offline'}
             </p>
+            <div className="portal-svc-card__actions">
+              {status.llm?.running ? (
+                <button
+                  className="portal-svc-btn"
+                  type="button"
+                  disabled={action['/stop/llm'] === 'pending'}
+                  onClick={() => doAction('/stop/llm')}
+                >
+                  {actionLabel('/stop/llm', 'Stop')}
+                </button>
+              ) : (
+                <button
+                  className="portal-svc-btn"
+                  type="button"
+                  disabled={action['/start/llm'] === 'pending'}
+                  onClick={() => doAction('/start/llm')}
+                >
+                  {actionLabel('/start/llm', 'Start')}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="portal-svc-card">
