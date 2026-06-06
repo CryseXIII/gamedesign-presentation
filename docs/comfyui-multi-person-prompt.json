@@ -2,7 +2,7 @@
   "1": {
     "class_type": "CheckpointLoaderSimple",
     "inputs": {
-      "ckpt_name": "dreamshaperXL_turboDpmppSDE.safetensors"
+      "ckpt_name": "ponyDiffusionV6XL_v6StartWithThisOne.safetensors"
     }
   },
   "2": {

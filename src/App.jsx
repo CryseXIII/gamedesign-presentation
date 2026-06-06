@@ -4,9 +4,10 @@ import CharacterSelect from './components/CharacterSelect.jsx'
 import CharacterCreate from './components/CharacterCreate.jsx'
 import GameScreen      from './components/GameScreen.jsx'
 import PortalScreen    from './components/PortalScreen.jsx'
+import ImageWorkbench  from './components/ImageWorkbench.jsx'
 import SnapshotCenter  from './components/SnapshotCenter.jsx'
 
-const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'select', 'create', 'game'])
+const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'workbench', 'select', 'create', 'game'])
 
 function readRoute() {
   if (typeof window === 'undefined') return 'portal'
@@ -48,6 +49,7 @@ export default function App() {
       <PortalScreen
         onOpenGameron={() => navigate('gameron')}
         onOpenSnapshots={() => navigate('snapshots')}
+        onOpenWorkbench={() => navigate('workbench')}
       />
     )
   }
@@ -58,6 +60,10 @@ export default function App() {
 
   if (screen === 'snapshots') {
     return <SnapshotCenter onBack={() => navigate('portal')} />
+  }
+
+  if (screen === 'workbench') {
+    return <ImageWorkbench onBack={() => navigate('portal')} />
   }
 
   if (screen === 'select') {

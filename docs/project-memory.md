@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-03 10:40 UTC (Full VPS audit + security hardening round)
+Last updated: 2026-06-06 22:41 UTC (image workbench UI and progress notifications)
 
 ## Project Objective
 
@@ -48,12 +48,30 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - Oobabooga portal link now targets `/v1/models` instead of the GET-incompatible API root
 - Portal now also supports an optional `VITE_SILLYTAVERN_URL` card and labels the raw chat entry explicitly
 - Public portal is still serving the older bundle until the source change is pushed and rebuilt; live bundle still shows the old internal Oobabooga card
+- Laptop launcher now exposes ComfyUI lifecycle/wait endpoints for the `sd-webui-comfyui` extension on port 8189, and the deployed daemon now uses a dedicated `ComfyUI\venv` with `torch 2.5.1+cu121`, `torchvision 0.20.1+cu121`, `torchaudio 2.5.1+cu121`, and `transformers 5.10.2`; the shared A1111 venv was the root cause, not a circular dependency. Browser verification passed: `http://127.0.0.1:8189/` returns `200` and the log shows `Starting server` with the isolated venv packages loaded
+- `a1111.gamedesign.152.53.117.246.sslip.io` and `comfyui.gamedesign.152.53.117.246.sslip.io` were added to CT201 Caddy and reloaded successfully; both public hostnames now serve the UI, and a minimal `txt2img` request returns `images: 1` locally and through the public A1111 proxy
+- CivitAI Browser+ preview/download paths now have explicit request timeouts on the remaining blocking HTTP calls, and preview-image failures are logged instead of being swallowed silently
+- CivitAI Browser+ now also persists the visible download queue snapshot in `sessionStorage` across refreshes, so the browser UI can recover the queue panel after a page reload
+- CivitAI Browser+ now also exposes an active-download snapshot and polls it after refresh, so a running aria2 job can reattach its visible progress state
+- ComfyUI on Windows was crashing on `tqdm` progress output because the logger wrapper inherited `cp1252`; `app/logger.py` now defaults to UTF-8 with `errors='replace'` so the progress bar cannot abort sampling
+- The A1111 launcher now also sets `PYTHONUTF8=1` and `PYTHONIOENCODING=utf-8` so ComfyUI and child Python processes inherit UTF-8 mode from process start
+- The launcher stack was restarted through `POST /restart/sd` and `GET /wait/comfyui?timeout=600` confirmed ComfyUI is reachable again; final status shows `sd.api_ready=true` and `comfyui.api_ready=true`
+- `comfyui-manager` is now installed into the dedicated ComfyUI venv and `--enable-manager` is saved in `comfyui_additional_args`; the startup log shows `ComfyUI-Manager` loading successfully
+- The SillyTavern scene render button now submits a queued `/render/from-excerpt/submit` job and polls `/render/status/{job_id}` instead of waiting on the slow inline extract call; the extension also uses a 30s fetch timeout guard
+- CT201 Caddy now also includes a public `sd-orchestrator.gamedesign.152.53.117.246.sslip.io` reverse proxy to CT210:8766 so SillyTavern's `SD Generate` button can bypass the broken n8n webhook and hit the image generator directly; the browser timeout was increased to 180s and the default SD request was trimmed to 512x512 at 8 steps
+- The SillyTavern extension now auto-migrates stale n8n `sd-agent` URLs to the SD orchestrator and falls back from queued scene submit to the older direct render endpoint on HTTP 422
 - `vps-architecture/sillytavern-image-action/` now provides a browser extension that posts the latest RP excerpt to the public scene-worker host and displays returned image artifacts
-- `vps-architecture/sillytavern-image-action/` now also includes an `SD Generate` button that posts the latest excerpt to the n8n `sd-agent` webhook and renders the returned image payload
+- `vps-architecture/sillytavern-image-action/` now also includes an `SD Generate` button that posts the latest excerpt to the public SD orchestrator and renders the returned image payload
+- The image-action prompt path now forwards active cast, `nsfw_level`, `continuity_notes`, and `lorebook_context` so generated images stay aligned with the current scene
 - CT215 is now reserved as the small SillyTavern LXC (`10.10.10.63`, `:8000`)
 - `vps-architecture/provisioning/provision-sillytavern-lxc.sh` now provisions the SillyTavern container with Node 22 and a systemd service
 - CT215 is now live and the browser extension is installed under `public/scripts/extensions/third-party/scene-image-action/`
-- The extension now auto-generates a Gameron RP pack from the setting seed, persists it in chat metadata / preset extension data, and injects it into generation prompts so the user does not need to hand-fill the frontend
+- The extension now auto-generates a Gameron RP pack from the current scene and lorebook context, persists it in chat metadata / preset extension data, and injects it into generation prompts so the user does not need to hand-fill the frontend
+- New `#/workbench` page added to the React app: model selector, crop selection, cutout/mask editor, grid mode, checkpoint history, and approval/merge buttons
+- Workbench can load the live checkpoint and LoRA inventory from the orchestrator, or fall back to the local three-model inventory if the API is unavailable
+- Workbench now mirrors progress updates to a configurable webhook so Telegram workflows can report repeated status without blocking the main job
+- CT212 `Private Videos`, `Uploads`, and `Animated` libraries now have actual source paths set; `/mnt/media/private` root perms were corrected so `jellyfin` can traverse the tree
+- `Animated` refresh is currently active after the path fix; the library now points at `/mnt/media/private/Bilder/Porn/Animated`
 - `vps-architecture/provisioning/provision-sillytavern-lxc.sh` now seeds CT215 with `main_api=openai`, `chat_completion_source=custom`, `custom_url=http://100.109.133.95:5000/v1`, and `custom_model=mythomax-l2-13b\\mythomax-l2-13b.Q5_K_M.gguf`
 - The SillyTavern scene render button now uses the fast `/scene/extract` -> `/scene/plan` -> `/render/submit` -> `/render/status/{job_id}` flow to avoid browser timeout/network errors from the long blocking endpoint
 - `docs/stable-diffusion-extension-guide.md` now clarifies A1111 extension access vs runtime activation and the OpenPose workflow
@@ -64,6 +82,20 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
   - Bad ending:  "DU BIST GEFALLEN — und wurdest, was du bekämpfst." + Gacha-Score readout
 - manifest.js cleaned: legacy `wb_bg_storm` + `wb_bg_widow` removed; all present image assets set to `loaded`
 - New GameScene future assets registered in manifest (`gm_bg_training_arena`, `gm_enemy_autoplay_lady`)
+- **Group chat automation fully working** (2026-06-03):
+  - `group-chat-autorun.js` on CT203 now reliably selects the group via `.group_select` CSS class using `page.evaluate` direct click
+  - Fresh chat per run: uses `GET /csrf-token` + `POST /api/chats/group/delete` + `POST /api/groups/edit` + full page reload — group config `chat_id` is updated each run so ST generates a new scenario
+  - AI message counting (not total) prevents trigger user messages from short-circuiting `waitForNewMessage`
+  - Name prefix cleanup (`cleanText()`) strips accumulated `Name: Name:` prefixes from transcript
+  - `persistTranscript()` called after every round so partial results survive failures
+  - `playwright-runner.service` now uses `StandardOutput=append:/var/log/pr.log` for persistent logging
+  - ST model set to `mythomax-l2-13b` (roleplay), `stream_openai=false`, `always_force_name2=false`
+  - Verified end-to-end: 10-round run completes in ~3 min, clean transcript, Makoto/Rachel/Noel in character
+- **Mythomax sampling tuned** (2026-06-03): `temp=0.87, freq_pen=0.1, rep_pen=1.1, top_k=40, top_p=0.95, min_p=0.05` applied to CT215 `oai_settings`
+- **Makoto / Rachel / Noel cards overhauled** (2026-06-03): multi-state mental model (vanilla/aroused/consumed for Makoto; composed/cracking/surrendered for Rachel; flustered/willing/overcome for Noel), NSFW escalation guidance, three-stage example messages — written back to PNG on CT215
+- **blazblue_universe lorebook** now has two new constant entries (uid 42 + 43): NSFW system directive and post-mission apartment scenario seed; group `description` and `scenario` fields also set
+- **Model safeguard** added to `group-chat-autorun.js`: checks Oobabooga `/v1/models` before browser launch; aborts if `mythomax` not loaded
+- **Results endpoints** added to `playwright-runner.js` (CT203): `GET /results` lists all on-disk report dirs; `GET /results/:id/transcript` returns plain-text transcript; `GET /results/:id/transcript.json` and `/results/:id/report.json` also available
 
 ### Core systems in place
 
@@ -76,6 +108,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - `docs/comfyui-multi-person-prompt.json`: ready-to-queue multi-person ComfyUI API prompt
 - `docs/comfyui-multi-person-workflow.json`: loadable ComfyUI workflow export for multi-person stills
 - `docs/comfyui-inpaint-workflow.json`: loadable ComfyUI workflow export for inpaint cleanup
+- All ComfyUI workflow exports now default to `ponyDiffusionV6XL_v6StartWithThisOne.safetensors`, and the SD orchestrator can still select among the installed checkpoints via `preferred_model_title`
 - `docs/architecture-map.svg`: presentation-style system interaction diagram
 - `docs/remote-control-map.md`: remote entry points and function list
 - `docs/jellyfin-shoko-anime-guide.md`: folder and metadata rules for anime in Jellyfin + Shoko
@@ -110,7 +143,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - CT212 `Serien` library was rebuilt with `EnableInternetProviders=true`, `EnableAutomaticSeriesGrouping=true`, and Shoko-enabled Series/Season/Episode metadata fetchers
 - The library reset queued per-folder full refreshes for 171 top-level series folders, but `IncludeItemTypes=Series` is still empty so the remaining blocker is grouping/matching, not stale library cache
 - Laptop Launcher Daemon now starts the local A1111 instance via `D:\Tools\StableDiffusion\webui\webui.bat` with `--enable-insecure-extension-access`, and the launch script now sets `git config --global --add safe.directory "*"` so extension updates can run under the SYSTEM service context
-- The local SD model set was pruned to one main checkpoint (`ponyDiffusionV6XL_v6StartWithThisOne`) plus a slim LoRA set for details/NSFW, and all LyCORIS files were removed to reclaim disk space
+- The local SD model set currently includes `albedobaseXL_v13`, `ponyDiffusionV6XL_v6StartWithThisOne`, and `Juggernaut-XL_v9_RunDiffusionPhoto_v2`; all LyCORIS files were removed to reclaim disk space, and the set is expected to grow with motion modules and other checkpoints
 - `docs/godmode.md` is now the canonical always-on prompt for OpenCode and the reusable text for other providers
 - `D:\Repositories\LLM\Oobabooga\text-generation-webui\user_data\characters\Code Pilot.yaml` now provides a concise code-first Oobabooga character card for the laptop instance
 - Best installed coding model in the current Oobabooga model set: `qwen2.5-coder-14b-instruct-q4_k_m.gguf`
@@ -198,7 +231,7 @@ Removed legacy keys: `wb_bg_storm`, `wb_bg_widow` (not used after scene compress
 | `scene-worker.*` | CT214:8770 | — |
 | `sillytavern.*` | CT215:8000 | — |
 | `a1111.*` | laptop:7860 | — |
-| `comfyui.*` | laptop:8188 | — |
+| `comfyui.*` | laptop:8189 | — |
 | `sd-agent.*` | CT211:5678 | basic_auth (user: sdagent, pass: sdagent2026) |
 | `bot.*` | CT211:5678 | — (Telegram webhook needs no auth) |
 
@@ -211,12 +244,12 @@ All subdomains under `152.53.117.246.sslip.io`.
 | Oobabooga UI | :1338 | ✅ running | — |
 | Oobabooga API | :5000 | ✅ running | Models: dolphin-12b, llama-3.1-8b, mythomax-13b, qwen2.5-14b-coder, qwen2.5-vl-7b, gemma-3-12b, internvl3-8b, minicpm-v |
 | A1111 | :7860 | ✅ running (idle) | Checkpoint: ponyDiffusionV6XL |
-| ComfyUI | :8188 | ❌ offline (intentional) | Standard port, consistent with CT210 env and Caddy |
+| ComfyUI | :8189 | ✅ running via `sd-webui-comfyui` | A1111 extension, not a separate standalone install |
 | Launcher Daemon | :8765 | ✅ running | Starts/stops SD via SD Orchestrator |
 
 ### CT210 service config
 
-- Open WebUI: `OPENAI_API_BASE_URLS=http://100.109.133.95:5000/v1` (Oobabooga), `COMFYUI_BASE_URL=http://100.109.133.95:8188`
+- Open WebUI: `OPENAI_API_BASE_URLS=http://100.109.133.95:5000/v1` (Oobabooga), `COMFYUI_BASE_URL=http://100.109.133.95:8189`
 - SD Orchestrator: `launcher_url=http://100.109.133.95:8765`, `a1111_url=http://100.109.133.95:7860`
 - Open WebUI only accessible via Tailscale DNAT (:8080) — intentionally not in Caddy (no public access)
 
@@ -226,6 +259,7 @@ All subdomains under `152.53.117.246.sslip.io`.
 - `WEBHOOK_URL=https://bot.152.53.117.246.sslip.io/`
 - Caddy entry `bot.152.53.117.246.sslip.io → CT211:5678` active as of 2026-06-03
 - Telegram workflows must be configured in n8n UI to receive/send messages
+- Long-running jobs should be able to report progress repeatedly without blocking the main process: percent, ETA, KB/s, `X/Y`, queue depth, and explicit wait reasons like `waiting on process XYZ`
 
 ---
 
@@ -246,7 +280,7 @@ All subdomains under `152.53.117.246.sslip.io`.
 4. Wire gd-test and gd-build containers into deployment workflow
 5. Buy/attach production domain (`crysiscreations.de`)
 6. Portrait review: female CharacterSelect portrait was landscape-cropped; re-generate if result unsatisfactory
-7. Verify the new SillyTavern `SD Generate` button end-to-end against the live n8n webhook and tune the image/result rendering if needed
+7. Decide whether to remove the unused n8n `sd-agent` workflow; `SD Generate` now points at the public SD orchestrator and stale URLs auto-migrate
 8. Test A1111 extension updates from the UI now that the launcher forces insecure extension access and trusts the repo tree for SYSTEM
 9. Watch the active Shoko import queue drain; if it stalls, restart `shokoserver` rather than clearing Jellyfin/Shokofin again
 10. Decide whether the empty `/mnt/media/musik` library should stay configured in Jellyfin or be removed to avoid the recurring empty-folder warning
@@ -254,3 +288,10 @@ All subdomains under `152.53.117.246.sslip.io`.
 12. Configure n8n Telegram workflows in n8n UI to actually receive/process messages (webhook endpoint now reachable)
 13. CT214 hostname still `v2202605355759456797` — decide whether to rename to `scene-worker`
 14. Build Telegram → n8n → Open WebUI/Oobabooga/SillyTavern pipeline for mobile AI interaction
+15. Verify the Jellyfin `Animated` library finishes scanning and actually shows nested content
+16. Verify the new `/start/comfyui` and `/wait/comfyui` launcher routes against the A1111 extension
+17. ComfyUI routes are live again in the daemon’s `/openapi.json`
+18. Investigate why ComfyUI stalls after `Starting server` even though the safe-directory fix is in place
+19. Inspect `sd-webui-comfyui/scripts/comfyui.py` and the xformers attention path if ComfyUI still does not bind on `8189`
+20. Verify the CivitAI active-download reconnect flow in a real browser refresh while a job is running
+21. Design a non-blocking progress-notification path for image jobs, with Telegram updates that can repeat until approval or completion

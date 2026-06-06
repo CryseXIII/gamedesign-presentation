@@ -57,6 +57,16 @@ Use `docs/comfyui-multi-person-prompt.json` only when you want the bare API prom
 
 Use `docs/comfyui-inpaint-workflow.json` for inpaint cleanup runs.
 
+## Current Checkpoints
+
+The live ComfyUI node currently exposes:
+
+- `albedobaseXL_v13.safetensors`
+- `ponyDiffusionV6XL_v6StartWithThisOne.safetensors`
+- `Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors`
+
+Pick the checkpoint that fits the scene. Do not assume a single permanent default.
+
 ## Raw Chat Meaning
 
 Raw chat means the direct Oobabooga UI at port `1338`:

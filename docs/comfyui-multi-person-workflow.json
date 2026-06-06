@@ -17,7 +17,7 @@
         {"name": "VAE", "type": "VAE", "links": [8]}
       ],
       "properties": {"Node name for S&R": "CheckpointLoaderSimple"},
-      "widgets_values": ["dreamshaperXL_turboDpmppSDE.safetensors"]
+      "widgets_values": ["ponyDiffusionV6XL_v6StartWithThisOne.safetensors"]
     },
     {
       "id": 2,

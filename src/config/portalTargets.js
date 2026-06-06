@@ -35,6 +35,11 @@ export const internalPages = [
     label: 'Snapshots',
     description: 'Manual snapshot, restore, and playback for the VPS stack.',
   },
+  {
+    id: 'workbench',
+    label: 'Image Workbench',
+    description: 'Model selection, crop editor, edit map, checkpoint approvals, and progress notifications.',
+  },
 ]
 
 export const serviceGroups = [

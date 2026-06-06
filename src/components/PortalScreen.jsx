@@ -180,7 +180,7 @@ function ServiceStatusPanel() {
   )
 }
 
-export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
+export default function PortalScreen({ onOpenGameron, onOpenSnapshots, onOpenWorkbench }) {
   const [copiedLabel, setCopiedLabel] = useState('')
 
   function copyUrl(url, label) {
@@ -245,12 +245,12 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
 
           <div className="portal-launchers">
             {internalPages.map(page => (
-              <button
-                key={page.id}
-                type="button"
-                className="portal-launcher"
-                onClick={page.id === 'gameron' ? onOpenGameron : onOpenSnapshots}
-              >
+                <button
+                  key={page.id}
+                  type="button"
+                  className="portal-launcher"
+                  onClick={page.id === 'gameron' ? onOpenGameron : page.id === 'snapshots' ? onOpenSnapshots : onOpenWorkbench}
+                >
                 <span className="portal-launcher__label">{page.label}</span>
                 <span className="portal-launcher__desc">{page.description}</span>
                 <span className="portal-launcher__meta">Open subpage</span>
@@ -341,4 +341,3 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots }) {
     </div>
   )
 }
-
