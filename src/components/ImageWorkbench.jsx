@@ -9,6 +9,11 @@ const SAMPLE_ANALYSIS = `Base image: preserve the full composition and atmospher
 const SAMPLE_SD_PROMPT = `sharp high-resolution image, cinematic lighting, coherent anatomy, strong composition, preserve atmosphere, fix only the marked area, no extra limbs, no blur, no text, no watermark`
 const COLOR_PALETTE = ['#ff4d4d', '#ff9f43', '#feca57', '#1dd1a1', '#54a0ff', '#5f27cd', '#ff6b81', '#00d2d3', '#2ecc71', '#e056fd', '#7bed9f', '#ff9ff3']
 const DEFAULT_GRID_SIZE = 8
+const LOCAL_MODELS = [
+  { title: 'albedobaseXL_v13.safetensors', name: 'albedobaseXL_v13.safetensors', hash: '', alias: '' },
+  { title: 'ponyDiffusionV6XL_v6StartWithThisOne.safetensors', name: 'ponyDiffusionV6XL_v6StartWithThisOne.safetensors', hash: '', alias: '' },
+  { title: 'Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors', name: 'Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors', hash: '', alias: '' },
+]
 
 function makeId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
@@ -292,7 +297,7 @@ export default function ImageWorkbench({ onBack }) {
 
   const [orchestratorUrl, setOrchestratorUrl] = useStorageState(orchestratorKey, DEFAULT_ORCHESTRATOR_URL)
   const [notificationUrl, setNotificationUrl] = useStorageState(notificationKey, DEFAULT_NOTIFICATION_URL)
-  const [selectedModelTitle, setSelectedModelTitle] = useStorageState(selectedModelKey, '')
+  const [selectedModelTitle, setSelectedModelTitle] = useStorageState(selectedModelKey, LOCAL_MODELS[0].title)
   const [modelLock, setModelLock] = useStorageState(modelLockKey, 'true')
   const [gridSize, setGridSize] = useStorageState(gridSizeKey, String(DEFAULT_GRID_SIZE))
   const [brushSize, setBrushSize] = useStorageState(brushSizeKey, '18')
@@ -550,57 +555,18 @@ export default function ImageWorkbench({ onBack }) {
   }, [cutoutImage])
 
   useEffect(() => {
-    const loadInventory = async () => {
-      try {
-        setInventoryStatus('Loading model and LoRA inventory...')
-        const [modelsResponse, lorasResponse, currentResponse] = await Promise.all([
-          fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/models`, {}, 25000),
-          fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/loras`, {}, 25000).catch(() => []),
-          fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/models/current`, {}, 25000).catch(() => ({ current: '' })),
-        ])
-
-        const normalizedModels = Array.isArray(modelsResponse)
-          ? modelsResponse.map((item) => ({
-              title: item.title || item.model_name || item.name || '',
-              name: item.model_name || item.name || item.title || '',
-              hash: item.hash || '',
-              alias: item.alias || '',
-            })).filter((item) => item.title)
-          : []
-
-        const normalizedLoras = Array.isArray(lorasResponse)
-          ? lorasResponse.map((item) => ({
-              name: item.name || item.alias || item.model_name || item.path || '',
-              alias: item.alias || '',
-              weight: 1,
-              enabled: false,
-            })).filter((item) => item.name)
-          : []
-
-        setModels(normalizedModels)
-        setLoras(normalizedLoras)
-        setCurrentModel(currentResponse.current || '')
-        setInventoryStatus(`Loaded ${normalizedModels.length} checkpoint(s) and ${normalizedLoras.length} LoRA(s).`)
-
-        if (normalizedLoras.length && !selectedLoras.length) {
-          setSelectedLoras(normalizedLoras.slice(0, 4))
-        }
-      } catch (error) {
-        setInventoryStatus(`Inventory unavailable: ${error.message}`)
-        setModels([
-          { title: 'albedobaseXL_v13.safetensors', name: 'albedobaseXL_v13.safetensors', hash: '', alias: '' },
-          { title: 'ponyDiffusionV6XL_v6StartWithThisOne.safetensors', name: 'ponyDiffusionV6XL_v6StartWithThisOne.safetensors', hash: '', alias: '' },
-          { title: 'Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors', name: 'Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors', hash: '', alias: '' },
-        ])
-        setLoras([])
-      }
+    setModels(LOCAL_MODELS)
+    setLoras([])
+    setCurrentModel(LOCAL_MODELS[0].title)
+    setInventoryStatus('Using local model list. Click Rescan from Tailscale to load live inventory.')
+    if (!selectedModelTitle || !LOCAL_MODELS.some((model) => model.title === selectedModelTitle)) {
+      setSelectedModelTitle(LOCAL_MODELS[0].title)
     }
-    void loadInventory()
-  }, [orchestratorUrl])
+  }, [])
 
   useEffect(() => {
     if (!selectedModelTitle) return
-    const match = models.find((model) => model.title === selectedModelTitle)
+    const match = models.find((model) => model.title === selectedModelTitle) || LOCAL_MODELS.find((model) => model.title === selectedModelTitle)
     if (match) {
       setJobStatus(`Selected model: ${match.title}`)
     }
@@ -853,6 +819,57 @@ export default function ImageWorkbench({ onBack }) {
     return canvas.toDataURL('image/png')
   }
 
+  async function refreshInventory() {
+    try {
+      setInventoryStatus('Loading live inventory...')
+      const [modelsResponse, lorasResponse, currentResponse] = await Promise.all([
+        fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/models`, {}, 25000),
+        fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/loras`, {}, 25000).catch(() => []),
+        fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/models/current`, {}, 25000).catch(() => ({ current: '' })),
+      ])
+
+      const normalizedModels = Array.isArray(modelsResponse)
+        ? modelsResponse.map((item) => ({
+            title: item.title || item.model_name || item.name || '',
+            name: item.model_name || item.name || item.title || '',
+            hash: item.hash || '',
+            alias: item.alias || '',
+          })).filter((item) => item.title)
+        : []
+
+      const normalizedLoras = Array.isArray(lorasResponse)
+        ? lorasResponse.map((item) => ({
+            name: item.name || item.alias || item.model_name || item.path || '',
+            alias: item.alias || '',
+            weight: 1,
+            enabled: false,
+          })).filter((item) => item.name)
+        : []
+
+      setModels(normalizedModels.length ? normalizedModels : LOCAL_MODELS)
+      setLoras(normalizedLoras)
+      setCurrentModel(currentResponse.current || normalizedModels[0]?.title || LOCAL_MODELS[0].title)
+      setInventoryStatus(`Loaded ${normalizedModels.length || LOCAL_MODELS.length} checkpoint(s) and ${normalizedLoras.length} LoRA(s).`)
+
+      const nextModel = selectedModelTitle && (normalizedModels.some((model) => model.title === selectedModelTitle) || LOCAL_MODELS.some((model) => model.title === selectedModelTitle))
+        ? selectedModelTitle
+        : (normalizedModels[0]?.title || LOCAL_MODELS[0].title)
+      setSelectedModelTitle(nextModel)
+
+      if (normalizedLoras.length && !selectedLoras.length) {
+        setSelectedLoras(normalizedLoras.slice(0, 4))
+      }
+    } catch {
+      setInventoryStatus('Live inventory unavailable; using local model list.')
+      setModels(LOCAL_MODELS)
+      setLoras([])
+      setCurrentModel(LOCAL_MODELS[0].title)
+      if (!selectedModelTitle || !LOCAL_MODELS.some((model) => model.title === selectedModelTitle)) {
+        setSelectedModelTitle(LOCAL_MODELS[0].title)
+      }
+    }
+  }
+
   async function generatePreview() {
     try {
       setJobStatus('Preparing job...')
@@ -864,9 +881,10 @@ export default function ImageWorkbench({ onBack }) {
 
       await ensureSelectedModelActive()
       const previewPrompt = promptBundle.strictPrompt
+      const activeModelTitle = selectedModelTitle || currentModel || LOCAL_MODELS[0].title
       const payload = {
         prompt: previewPrompt,
-        preferred_model_title: selectedModelTitle || undefined,
+        preferred_model_title: activeModelTitle,
         auto_download_loras: false,
         max_loras: selectedLoras.filter((item) => item.enabled).length || 0,
         dry_run: false,
@@ -891,11 +909,11 @@ export default function ImageWorkbench({ onBack }) {
             cfg_scale: 6.5,
             sampler_name: 'DPM++ 2M Karras',
             seed: -1,
-            override_settings: selectedModelTitle ? { sd_model_checkpoint: selectedModelTitle } : {},
+            override_settings: activeModelTitle ? { sd_model_checkpoint: activeModelTitle } : {},
           }),
         }, 240000).catch(async () => {
           const preview = await buildPreviewResult()
-          return { image_base64: preview, output: 'local preview fallback', model: selectedModelTitle || 'auto', seed: 0 }
+          return { image_base64: preview, output: 'local preview fallback', model: activeModelTitle, seed: 0 }
         })
       } else {
         setJobStatus('Sending planned generation job...')
@@ -905,7 +923,7 @@ export default function ImageWorkbench({ onBack }) {
           body: JSON.stringify(payload),
         }, 240000).catch(async () => {
           const preview = await buildPreviewResult()
-          return { image_base64: preview, output: 'local preview fallback', model: selectedModelTitle || 'auto', seed: 0 }
+          return { image_base64: preview, output: 'local preview fallback', model: activeModelTitle, seed: 0 }
         })
       }
 
@@ -915,8 +933,8 @@ export default function ImageWorkbench({ onBack }) {
       if (imageBase64) {
         const normalized = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`
         setResultSrc(normalized)
-        setResultNote(`Result from ${response.model || selectedModelTitle || 'auto'}${response.seed ? ` • seed ${response.seed}` : ''}`)
-        setBaseHistory((previous) => [{ kind: 'preview', src: normalized, note: `Preview from ${response.model || selectedModelTitle || 'auto'}`, time: new Date().toLocaleString() }, ...previous].slice(0, 12))
+        setResultNote(`Result from ${response.model || activeModelTitle}${response.seed ? ` • seed ${response.seed}` : ''}`)
+        setBaseHistory((previous) => [{ kind: 'preview', src: normalized, note: `Preview from ${response.model || activeModelTitle}`, time: new Date().toLocaleString() }, ...previous].slice(0, 12))
       } else {
         const preview = await buildPreviewResult()
         setResultSrc(preview)
@@ -927,7 +945,7 @@ export default function ImageWorkbench({ onBack }) {
       setJobStatus('Preview ready')
       setJobProgress(100)
       setJobEta('done')
-      pushLog(`Preview ready: ${response?.model || selectedModelTitle || 'auto'}`, 100, 'done')
+      pushLog(`Preview ready: ${response?.model || activeModelTitle}`, 100, 'done')
     } catch (error) {
       setJobStatus(`Error: ${error.message}`)
       pushLog(`Job failed: ${error.message}`, 0, 'unknown')
@@ -1311,17 +1329,16 @@ export default function ImageWorkbench({ onBack }) {
           <div className="workbench-column workbench-column--right">
             <CanvasFrame
               label="Model Control"
-              note="Choose a checkpoint. Leave it blank to auto-pick from the installed models."
-              actions={<button type="button" className="wb-mini" onClick={() => setSelectedModelTitle('')}>Auto</button>}
+              note="Choose a checkpoint. The selected one stays pinned until you change it."
+              actions={<button type="button" className="wb-mini" onClick={() => setSelectedModelTitle(currentModel || LOCAL_MODELS[0].title)}>Use current</button>}
             >
               <label className="wb-field">
                 <span>Orchestrator URL</span>
                 <input className="wb-input" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} />
               </label>
               <label className="wb-field">
-                <span>Selected checkpoint</span>
+                <span>Pinned checkpoint</span>
                 <select className="wb-input" value={selectedModelTitle} onChange={(event) => setSelectedModelTitle(event.target.value)}>
-                  <option value="">Auto</option>
                   {models.map((model) => (
                     <option key={model.title} value={model.title}>{model.title}</option>
                   ))}
@@ -1333,7 +1350,7 @@ export default function ImageWorkbench({ onBack }) {
               </label>
               <div className="wb-inline-actions">
                 <button type="button" className="wb-mini" onClick={() => void ensureSelectedModelActive()}>Sync model</button>
-                <button type="button" className="wb-mini" onClick={() => { void fetchJson(`${orchestratorUrl.replace(/\/$/, '')}/models/refresh`, { method: 'POST', body: '{}' }, 120000).then(() => pushLog('Requested a model / LoRA rescan.', 4, 'waiting for scan')) }}>Rescan</button>
+                <button type="button" className="wb-mini" onClick={() => { void refreshInventory().then(() => pushLog('Refreshed model inventory.', 4, 'scan complete')) }}>Rescan</button>
               </div>
               <div className="wb-model-summary">Current: {currentModel || 'unknown'}</div>
             </CanvasFrame>
