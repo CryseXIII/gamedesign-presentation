@@ -461,7 +461,13 @@ export default class WorldBuildingScene extends Phaser.Scene {
     if (!this._player || this._transitioning) return
 
     if (!this._encounterActive) {
-      this._player.update()
+      try {
+        this._player.update()
+      } catch (error) {
+        console.error('[GAMERON] WorldBuildingScene player update crashed', error)
+        window.dispatchEvent(new CustomEvent('game:debugError', { detail: { scope: 'WorldBuildingScene', error: String(error) } }))
+        return
+      }
     } else {
       this._player.halt()
     }

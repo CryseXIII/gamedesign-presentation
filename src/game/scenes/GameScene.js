@@ -73,7 +73,13 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (!this.player || this.transitioning) return
 
-    this.player.update()
+    try {
+      this.player.update()
+    } catch (error) {
+      console.error('[GAMERON] GameScene update crashed', error)
+      window.dispatchEvent(new CustomEvent('game:debugError', { detail: { scope: 'GameScene', error: String(error) } }))
+      return
+    }
 
     // ── Room exit → PlayerGuidanceScene ──────────────────────────────────────
     if (this.player.x >= this.roomWidth - 200) {

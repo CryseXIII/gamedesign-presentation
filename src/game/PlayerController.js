@@ -142,7 +142,20 @@ export default class PlayerController {
     if (this._state === s) return
     console.info('[GAMERON] player state', { from: this._state, to: s })
     this._state = s
-    this.sprite.play(s)
+    if (!this.scene.anims.exists(s)) {
+      console.error('[GAMERON] missing animation, falling back to idle', { requested: s })
+      this._state = S.IDLE
+      this.sprite.play(S.IDLE)
+      return
+    }
+
+    try {
+      this.sprite.play(s)
+    } catch (error) {
+      console.error('[GAMERON] sprite.play failed, falling back to idle', { requested: s, error })
+      this._state = S.IDLE
+      this.sprite.play(S.IDLE)
+    }
   }
 
   _onAnimComplete(key) {
