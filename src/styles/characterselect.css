@@ -40,17 +40,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-}
-
-.charsel-world {
-  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
-  font-size: clamp(0.65rem, 1.2vw, 0.9rem);
-  font-weight: 700;
-  letter-spacing: 0.6em;
-  color: #5a4218;
-  text-transform: uppercase;
-  margin: 0;
+  gap: 0;
 }
 
 .charsel-title {
@@ -62,15 +52,6 @@
   text-transform: uppercase;
   margin: 0;
   text-shadow: 0 0 22px rgba(201, 168, 76, 0.3), 0 2px 6px rgba(0,0,0,0.9);
-}
-
-.charsel-hint {
-  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
-  font-size: clamp(0.55rem, 1vw, 0.75rem);
-  letter-spacing: 0.15em;
-  color: #3a2e18;
-  text-transform: uppercase;
-  margin: 0;
 }
 
 /* ─── CARDS CONTAINER ─────────────────────────────────────────────────────── */
@@ -94,7 +75,7 @@
   cursor: pointer;
   border: 1px solid #2a1f0e;
   background: linear-gradient(175deg, #0e0b06 0%, #17120a 60%, #0a0806 100%);
-  padding: 0 0 1rem 0;
+  padding: 0;
   transition:
     border-color 0.25s ease,
     box-shadow   0.25s ease,
@@ -154,93 +135,31 @@
   transition: filter 0.3s ease;
 }
 
+.charsel-portrait__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.7rem 0.5rem 0.65rem;
+  text-align: center;
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  letter-spacing: 0.28em;
+  color: #e2c060;
+  text-transform: uppercase;
+  background: linear-gradient(to top, rgba(8,6,3,0.95), rgba(8,6,3,0.15));
+  text-shadow: 0 0 12px rgba(201, 168, 76, 0.35);
+}
+
 .charsel-card--active .charsel-portrait img {
   filter: saturate(0.95) brightness(0.95);
 }
 
 /* ─── CARD BODY ───────────────────────────────────────────────────────────── */
-.charsel-card-body {
-  width: 100%;
-  padding: 0.9rem 1.1rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  box-sizing: border-box;
-}
-
-.charsel-card-name {
-  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
-  font-size: clamp(1rem, 1.8vw, 1.4rem);
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: #c9a84c;
-  text-transform: uppercase;
-  margin: 0;
-  text-shadow: 0 0 14px rgba(201, 168, 76, 0.22);
-}
-
-.charsel-card--active .charsel-card-name {
-  text-shadow: 0 0 20px rgba(201, 168, 76, 0.55);
-}
-
-.charsel-card-epithet {
-  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
-  font-size: clamp(0.55rem, 0.9vw, 0.72rem);
-  letter-spacing: 0.08em;
-  color: #5a4520;
-  font-style: italic;
-  margin: 0;
-}
-
-.charsel-card-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(to right, transparent, #3a2e18, transparent);
-  margin: 0.2rem 0;
-}
-
-.charsel-card-lore {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.charsel-card-lore p {
-  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
-  font-size: clamp(0.52rem, 0.85vw, 0.68rem);
-  color: #6a5830;
-  line-height: 1.55;
-  margin: 0;
-  font-style: italic;
-  letter-spacing: 0.04em;
-}
-
-.charsel-card--active .charsel-card-lore p {
-  color: #8a7240;
-}
-
-.charsel-card-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.charsel-card-stats p {
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(0.38rem, 0.65vw, 0.52rem);
-  color: #4a3820;
-  margin: 0;
-  letter-spacing: 0.05em;
-}
-
-.charsel-card--active .charsel-card-stats p {
-  color: #7a6030;
-}
-
 /* ─── SELECT HINT ─────────────────────────────────────────────────────────── */
 .charsel-card-select-hint {
   position: absolute;
-  bottom: -1px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);

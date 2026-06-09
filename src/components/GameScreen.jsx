@@ -14,7 +14,7 @@ import '../styles/gallery.css'
  *
  * When overlays close, dispatches the corresponding response events back to Phaser.
  */
-export default function GameScreen({ gender = 'male', charConfig, onExit }) {
+export default function GameScreen({ gender = 'male', onExit }) {
   const containerRef = useRef(null)
   const [galleryItem,  setGalleryItem]  = useState(null)
   const [encounter,    setEncounter]    = useState(null)
@@ -26,7 +26,7 @@ export default function GameScreen({ gender = 'male', charConfig, onExit }) {
     // Reset GameState so a fresh playthrough starts clean
     GameState.reset()
     GameState.gender = gender
-    const game = createGame(el, charConfig, gender)
+    const game = createGame(el, null, gender)
     return () => { game.destroy(true, true) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

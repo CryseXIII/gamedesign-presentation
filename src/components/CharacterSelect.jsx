@@ -66,30 +66,12 @@ export default function CharacterSelect({ onStart }) {
   const cards = [
     {
       gender: 'male',
-      name:   'Der Krieger',
-      epithet: '— letzter Sohn von Gameron —',
-      lore: [
-        'Sein Dorf liegt in Asche.',
-        'Seine Klinge kennt keine Gnade.',
-        'Er kämpft, damit kein anderer trauern muss.',
-      ],
-      stat1: 'Stärke ████████░░',
-      stat2: 'Tempo  ██████░░░░',
-      stat3: 'Wille  █████████░',
+      label:  'Männlich',
       portrait: '/assets/charsel_portrait_male.png',
     },
     {
       gender: 'female',
-      name:   'Die Kriegerin',
-      epithet: '— letzte Tochter von Gameron —',
-      lore: [
-        'Sie hat alles verloren, was sie liebte.',
-        'Trauer wurde zu Zorn — Zorn zu Stahl.',
-        'Kein Preis ist zu hoch für Rache.',
-      ],
-      stat1: 'Stärke ███████░░░',
-      stat2: 'Tempo  ████████░░',
-      stat3: 'Wille  █████████░',
+      label:  'Weiblich',
       portrait: '/assets/charsel_portrait_female.png',
     },
   ]
@@ -99,9 +81,7 @@ export default function CharacterSelect({ onStart }) {
       <div className="charsel-bg" />
 
       <header className="charsel-header">
-        <p className="charsel-world">GAMERON</p>
-        <h1 className="charsel-title">Wähle deinen Krieger</h1>
-        <p className="charsel-hint">← → oder Klick · Enter zum Bestätigen</p>
+        <h1 className="charsel-title">Wähle dein Geschlecht</h1>
       </header>
 
       <div className="charsel-cards">
@@ -130,23 +110,7 @@ export default function CharacterSelect({ onStart }) {
                     onError={() => handleImgError(card.gender)}
                   />
                 )}
-              </div>
-
-              <div className="charsel-card-body">
-                <p className="charsel-card-name">{card.name}</p>
-                <p className="charsel-card-epithet">{card.epithet}</p>
-                <div className="charsel-card-divider" />
-                <div className="charsel-card-lore">
-                  {card.lore.map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
-                </div>
-                <div className="charsel-card-divider" />
-                <div className="charsel-card-stats">
-                  <p>{card.stat1}</p>
-                  <p>{card.stat2}</p>
-                  <p>{card.stat3}</p>
-                </div>
+                <div className="charsel-portrait__label">{card.label}</div>
               </div>
 
               {isActive && !isChosen && (

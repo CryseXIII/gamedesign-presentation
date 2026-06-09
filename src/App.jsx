@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import StartScreen     from './components/StartScreen.jsx'
 import CharacterSelect from './components/CharacterSelect.jsx'
-import CharacterCreate from './components/CharacterCreate.jsx'
 import GameScreen      from './components/GameScreen.jsx'
 import PortalScreen    from './components/PortalScreen.jsx'
 import ImageWorkbench  from './components/ImageWorkbench.jsx'
 import SnapshotCenter  from './components/SnapshotCenter.jsx'
 import VisionPortal    from './components/VisionPortal.jsx'
 
-const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'workbench', 'vision', 'select', 'create', 'game'])
+const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'workbench', 'vision', 'select', 'game'])
 
 function canOpenVision() {
   return true
@@ -37,7 +36,6 @@ function readRoute() {
 export default function App() {
   const [screen,     setScreen]     = useState(() => readRoute())
   const [gender,     setGender]     = useState('male')
-  const [charConfig, setCharConfig] = useState(null)
 
   useEffect(() => {
     function syncRoute() {
@@ -97,18 +95,6 @@ export default function App() {
       <CharacterSelect
         onStart={(selectedGender) => {
           setGender(selectedGender)
-          navigate('create')
-        }}
-      />
-    )
-  }
-
-  if (screen === 'create') {
-    return (
-      <CharacterCreate
-        defaultIsFemale={gender === 'female'}
-        onConfirm={(config) => {
-          setCharConfig(config)
           navigate('game')
         }}
       />
@@ -119,7 +105,6 @@ export default function App() {
     return (
       <GameScreen
         gender={gender}
-        charConfig={charConfig}
         onExit={() => navigate('portal')}
       />
     )
