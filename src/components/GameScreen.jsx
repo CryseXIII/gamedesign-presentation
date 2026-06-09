@@ -23,12 +23,28 @@ export default function GameScreen({ gender = 'male', onExit }) {
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    console.info('[GAMERON] mount game screen', { gender })
     // Reset GameState so a fresh playthrough starts clean
     GameState.reset()
     GameState.gender = gender
     const game = createGame(el, null, gender)
     return () => { game.destroy(true, true) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onError = (event) => {
+      console.error('[GAMERON] window error', event.error || event.message || event)
+    }
+    const onRejection = (event) => {
+      console.error('[GAMERON] unhandled rejection', event.reason)
+    }
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onRejection)
+    return () => {
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onRejection)
+    }
+  }, [])
 
   // ── Window event listeners ────────────────────────────────────────────────
   useEffect(() => {

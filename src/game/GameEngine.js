@@ -25,6 +25,7 @@ import GameState            from './GameState.js'
 export function createGame(container, _charConfig, gender = 'male') {
   // Write gender into singleton BEFORE any scene runs.
   GameState.gender = gender
+  console.info('[GAMERON] createGame', { gender, width: container.clientWidth, height: container.clientHeight })
 
   const w = container.clientWidth  || window.innerWidth
   const h = container.clientHeight || window.innerHeight

@@ -93,11 +93,24 @@ function makeTrimmedFrameCanvas(image, sx, sy, sw, sh, targetSize) {
 
 function buildRunTexture(scene) {
   if (scene.textures.exists(RUN_ATLAS.key) || !scene.textures.exists(RUN_ATLAS.sourceKey)) {
+    console.info('[GAMERON] run texture skipped', {
+      exists: scene.textures.exists(RUN_ATLAS.key),
+      sourceExists: scene.textures.exists(RUN_ATLAS.sourceKey),
+    })
     return
   }
 
   const sourceImage = getTextureSourceImage(scene.textures.get(RUN_ATLAS.sourceKey))
-  if (!sourceImage) return
+  if (!sourceImage) {
+    console.warn('[GAMERON] run texture source missing')
+    return
+  }
+
+  console.info('[GAMERON] building run texture', {
+    sourceWidth: sourceImage.width,
+    sourceHeight: sourceImage.height,
+    frames: RUN_ATLAS.frameCount,
+  })
 
   const halfWidth = Math.round(sourceImage.width / RUN_ATLAS.frameCount)
   const frames = [
@@ -116,6 +129,12 @@ function buildRunTexture(scene) {
   const canvasTexture = scene.textures.addCanvas(RUN_ATLAS.canvasKey, stripCanvas)
   scene.textures.addSpriteSheet(RUN_ATLAS.key, canvasTexture, {
     frameWidth:  RUN_ATLAS.frameW,
+    frameHeight: RUN_ATLAS.frameH,
+  })
+
+  console.info('[GAMERON] run texture ready', {
+    key: RUN_ATLAS.key,
+    frameWidth: RUN_ATLAS.frameW,
     frameHeight: RUN_ATLAS.frameH,
   })
 }
@@ -194,6 +213,7 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
+    console.info('[GAMERON] preload create -> build run texture')
     buildRunTexture(this)
     this.scene.start('WorldBuildingScene')
   }

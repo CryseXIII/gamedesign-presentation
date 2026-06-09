@@ -103,6 +103,8 @@ export default class PlayerController {
     this.sprite.on('animationcomplete', (anim) => {
       this._onAnimComplete(anim.key)
     })
+
+    console.info('[GAMERON] player init', { x, y })
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -138,6 +140,7 @@ export default class PlayerController {
    */
   _setState(s) {
     if (this._state === s) return
+    console.info('[GAMERON] player state', { from: this._state, to: s })
     this._state = s
     this.sprite.play(s)
   }
