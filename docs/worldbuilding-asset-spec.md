@@ -35,6 +35,16 @@ Frame layout required by current animation config:
 - Row 10 col 2-6: `ladderClimb`
 - Row 11 col 1: `interact`, col 3: `death`, col 4: `respawn`, col 5-8: `fomoChains`
 
+## A2) Main Character Run Strip (replacement)
+
+- Target file: `public/assets/gm_main_male_run.png`
+- Canvas: 1774 x 887 px
+- Layout: 2-frame horizontal strip
+- Frame: 887 x 887 px each
+- Background: chroma-key green, converted to transparency at preload
+- Output: trimmed to 64 x 64 frames at preload, then displayed scaled in-game
+- Purpose: replace only the `run` animation first; keep the other legacy hero-sheet animations until they are split out later
+
 ## B) CharacterSelect Portraits
 
 - `public/assets/charsel_portrait_male.png`

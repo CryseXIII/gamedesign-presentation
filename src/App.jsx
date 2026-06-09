@@ -6,18 +6,36 @@ import GameScreen      from './components/GameScreen.jsx'
 import PortalScreen    from './components/PortalScreen.jsx'
 import ImageWorkbench  from './components/ImageWorkbench.jsx'
 import SnapshotCenter  from './components/SnapshotCenter.jsx'
+import VisionPortal    from './components/VisionPortal.jsx'
 
-const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'workbench', 'select', 'create', 'game'])
+const ROUTES = new Set(['portal', 'gameron', 'snapshots', 'workbench', 'vision', 'select', 'create', 'game'])
+
+function canOpenVision() {
+  return true
+}
 
 function readRoute() {
   if (typeof window === 'undefined') return 'portal'
 
+  const hostname = window.location.hostname
   const raw = window.location.hash.replace(/^#\/?/, '')
-  return ROUTES.has(raw) ? raw : 'portal'
+  if (raw === 'vision' && canOpenVision()) return raw
+  if (ROUTES.has(raw) && raw !== 'vision') return raw
+
+  const pathname = window.location.pathname.replace(/\/+$/, '')
+  if (hostname.startsWith('vision.') && canOpenVision()) {
+    return 'vision'
+  }
+
+  if (canOpenVision() && pathname.endsWith('/vision')) {
+    return 'vision'
+  }
+
+  return 'portal'
 }
 
 export default function App() {
-  const [screen,     setScreen]     = useState('portal')
+  const [screen,     setScreen]     = useState(() => readRoute())
   const [gender,     setGender]     = useState('male')
   const [charConfig, setCharConfig] = useState(null)
 
@@ -27,7 +45,7 @@ export default function App() {
     }
 
     if (!window.location.hash) {
-      window.location.hash = '#/portal'
+      window.location.hash = `#/${screen}`
     } else {
       syncRoute()
     }
@@ -37,6 +55,9 @@ export default function App() {
   }, [])
 
   function navigate(next) {
+    if (next === 'vision' && !canOpenVision()) {
+      next = 'portal'
+    }
     const hash = `#/${next}`
     if (window.location.hash !== hash) {
       window.location.hash = hash
@@ -50,6 +71,7 @@ export default function App() {
         onOpenGameron={() => navigate('gameron')}
         onOpenSnapshots={() => navigate('snapshots')}
         onOpenWorkbench={() => navigate('workbench')}
+        onOpenVision={() => navigate('vision')}
       />
     )
   }
@@ -64,6 +86,10 @@ export default function App() {
 
   if (screen === 'workbench') {
     return <ImageWorkbench onBack={() => navigate('portal')} />
+  }
+
+  if (screen === 'vision') {
+    return <VisionPortal onBack={() => navigate('portal')} />
   }
 
   if (screen === 'select') {

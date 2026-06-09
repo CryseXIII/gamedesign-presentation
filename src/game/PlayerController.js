@@ -63,6 +63,7 @@ export default class PlayerController {
     // ── Sprite & physics ──────────────────────────────────────────────────
     this.sprite = scene.physics.add.sprite(x, y, 'hero')
     this.sprite.setOrigin(0.5, 0.5)
+    this.sprite.setDisplaySize(128, 128)
     this.sprite.body.setSize(38, 84)
     this.sprite.body.setOffset(45, 40)
     this.sprite.setCollideWorldBounds(true)

@@ -14,8 +14,111 @@
  */
 
 import Phaser from 'phaser'
-import { HERO_ATLAS } from '../animConfig.js'
+import { HERO_ATLAS, RUN_ATLAS } from '../animConfig.js'
 import { MANIFEST } from '../assets/manifest.js'
+
+function getTextureSourceImage(texture) {
+  return texture?.getSourceImage?.() || texture?.source?.[0]?.image || null
+}
+
+function makeTrimmedFrameCanvas(image, sx, sy, sw, sh, targetSize) {
+  const sourceCanvas = document.createElement('canvas')
+  sourceCanvas.width = sw
+  sourceCanvas.height = sh
+
+  const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true })
+  sourceCtx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh)
+
+  const pixels = sourceCtx.getImageData(0, 0, sw, sh)
+  const data = pixels.data
+  const keyR = data[0]
+  const keyG = data[1]
+  const keyB = data[2]
+  const tolerance = 36
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+
+    if (
+      Math.abs(r - keyR) <= tolerance &&
+      Math.abs(g - keyG) <= tolerance &&
+      Math.abs(b - keyB) <= tolerance
+    ) {
+      data[i + 3] = 0
+    }
+  }
+
+  sourceCtx.putImageData(pixels, 0, 0)
+
+  let minX = sw
+  let minY = sh
+  let maxX = -1
+  let maxY = -1
+
+  for (let y = 0; y < sh; y += 1) {
+    for (let x = 0; x < sw; x += 1) {
+      const alpha = data[(y * sw + x) * 4 + 3]
+      if (!alpha) continue
+      if (x < minX) minX = x
+      if (y < minY) minY = y
+      if (x > maxX) maxX = x
+      if (y > maxY) maxY = y
+    }
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetSize
+  canvas.height = targetSize
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = false
+
+  if (maxX < 0 || maxY < 0) {
+    return canvas
+  }
+
+  const cropW = maxX - minX + 1
+  const cropH = maxY - minY + 1
+  const scale = Math.min(targetSize / cropW, targetSize / cropH)
+  const drawW = Math.max(1, Math.round(cropW * scale))
+  const drawH = Math.max(1, Math.round(cropH * scale))
+  const dx = Math.floor((targetSize - drawW) / 2)
+  const dy = Math.floor((targetSize - drawH) / 2)
+
+  ctx.clearRect(0, 0, targetSize, targetSize)
+  ctx.drawImage(sourceCanvas, minX, minY, cropW, cropH, dx, dy, drawW, drawH)
+  return canvas
+}
+
+function buildRunTexture(scene) {
+  if (scene.textures.exists(RUN_ATLAS.key) || !scene.textures.exists(RUN_ATLAS.sourceKey)) {
+    return
+  }
+
+  const sourceImage = getTextureSourceImage(scene.textures.get(RUN_ATLAS.sourceKey))
+  if (!sourceImage) return
+
+  const halfWidth = Math.round(sourceImage.width / RUN_ATLAS.frameCount)
+  const frames = [
+    makeTrimmedFrameCanvas(sourceImage, 0, 0, halfWidth, sourceImage.height, RUN_ATLAS.frameW),
+    makeTrimmedFrameCanvas(sourceImage, halfWidth, 0, halfWidth, sourceImage.height, RUN_ATLAS.frameW),
+  ]
+
+  const stripCanvas = document.createElement('canvas')
+  stripCanvas.width = RUN_ATLAS.frameW * RUN_ATLAS.frameCount
+  stripCanvas.height = RUN_ATLAS.frameH
+  const stripCtx = stripCanvas.getContext('2d')
+  stripCtx.imageSmoothingEnabled = false
+  stripCtx.drawImage(frames[0], 0, 0)
+  stripCtx.drawImage(frames[1], RUN_ATLAS.frameW, 0)
+
+  const canvasTexture = scene.textures.addCanvas(RUN_ATLAS.canvasKey, stripCanvas)
+  scene.textures.addSpriteSheet(RUN_ATLAS.key, canvasTexture, {
+    frameWidth:  RUN_ATLAS.frameW,
+    frameHeight: RUN_ATLAS.frameH,
+  })
+}
 
 export default class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -66,6 +169,10 @@ export default class PreloadScene extends Phaser.Scene {
       this.load.audio('endcredits', '/assets/endcredits.mp3')
     }
 
+    if (!this.textures.exists(RUN_ATLAS.sourceKey)) {
+      this.load.image(RUN_ATLAS.sourceKey, RUN_ATLAS.path)
+    }
+
     // ── WorldBuilding assets (load only if status === 'loaded') ──────────────
     // New assets start as 'missing' in the manifest.  Once the PNG/MP3 files
     // are placed in public/assets/scenes/wb/ and the manifest is updated to
@@ -87,6 +194,7 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
+    buildRunTexture(this)
     this.scene.start('WorldBuildingScene')
   }
 }

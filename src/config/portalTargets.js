@@ -3,14 +3,15 @@ export const launcherConfig = {
   token: (import.meta.env.VITE_LAUNCHER_TOKEN || '').trim(),
 }
 
+const hostname = typeof window !== 'undefined' ? window.location.hostname : ''
 const jellyfinUrl = (import.meta.env.VITE_JELLYFIN_URL || 'https://jellyfin.gamedesign.152.53.117.246.sslip.io/web/').trim()
 const shokoUrl = (import.meta.env.VITE_SHOKO_URL || 'https://shoko.gamedesign.152.53.117.246.sslip.io/').trim()
-const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'https://ooba.gamedesign.152.53.117.246.sslip.io/').trim()
-const oobaApiUrl = (import.meta.env.VITE_OOBA_API_URL || 'https://ooba-api.gamedesign.152.53.117.246.sslip.io/v1/models').trim()
+const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'http://100.109.133.95:1338/').trim()
+const oobaApiUrl = (import.meta.env.VITE_OOBA_API_URL || 'http://100.109.133.95:5000/v1/models').trim()
 const sillyTavernUrl = (import.meta.env.VITE_SILLYTAVERN_URL || 'https://sillytavern.gamedesign.152.53.117.246.sslip.io/').trim()
-const isPublicPortal = typeof window !== 'undefined' && window.location.hostname.endsWith('sslip.io') && !window.location.hostname.startsWith('100.')
-const a1111Url = isPublicPortal ? '' : (import.meta.env.VITE_A1111_URL || 'http://100.109.133.95:7860').trim()
-const comfyUiUrl = isPublicPortal ? '' : (import.meta.env.VITE_COMFYUI_URL || 'http://100.109.133.95:8189').trim()
+const visionUrl = (import.meta.env.VITE_VISION_URL || 'https://gamedesign.152.53.117.246.sslip.io/#/vision').trim()
+const a1111Url = (import.meta.env.VITE_A1111_URL || 'http://100.109.133.95:7860').trim()
+const comfyUiUrl = (import.meta.env.VITE_COMFYUI_URL || 'http://100.109.133.95:8189').trim()
 
 export const portalUrls = [
   {
@@ -23,6 +24,11 @@ export const portalUrls = [
     url: 'http://100.118.216.77:8080/#/portal',
     note: 'Private hub',
   },
+  ...(visionUrl ? [{
+    label: 'Vision Portal',
+    url: visionUrl,
+    note: 'Tailscale-only image analysis hub',
+  }] : []),
 ]
 
 export const internalPages = [
@@ -36,6 +42,11 @@ export const internalPages = [
     label: 'Snapshots',
     description: 'Manual snapshot, restore, and playback for the VPS stack.',
   },
+  ...([{ 
+    id: 'vision',
+    label: 'Vision',
+    description: 'Batch image upload and local LLM descriptions.',
+  }]),
   {
     id: 'workbench',
     label: 'Image Workbench',
@@ -96,6 +107,12 @@ export const serviceGroups = [
         url: sillyTavernUrl,
         description: 'Roleplay frontend that can point at the Oobabooga API.',
         fallback: 'Set VITE_SILLYTAVERN_URL to override this link.',
+      },
+      {
+        label: 'Vision Portal',
+        url: visionUrl,
+        description: 'Tailnet-only image analysis portal for batched uploads.',
+        fallback: 'Open from the Tailscale portal or set VITE_VISION_URL locally.',
       },
       {
         label: 'Scene Worker',

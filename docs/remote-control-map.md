@@ -6,6 +6,7 @@
 
 - Portal hub: `https://gamedesign.152.53.117.246.sslip.io/#/portal`
 - Open WebUI: `http://100.118.216.77:8080`
+- Vision Portal: `https://vision.gamedesign.152.53.117.246.sslip.io/vision`
 - Oobabooga Chat: `https://ooba.gamedesign.152.53.117.246.sslip.io/`
 - Shoko: `https://shoko.gamedesign.152.53.117.246.sslip.io/`
 - Scene Worker: `https://scene-worker.gamedesign.152.53.117.246.sslip.io/`

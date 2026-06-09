@@ -1,0 +1,617 @@
+GAMERON ASSET PROMPT LIST
+Windows Plain Text Edition
+
+REFERENCE IMAGE FOR MALE CHARACTER CONSISTENCY
+------------------------------------------------
+Use the attached reference image as the canonical model sheet for every male character asset.
+The male character must keep the same face shape, hair silhouette, scarf/cape language, armor language, proportions, boots, gloves, and overall grimdark pixel-art read across all male assets.
+Do not redesign him between animations.
+Keep the model consistent, only change pose, anatomy, and motion.
+
+GLOBAL RULES
+------------
+- Chroma-Farbe: #00FF00
+- Transparenter Hintergrund: ja for all character and VFX sprites
+- Stil fuer alle Pixel-Assets: pixelart, grimdark, hard edges, no blur, no antialiasing
+- Animation sheets must be split into separate named assets
+- The AI must generate the missing in-between frames itself
+- Use exact filenames so the assets can be assigned directly
+
+UNIVERSAL KEYFRAME PROMPT TEMPLATE
+----------------------------------
+Use this structure for every animation sheet:
+
+Asset name:
+<filename>
+
+Animation goal:
+<state and movement>
+
+Keyframe 1:
+<exact start pose, body balance, limb positions, weapon position, silhouette>
+
+Keyframe 2:
+<exact anticipation pose or transition pose, where weight shifts and which joints lead>
+
+Keyframe 3:
+<exact contact or extreme pose, where the action is clearest and the silhouette is strongest>
+
+Keyframe 4:
+<exact recovery pose, where momentum resolves and the body returns>
+
+Interpolation rule:
+The other AI must generate the remaining frames between these keyframes and keep the anatomy consistent, readable, and evenly timed.
+
+Strict constraints:
+- One character only unless the asset is explicitly a background or effect.
+- Transparent background with chroma key #00FF00.
+- Hard pixel edges, no blur, no antialiasing.
+- Silhouette must remain readable at 64x64.
+- Do not change the model design between frames.
+
+MALE MAIN CHARACTER ASSETS
+--------------------------
+
+Hauptcharakter Maennlich Idle
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_idle.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Idle
+Frame-Anzahl: 4
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, subtle breathing, sword resting low
+Keyframe 1: standing neutral, weight centered, sword hanging low behind the body, cape resting straight down.
+Keyframe 2: slight inhale, shoulders rise a little, cape and scarf move one pixel as a tiny breathing cue.
+Keyframe 3: the same stance, but with the strongest breathing expansion and a small weight shift in the front foot.
+Keyframe 4: return to neutral, relaxed guard, no change in model design.
+ChatGPT Image Prompt: strict pixel art sideview idle sprite sheet for the attached grimdark male warrior reference model, 4 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same face, hair, scarf, armor, boots, gloves, cape, and proportions as the reference image, subtle breathing only, sword resting low, the other AI must generate the remaining in-between frames.
+
+Hauptcharakter Maennlich Walk
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_walk.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Walk
+Frame-Anzahl: 6
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, readable stride, grounded motion
+Keyframe 1: left foot forward, right foot back, body slightly leaning into the step, sword and cape lag behind the torso.
+Keyframe 2: passing pose, feet close together, hips at their highest point, cape mid-swing, arms counter-balance the stride.
+Keyframe 3: right foot forward, left foot back, mirrored stride with the same body proportions and head angle.
+Keyframe 4: passing pose mirrored again, hips high, stride readable, no redesign.
+Interpolation rule: the other AI must build the in-between step frames so the walk cycle reads smoothly and anatomically.
+ChatGPT Image Prompt: strict pixel art sideview walk sprite sheet for the attached grimdark male warrior reference model, 6 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, keep the exact male model consistent across every frame, readable sideview walk cycle, grounded stride, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Run
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_run.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Run
+Frame-Anzahl: 8
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, fast legs, sword trailing behind
+Keyframe 1: compression pose, torso lowers slightly, rear leg loads like a spring, front arm opens for balance.
+Keyframe 2: takeoff, body stretches forward, trailing cape and scarf arc backward, sword remains controlled.
+Keyframe 3: airborne extension, legs split in a long running stride, torso angled forward, silhouette must still read clearly.
+Keyframe 4: landing compression, front foot strikes, knee bends deeply, armor compresses, momentum carries forward.
+Interpolation rule: the other AI must generate the remaining running steps between the keyframes while keeping the same male reference model.
+ChatGPT Image Prompt: strict pixel art sideview run sprite sheet for the attached grimdark male warrior reference model, 8 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same face, hair, scarf, armor, boots, gloves, cape, and proportions as the reference image, fast readable run cycle, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Jump Up
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_jump_up.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Jump Up
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, upward impulse only
+Keyframe 1: crouch and preload, knees bent, torso lowered, sword tight to the body, cape tucked behind the center of mass.
+Keyframe 2: takeoff, feet leave the ground, hips drive upward first, head follows a fraction later, arms stabilize the launch.
+Keyframe 3: peak arc, body extended but not overlong, silhouette clear, no pose drift.
+Interpolation rule: the other AI must fill the lift-off motion and preserve the exact male reference model.
+ChatGPT Image Prompt: strict pixel art sideview jump-rise sprite sheet for the attached grimdark male warrior reference model, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Fall
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_fall.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Fall
+Frame-Anzahl: 2
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, downward body tilt
+Keyframe 1: loss of footing, chest tips forward, legs lose ground contact, cape trails upward for a beat.
+Keyframe 2: full fall, body angles downward, knees and elbows react late, sword stays controlled, no exaggerated smear.
+Interpolation rule: the other AI can add the mid-fall frames as needed, but the anatomy must stay consistent.
+ChatGPT Image Prompt: strict pixel art sideview fall sprite sheet for the attached grimdark male warrior reference model, 2 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Land
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_land.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Land
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, impact readable, no dust cloud overload
+Keyframe 1: feet contact, knees beginning to absorb impact, torso still moving downward.
+Keyframe 2: compression at impact, lowest body point, cape and scarf snap downward.
+Keyframe 3: recovery, torso rises back to a ready stance, weight re-centers.
+Interpolation rule: the other AI must create the in-between landing compression frames.
+ChatGPT Image Prompt: strict pixel art sideview landing sprite sheet for the attached grimdark male warrior reference model, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Sword Attack Up
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_attack_up.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Sword Attack Up
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, blade arcs upward, attack must read instantly
+Keyframe 1: windup, sword low and behind the body, torso twists slightly, front shoulder opens.
+Keyframe 2: strike apex, sword arcs upward in a clean readable line, upper body extends, rear foot anchors the push.
+Keyframe 3: follow-through, blade finishes high, torso returns to a stable guard, cape settles after the swing.
+Interpolation rule: the other AI must handle the precise arm and torso interpolation between these keyframes.
+ChatGPT Image Prompt: strict pixel art sideview sword attack up sprite sheet for the attached grimdark male warrior reference model, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Sword Attack Forward
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_attack_forward.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Sword Attack Forward
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, forward slash, no overpose
+Keyframe 1: windup, sword drawn back near the hip, chest compresses, front knee bends to load the swing.
+Keyframe 2: strike, sword cuts straight forward with a readable horizontal slash line, body rotates through the hips.
+Keyframe 3: recovery, weapon extends past the target line, torso re-centers, stance is ready again.
+Interpolation rule: the other AI must generate the internal swing motion frames with accurate arm mechanics.
+ChatGPT Image Prompt: strict pixel art sideview sword attack forward sprite sheet for the attached grimdark male warrior reference model, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Heavy Attack
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_attack_heavy.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Heavy Attack
+Frame-Anzahl: 4
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, committed swing, stronger windup
+Keyframe 1: deep windup, sword held back further than the light attack, rear shoulder tight, stance lower.
+Keyframe 2: power transfer, hips drive first, chest follows, sword begins a heavier arc.
+Keyframe 3: impact apex, the swing is at its strongest, silhouette must remain clean and muscular.
+Keyframe 4: recovery, weapon completes the heavy arc, body settles, balance remains grounded.
+Interpolation rule: the other AI must generate the slow heavy-swing in-betweens and keep the anatomy believable.
+ChatGPT Image Prompt: strict pixel art sideview heavy attack sprite sheet for the attached grimdark male warrior reference model, 4 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Hit
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_hit.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Hit
+Frame-Anzahl: 2
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, pain reaction readable
+Keyframe 1: contact frame, torso jerks sharply, head and shoulders react first, one foot still planted.
+Keyframe 2: recoil frame, body shifts back, knees flex, weapon remains controlled and visible.
+Interpolation rule: the other AI may add the missing reaction frame, but the male model must stay identical.
+ChatGPT Image Prompt: strict pixel art sideview hit reaction sprite sheet for the attached grimdark male warrior reference model, 2 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Death
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_death.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Death
+Frame-Anzahl: 6
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, final collapse, readable corpse shape
+Keyframe 1: stagger, knees buckle, sword dips, torso begins to fold.
+Keyframe 2: one knee touches down, upper body slumps forward, cape folds under gravity.
+Keyframe 3: collapse midpoint, body is low and uneven, still readable as the male reference model.
+Keyframe 4: full collapse, body lies across the ground plane, weapon and limbs separated clearly.
+Interpolation rule: the other AI must complete the collapse motion and preserve the same male silhouette.
+ChatGPT Image Prompt: strict pixel art sideview death sprite sheet for the attached grimdark male warrior reference model, 6 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Maennlich Interact
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_male_interact.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Interact
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, one hand reach, minimal motion
+Keyframe 1: neutral stance, arm begins to lift toward an object or button.
+Keyframe 2: hand reaches full extension, torso leans slightly forward.
+Keyframe 3: hand retracts, body returns to neutral.
+Interpolation rule: the other AI must generate the small interaction transition frames.
+ChatGPT Image Prompt: strict pixel art sideview interact sprite sheet for the attached grimdark male warrior reference model, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, same male model consistency as the reference image, the other AI must generate the missing in-between frames.
+
+FEMALE MAIN CHARACTER ASSETS
+----------------------------
+
+All female assets can use the same grimdark pixel-art style, but they do not need the male reference model.
+
+Hauptcharakter Weiblich Idle
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_idle.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Idle
+Frame-Anzahl: 4
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, subtle breathing, sword resting low
+Keyframe 1: standing neutral, weight centered, sword hanging low behind the body.
+Keyframe 2: slight inhale, shoulders rise a little, cape and scarf move one pixel as a tiny breathing cue.
+Keyframe 3: same stance, strongest breathing expansion, a small weight shift in the front foot.
+Keyframe 4: return to neutral, relaxed guard.
+ChatGPT Image Prompt: strict pixel art sideview idle sprite sheet for a grimdark female warrior, 4 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, subtle breathing only, sword resting low, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Walk
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_walk.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Walk
+Frame-Anzahl: 6
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, readable stride, grounded motion
+Keyframe 1: left foot forward, right foot back, body slightly leaning into the step.
+Keyframe 2: passing pose, feet close together, hips at their highest point.
+Keyframe 3: right foot forward, left foot back, mirrored stride.
+Keyframe 4: passing pose mirrored again, hips high, stride readable.
+Interpolation rule: the other AI must build the in-between step frames.
+ChatGPT Image Prompt: strict pixel art sideview walk sprite sheet for a grimdark female warrior, 6 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, readable sideview walk cycle, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Run
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_run.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Run
+Frame-Anzahl: 8
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, fast legs, sword trailing behind
+Keyframe 1: compression pose, torso lowers slightly, rear leg loads like a spring.
+Keyframe 2: takeoff, body stretches forward, cape arcs backward.
+Keyframe 3: airborne extension, legs split in a long running stride.
+Keyframe 4: landing compression, front foot strikes, knee bends deeply.
+Interpolation rule: the other AI must generate the remaining running steps.
+ChatGPT Image Prompt: strict pixel art sideview run sprite sheet for a grimdark female warrior, 8 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, fast readable run cycle, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Jump Up
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_jump_up.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Jump Up
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, upward impulse only
+Keyframe 1: crouch and preload, knees bent, torso lowered.
+Keyframe 2: takeoff, feet leave the ground, hips drive upward first.
+Keyframe 3: peak arc, body extended but not overlong.
+Interpolation rule: the other AI must fill the lift-off motion.
+ChatGPT Image Prompt: strict pixel art sideview jump-rise sprite sheet for a grimdark female warrior, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Fall
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_fall.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Fall
+Frame-Anzahl: 2
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, downward body tilt
+Keyframe 1: loss of footing, chest tips forward.
+Keyframe 2: full fall, body angles downward, knees and elbows react late.
+Interpolation rule: the other AI may add mid-fall frames as needed.
+ChatGPT Image Prompt: strict pixel art sideview fall sprite sheet for a grimdark female warrior, 2 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Land
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_land.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Land
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, impact readable
+Keyframe 1: feet contact, knees beginning to absorb impact.
+Keyframe 2: compression at impact, lowest body point.
+Keyframe 3: recovery, torso rises back to a ready stance.
+Interpolation rule: the other AI must create the in-between landing compression frames.
+ChatGPT Image Prompt: strict pixel art sideview landing sprite sheet for a grimdark female warrior, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Sword Attack Up
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_attack_up.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Sword Attack Up
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, blade arcs upward
+Keyframe 1: windup, sword low and behind the body.
+Keyframe 2: strike apex, sword arcs upward in a clean readable line.
+Keyframe 3: follow-through, blade finishes high, body returns to stable guard.
+Interpolation rule: the other AI must handle the arm and torso interpolation.
+ChatGPT Image Prompt: strict pixel art sideview sword attack up sprite sheet for a grimdark female warrior, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Sword Attack Forward
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_attack_forward.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Sword Attack Forward
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, forward slash
+Keyframe 1: windup, sword drawn back near the hip.
+Keyframe 2: strike, sword cuts straight forward with a readable slash line.
+Keyframe 3: recovery, weapon extends past the target line.
+Interpolation rule: the other AI must generate the internal swing motion frames.
+ChatGPT Image Prompt: strict pixel art sideview sword attack forward sprite sheet for a grimdark female warrior, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Heavy Attack
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_attack_heavy.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Heavy Attack
+Frame-Anzahl: 4
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, committed swing
+Keyframe 1: deep windup, stance lower.
+Keyframe 2: power transfer, hips drive first.
+Keyframe 3: impact apex, swing strongest.
+Keyframe 4: recovery, body settles.
+Interpolation rule: the other AI must generate the slow heavy-swing in-betweens.
+ChatGPT Image Prompt: strict pixel art sideview heavy attack sprite sheet for a grimdark female warrior, 4 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Hit
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_hit.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Hit
+Frame-Anzahl: 2
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, pain reaction readable
+Keyframe 1: contact frame, torso jerks sharply.
+Keyframe 2: recoil frame, body shifts back.
+Interpolation rule: the other AI may add the missing reaction frame.
+ChatGPT Image Prompt: strict pixel art sideview hit reaction sprite sheet for a grimdark female warrior, 2 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Death
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_death.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Death
+Frame-Anzahl: 6
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, final collapse, readable corpse shape
+Keyframe 1: stagger, knees buckle.
+Keyframe 2: one knee touches down.
+Keyframe 3: collapse midpoint.
+Keyframe 4: full collapse.
+Interpolation rule: the other AI must complete the collapse motion.
+ChatGPT Image Prompt: strict pixel art sideview death sprite sheet for a grimdark female warrior, 6 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+Hauptcharakter Weiblich Interact
+Asset-Typ: Charakter Sprite-Sheet
+Dateiname: gm_main_female_interact.png
+Ansicht: Sideview
+Aufloesung: 64x64 pro Frame
+Sprite-Sheet Stil: Pixelart, grimdark
+Animation: Interact
+Frame-Anzahl: 3
+Transparenter Hintergrund: ja
+Strenge Details: Silhouette, one hand reach, minimal motion
+Keyframe 1: neutral stance, arm begins to lift.
+Keyframe 2: hand reaches full extension.
+Keyframe 3: hand retracts, body returns to neutral.
+Interpolation rule: the other AI must generate the small interaction transition frames.
+ChatGPT Image Prompt: strict pixel art sideview interact sprite sheet for a grimdark female warrior, 3 frames, 64x64 frames, transparent background with chroma key #00FF00, hard edges only, no blur, no antialiasing, the other AI must generate the missing in-between frames.
+
+GACHA DEMON GIRL PORTRAITS
+--------------------------
+
+All gacha demon girls are single portraits only, styled like polished adult dark-gacha succubus characters.
+No animation sheets, no multiple frames.
+
+Gacha Demon Girl 01 Widow Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_widow_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_widow_portrait.png.
+
+Gacha Demon Girl 02 Autoplay Lady Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_autoplay_lady_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_autoplay_lady_portrait.png.
+
+Gacha Demon Girl 03 Banner Siren Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_banner_siren_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_banner_siren_portrait.png.
+
+Gacha Demon Girl 04 Whale Queen Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_whale_queen_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_whale_queen_portrait.png.
+
+Gacha Demon Girl 05 Loot Witch Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_loot_witch_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_loot_witch_portrait.png.
+
+Gacha Demon Girl 06 Pity Oracle Portrait
+Asset-Typ: Charakter Portrait
+Dateiname: gm_demon_pity_oracle_portrait.png
+Ansicht: Front / 3-4
+Aufloesung: 512x768
+Transparenter Hintergrund: ja
+Strenge Details: single portrait only, readable face, polished mobile-gacha render, no scene clutter
+ChatGPT Image Prompt: adult gothic succubus portrait, single character only, dark gacha anime aesthetic, polished mobile-game rendering, transparent background, chroma key #00FF00, no extra characters, no text, no watermark, no scene clutter, direct asset-ready framing, name the output gm_demon_pity_oracle_portrait.png.
+
+BACKGROUND AND UI ASSETS
+------------------------
+
+Background Village Night
+Asset-Typ: Hintergrund
+Dateiname: wb_bg_village.png
+Ansicht: Wide side-scene
+Aufloesung: 1920x900
+Stil: dark gothic fantasy matte look
+Transparenter Hintergrund: nein
+Strenge Details: burning ruined village, night, readable horizon
+ChatGPT Image Prompt: wide dark gothic fantasy village background at night, burning ruins, ashes in the air, high readability, no characters, no text, no watermark, cinematic depth, name the output wb_bg_village.png.
+
+Background Steppe Storm
+Asset-Typ: Hintergrund
+Dateiname: wb_bg_steppe.png
+Ansicht: Wide side-scene
+Aufloesung: 1920x900
+Stil: dark gothic fantasy matte look
+Transparenter Hintergrund: nein
+Strenge Details: dead steppe, storm horizon, readable silhouette layers
+ChatGPT Image Prompt: wide dark gothic fantasy steppe background with storm horizon, dead grass, looming clouds, high readability, no characters, no text, no watermark, cinematic depth, name the output wb_bg_steppe.png.
+
+Background Training Arena
+Asset-Typ: Hintergrund
+Dateiname: gm_bg_training_arena.png
+Ansicht: Wide side-scene
+Aufloesung: 1920x1080
+Stil: grimdark arena, training ground, clear gameplay read
+Transparenter Hintergrund: nein
+Strenge Details: simple combat floor, strong contrast, no clutter
+ChatGPT Image Prompt: grimdark training arena background, clean combat floor, strong contrast, minimal clutter, no characters, no text, no watermark, side-view gameplay readability, name the output gm_bg_training_arena.png.
+
+UI Banner
+Asset-Typ: UI
+Dateiname: gm_ui_banner_main.png
+Ansicht: Front
+Aufloesung: 1024x256
+Stil: dark fantasy UI frame
+Transparenter Hintergrund: ja
+Strenge Details: decorative but readable, no busy ornament overflow
+ChatGPT Image Prompt: dark fantasy UI banner frame, front view, transparent background, readable text area, subtle gothic ornament, no extra text, no watermark, name the output gm_ui_banner_main.png.
+
+Button Default
+Asset-Typ: UI
+Dateiname: gm_ui_button_default.png
+Ansicht: Front
+Aufloesung: 512x128
+Stil: dark fantasy UI button
+Transparenter Hintergrund: ja
+Strenge Details: clean label area, no heavy ornament
+ChatGPT Image Prompt: dark fantasy UI button, front view, transparent background, clean label area, subtle bevel, no text, no watermark, name the output gm_ui_button_default.png.
+
+Button Hover
+Asset-Typ: UI
+Dateiname: gm_ui_button_hover.png
+Ansicht: Front
+Aufloesung: 512x128
+Stil: dark fantasy UI button
+Transparenter Hintergrund: ja
+Strenge Details: brighter edge glow, same layout as default
+ChatGPT Image Prompt: dark fantasy UI button hover state, front view, transparent background, same geometry as default button, subtle brighter edge glow, no text, no watermark, name the output gm_ui_button_hover.png.
+
+VFX Slash Hit
+Asset-Typ: VFX Sprite
+Dateiname: gm_vfx_slash_hit.png
+Ansicht: Sideview
+Aufloesung: 128x128
+Stil: pixelart, grimdark impact spark
+Transparenter Hintergrund: ja
+Strenge Details: readable impact arc, no smoke overload
+ChatGPT Image Prompt: strict pixel art slash impact effect, side view, transparent background, chroma key #00FF00, 3 frames, hard edges only, no blur, no antialiasing, readable arc, no text, no watermark, name the output gm_vfx_slash_hit.png.
+
+VFX Gacha Corruption
+Asset-Typ: VFX Sprite
+Dateiname: gm_vfx_gacha_corruption.png
+Ansicht: Front
+Aufloesung: 128x128
+Stil: pixelart, purple-black corruption swirl
+Transparenter Hintergrund: ja
+Strenge Details: readable corruption ring, no clutter
+ChatGPT Image Prompt: strict pixel art corruption swirl effect, front view, transparent background, chroma key #00FF00, 4 frames, hard edges only, no blur, no antialiasing, purple-black greed aura, readable loop, no text, no watermark, name the output gm_vfx_gacha_corruption.png.
+
+VFX Damage Number
+Asset-Typ: UI VFX
+Dateiname: gm_vfx_damage_number.png
+Ansicht: Front
+Aufloesung: 256x128
+Stil: pixelart UI pop-up
+Transparenter Hintergrund: ja
+Strenge Details: bold readable number plate
+ChatGPT Image Prompt: pixel art damage number pop-up UI, front view, transparent background, bold readable number plate, no extra text, no watermark, name the output gm_vfx_damage_number.png.
+
+AUDIO ASSETS
+------------
+
+Audio Fire
+Asset-Typ: Audio
+Dateiname: wb_fire_sfx.mp3
+Prompt fuer Erzeugung: looping ember crackle, dry wood pop, subtle wind, no music, no voice, clean loop
+
+Audio Rain
+Asset-Typ: Audio
+Dateiname: wb_rain_sfx.mp3
+Prompt fuer Erzeugung: looping rain bed with distant thunder, wet ambience, no voice, no music, seamless loop
+
+Audio Widow Music
+Asset-Typ: Audio
+Dateiname: wb_widow_music.mp3
+Prompt fuer Erzeugung: encounter tension cue, low strings, greedy pulses, gothic unease, seamless loopable ending

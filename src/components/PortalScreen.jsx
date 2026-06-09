@@ -180,8 +180,14 @@ function ServiceStatusPanel() {
   )
 }
 
-export default function PortalScreen({ onOpenGameron, onOpenSnapshots, onOpenWorkbench }) {
+export default function PortalScreen({ onOpenGameron, onOpenSnapshots, onOpenWorkbench, onOpenVision }) {
   const [copiedLabel, setCopiedLabel] = useState('')
+  const pageHandlers = {
+    gameron: onOpenGameron,
+    snapshots: onOpenSnapshots,
+    vision: onOpenVision,
+    workbench: onOpenWorkbench,
+  }
 
   function copyUrl(url, label) {
     if (!url || !navigator.clipboard) return
@@ -214,7 +220,7 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots, onOpenWor
             </div>
             <div className="portal-pill">
               <span className="portal-pill__label">Portal URLs</span>
-              <span className="portal-pill__value">2 routes</span>
+              <span className="portal-pill__value">{formatLinkCount(portalUrls.length)}</span>
             </div>
           </div>
         </header>
@@ -245,12 +251,12 @@ export default function PortalScreen({ onOpenGameron, onOpenSnapshots, onOpenWor
 
           <div className="portal-launchers">
             {internalPages.map(page => (
-                <button
-                  key={page.id}
-                  type="button"
-                  className="portal-launcher"
-                  onClick={page.id === 'gameron' ? onOpenGameron : page.id === 'snapshots' ? onOpenSnapshots : onOpenWorkbench}
-                >
+              <button
+                key={page.id}
+                type="button"
+                className="portal-launcher"
+                onClick={pageHandlers[page.id]}
+              >
                 <span className="portal-launcher__label">{page.label}</span>
                 <span className="portal-launcher__desc">{page.description}</span>
                 <span className="portal-launcher__meta">Open subpage</span>

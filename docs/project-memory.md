@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-06 22:41 UTC (image workbench UI and progress notifications)
+Last updated: 2026-06-09 05:12 UTC (run strip chroma-key swap)
 
 ## Project Objective
 
@@ -35,6 +35,14 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
+- Workbench scrolling is restored, the edit-map export now keeps the stamped cutout as the background, the default orchestrator URL now uses the public HTTPS route, and `App` now preserves the resolved route on first load so `/workbench` and the Vision subpage no longer flicker through the portal first
+- `gm_main_male_run.png` is now wired into the hero state machine as the new `run` animation, with chroma-key green removed at preload and the sprite display forced to a stable 128×128 size so the old sheet can stay in place for the other animations while they are phased out
+- Image Workbench build is now live on CT205: rebuilt `dist/` was streamed into `/root/gamedesign-app/dist`, `gamedesign-prod.service` was restarted, and the public portal still returns `200 OK`
+- Image Workbench rebuilt around the requested workflow: main tab now has drag/drop base loading, a pan/zoom/right-drag cutout viewport with minimap, a FontAwesome stamp button, a modal cutout editor with color-by-stroke paint, right-click continuation, whole-stroke erase, undo/redo, save/close, edit-target generation, output gallery, and checkpoint zip export/import/restore; grid mode is now isolated into its own tab
+- CT215 SillyTavern `SD Generate` now works again from the browser: CT201 Caddy adds CORS preflight/response headers on `sd-orchestrator.gamedesign.152.53.117.246.sslip.io`, the stale duplicate `orchestrator.service` on CT210 was disabled, and the browser now receives `POST /generate/planned` `200` responses with returned image data
+- Vision Portal restored as a dedicated multi-image upload page that POSTs to `/vision/analyze`; the dedicated `vision.gamedesign.152.53.117.246.sslip.io` host now exists again, is locked to Tailscale source ranges in Caddy, and is live on CT205/CT201
+- Portal now exposes Vision Portal, A1111, and ComfyUI links on the public portal too; Vision opens the same served app route in a new tab, and A1111/ComfyUI use direct Tailnet HTTP targets
+- Workbench now uses a cooler slate/blue theme, actually scrolls again, and spans a near full-width three-column workspace
 - Asset integration: all WorldBuildingScene and CharacterSelect image assets placed and wired
 - CharacterSelect now shows real portrait images with `onError` fallback to sword placeholder
 - App.jsx now routes `#/portal`, `#/gameron`, and `#/snapshots`
@@ -47,9 +55,11 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - Portal defaults now point at public hostnames: `ooba.gamedesign.152.53.117.246.sslip.io`, `ooba-api.gamedesign.152.53.117.246.sslip.io`, and `shoko.gamedesign.152.53.117.246.sslip.io`
 - Oobabooga portal link now targets `/v1/models` instead of the GET-incompatible API root
 - Portal now also supports an optional `VITE_SILLYTAVERN_URL` card and labels the raw chat entry explicitly
-- Public portal is still serving the older bundle until the source change is pushed and rebuilt; live bundle still shows the old internal Oobabooga card
+- Public portal bundle was rebuilt and deployed; the old HTTPS-only defaults that triggered `Secure Connection Failed` were replaced with HTTP/Tailnet targets
 - Laptop launcher now exposes ComfyUI lifecycle/wait endpoints for the `sd-webui-comfyui` extension on port 8189, and the deployed daemon now uses a dedicated `ComfyUI\venv` with `torch 2.5.1+cu121`, `torchvision 0.20.1+cu121`, `torchaudio 2.5.1+cu121`, and `transformers 5.10.2`; the shared A1111 venv was the root cause, not a circular dependency. Browser verification passed: `http://127.0.0.1:8189/` returns `200` and the log shows `Starting server` with the isolated venv packages loaded
 - `a1111` and `comfyui` are tailnet-only; public portal entries are disabled and the Caddy proxy should not expose them on the public internet
+- Scene worker now validates requested checkpoints against the live ComfyUI model list and falls back to Pony/Juggernaut/Albedo if a stale default is configured; the provisioning script now seeds Pony as the default checkpoint
+- The SD orchestrator now prefers the installed Pony/Juggernaut/Albedo checkpoints over the stale DreamShaper default when it plans image jobs
 - CivitAI Browser+ preview/download paths now have explicit request timeouts on the remaining blocking HTTP calls, and preview-image failures are logged instead of being swallowed silently
 - CivitAI Browser+ now also persists the visible download queue snapshot in `sessionStorage` across refreshes, so the browser UI can recover the queue panel after a page reload
 - CivitAI Browser+ now also exposes an active-download snapshot and polls it after refresh, so a running aria2 job can reattach its visible progress state
@@ -72,7 +82,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - Workbench now mirrors progress updates to a configurable webhook so Telegram workflows can report repeated status without blocking the main job
 - CT212 `Private Videos`, `Uploads`, and `Animated` libraries now have actual source paths set; `/mnt/media/private` root perms were corrected so `jellyfin` can traverse the tree
 - `Animated` refresh is currently active after the path fix; the library now points at `/mnt/media/private/Bilder/Porn/Animated`
-- `vps-architecture/provisioning/provision-sillytavern-lxc.sh` now seeds CT215 with `main_api=openai`, `chat_completion_source=custom`, `custom_url=http://100.109.133.95:5000/v1`, and `custom_model=mythomax-l2-13b\\mythomax-l2-13b.Q5_K_M.gguf`
+- `vps-architecture/provisioning/provision-sillytavern-lxc.sh` now seeds CT215 with `main_api=openai`, `chat_completion_source=custom`, `custom_url=http://100.109.133.95:5000/v1`, and `custom_model=mythomax-l2-13b\\mythomax-l2-13b.Q5_K_M.gguf`; the live CT215 `settings.json` was also restored from `mars.chub.ai` to the local Mythomax backend
 - The SillyTavern scene render button now uses the fast `/scene/extract` -> `/scene/plan` -> `/render/submit` -> `/render/status/{job_id}` flow to avoid browser timeout/network errors from the long blocking endpoint
 - `docs/stable-diffusion-extension-guide.md` now clarifies A1111 extension access vs runtime activation and the OpenPose workflow
 - `docs/vision-grid-pipeline.md` now documents the existing global + overlapping detail crop vision pass structure
@@ -295,3 +305,7 @@ All subdomains under `152.53.117.246.sslip.io`.
 19. Inspect `sd-webui-comfyui/scripts/comfyui.py` and the xformers attention path if ComfyUI still does not bind on `8189`
 20. Verify the CivitAI active-download reconnect flow in a real browser refresh while a job is running
 21. Design a non-blocking progress-notification path for image jobs, with Telegram updates that can repeat until approval or completion
+22. Watch the `SD Generate` browser flow for latency regressions now that CORS is fixed at the edge
+23. Verify the new Image Workbench editor, minimap, checkpoint import/export, and grid tab in a live browser session
+24. Confirm the live workbench in a browser later, once interaction testing is wanted again
+25. Watch `POST /inpaint` latency if the live banana-edit workflow stays slow under larger images

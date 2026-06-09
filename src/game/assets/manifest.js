@@ -11,7 +11,7 @@
  *   labeled  "missing_id:<id>"  at the intended position/size.
  *
  * Asset folder layout:
- *   public/assets/                 — global / shared (hero sheet, charsel portraits, audio)
+ *   public/assets/                 — global / shared (hero sheets, charsel portraits, audio)
  *   public/assets/scenes/wb/       — WorldBuildingScene
  *   public/assets/scenes/guidance/ — PlayerGuidanceScene
  *   public/assets/scenes/gallery/  — GalleryScene
@@ -31,6 +31,14 @@ export const MANIFEST = {
     path:   '/assets/dark_fantasy_hero_sprite_sheet.png',
     status: 'loaded',
     note:   '1024×1536, 8 cols × 12 rows, 128×128 px per frame',
+  },
+  gm_main_male_run: {
+    id:     'gm_main_male_run',
+    type:   'spritesheet',
+    key:    'gm_main_male_run',
+    path:   '/assets/gm_main_male_run.png',
+    status: 'loaded',
+    note:   'Legacy run strip replacement — 2 frames trimmed to 64x64, chroma-key green removed at preload',
   },
   logo: {
     id:     'logo',

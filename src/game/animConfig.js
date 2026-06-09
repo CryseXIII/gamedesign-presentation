@@ -1,14 +1,20 @@
 /**
- * Animation configuration for the Gameron hero sprite sheet.
+ * Animation configuration for the Gameron hero.
  *
- * Sprite sheet spec:
+ * Legacy sheet:
  *   File:   /assets/dark_fantasy_hero_sprite_sheet.png
  *   Size:   1024 × 1536 px
  *   Grid:   8 columns × 12 rows
  *   Frame:  128 × 128 px each
  *   Facing: right (flip X for left movement)
  *
- * Frame index formula: (row - 1) * 8 + (col - 1)   [0-based]
+ * Run strip:
+ *   File:   /assets/gm_main_male_run.png
+ *   Size:   1774 × 887 px
+ *   Frames: 2-frame horizontal strip
+ *   Background: chroma-key green, removed at preload
+ *
+ * Frame index formula for the legacy sheet: (row - 1) * 8 + (col - 1) [0-based]
  */
 
 export const HERO_ATLAS = {
@@ -16,6 +22,16 @@ export const HERO_ATLAS = {
   path:   '/assets/dark_fantasy_hero_sprite_sheet.png',
   frameW: 128,
   frameH: 128,
+}
+
+export const RUN_ATLAS = {
+  key:        'gm_main_male_run',
+  sourceKey:  'gm_main_male_run_source',
+  canvasKey:  'gm_main_male_run_canvas',
+  path:       '/assets/gm_main_male_run.png',
+  frameW:     64,
+  frameH:     64,
+  frameCount: 2,
 }
 
 /**
@@ -35,7 +51,7 @@ function fr(row, c1, c2) {
 export const HERO_ANIMS = [
   // ── Movement ──────────────────────────────────────────────────────────────
   { key: 'idle',        frames: fr(1,  1, 5), frameRate:  8, repeat: -1 },
-  { key: 'run',         frames: fr(2,  1, 8), frameRate: 12, repeat: -1 },
+  { key: 'run',         textureKey: RUN_ATLAS.key, frames: [0, 1], frameRate: 12, repeat: -1 },
 
   // ── Jumping ───────────────────────────────────────────────────────────────
   { key: 'jumpRise',    frames: fr(3,  3, 4), frameRate: 10, repeat:  0 },
@@ -80,7 +96,7 @@ export function registerAnimations(scene) {
     if (scene.anims.exists(def.key)) continue
     scene.anims.create({
       key:       def.key,
-      frames:    def.frames.map(f => ({ key: 'hero', frame: f })),
+      frames:    def.frames.map(f => ({ key: def.textureKey || HERO_ATLAS.key, frame: f })),
       frameRate: def.frameRate,
       repeat:    def.repeat,
     })
