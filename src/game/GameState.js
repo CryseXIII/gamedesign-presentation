@@ -4,6 +4,7 @@
  * Tracks:
  *   gender     — 'male' | 'female', set at CharacterSelect before game starts
  *   gachaScore — incremented each time the player makes a gacha-friendly choice
+ *   speedBoostUnlocked — true after the speedup succubus grants the diamond power
  *
  * Threshold: gachaScore >= 5 → player "becomes" a gacha demon (bad ending)
  *
@@ -23,6 +24,9 @@ const GameState = {
 
   /** How many dark-pattern choices the player made. */
   gachaScore: 0,
+
+  /** Whether the speed boost / barrier power is unlocked. */
+  speedBoostUnlocked: false,
 
   /**
    * Record a player choice.
@@ -50,6 +54,7 @@ const GameState = {
   reset() {
     this.gender     = 'male'
     this.gachaScore = 0
+    this.speedBoostUnlocked = false
   },
 }
 

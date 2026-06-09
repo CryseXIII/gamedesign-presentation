@@ -56,10 +56,10 @@ Frame layout required by current animation config:
 
 ## C) World backgrounds (compressed scene)
 
-1) `public/assets/scenes/wb/bg_village.png`
-- Key: `wb_bg_village`
-- Size: 1920 x 900 px
-- Burning ruined village at night
+1) `public/assets/scenes/wb/bg_intro.png`
+- Key: `wb_bg_intro`
+- Size: 2172 x 724 px
+- Wide intro backdrop for the first three-screen stretch
 
 2) `public/assets/scenes/wb/bg_steppe.png`
 - Key: `wb_bg_steppe`

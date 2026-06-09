@@ -24,6 +24,16 @@
   animation: fadeSlideIn 0.35s ease forwards;
 }
 
+.encounter-backdrop--speedup {
+  background: rgba(5, 10, 26, 0.78);
+}
+
+.encounter-panel--speedup {
+  background: linear-gradient(170deg, #07111f 0%, #0b1d31 100%);
+  border-color: #5ea7ff;
+  box-shadow: 0 0 48px rgba(94, 167, 255, 0.28), 0 8px 32px rgba(0,0,0,0.8);
+}
+
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(-18px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -40,6 +50,11 @@
   text-shadow: 0 0 24px rgba(187, 68, 255, 0.5);
 }
 
+.encounter-who--speedup {
+  color: #a9ddff;
+  text-shadow: 0 0 24px rgba(106, 198, 255, 0.55);
+}
+
 /* HP bar */
 .encounter-hp-bar-wrap {
   width: 100%;
@@ -48,10 +63,19 @@
   border: 1px solid #440055;
 }
 
+.encounter-hp-bar-wrap--speedup {
+  background: #08142a;
+  border-color: #3b7ab6;
+}
+
 .encounter-hp-bar {
   height: 100%;
   background: linear-gradient(to right, #8800cc, #cc44ff);
   transition: width 0.4s ease;
+}
+
+.encounter-hp-bar--speedup {
+  background: linear-gradient(to right, #55bfff, #d6f3ff);
 }
 
 .encounter-speech {
@@ -62,6 +86,10 @@
   line-height: 1.7;
   text-align: center;
   margin: 0;
+}
+
+.encounter-speech--speedup {
+  color: #b7dbff;
 }
 
 /* Choice buttons */
@@ -101,6 +129,16 @@
   border-color: #330044;
   background: linear-gradient(160deg, #0d0812 0%, #12081a 100%);
 }
+
+.encounter-btn--speedup {
+  border-color: #4d90c7;
+  background: linear-gradient(160deg, #06121f 0%, #0b2238 100%);
+}
+
+.encounter-btn--speedup:hover {
+  border-color: #a9ddff;
+  box-shadow: 0 0 18px rgba(94, 167, 255, 0.28);
+}
 .encounter-btn--pay:hover {
   border-color: #bb44ff;
   box-shadow: 0 0 18px rgba(187, 68, 255, 0.28);
@@ -123,6 +161,10 @@
   color: #bb44ff;
 }
 
+.encounter-btn--speedup .encounter-btn-label {
+  color: #c8f1ff;
+}
+
 .encounter-btn-sub {
   font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
   font-size: clamp(0.5rem, 0.9vw, 0.65rem);
@@ -135,6 +177,10 @@
   color: #5a3a7a;
 }
 
+.encounter-btn--speedup .encounter-btn-sub {
+  color: #7baed4;
+}
+
 .encounter-hint {
   font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
   font-size: clamp(0.5rem, 0.9vw, 0.65rem);
@@ -142,4 +188,8 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin: 0;
+}
+
+.encounter-hint--speedup {
+  color: #78a8d6;
 }

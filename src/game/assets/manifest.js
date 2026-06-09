@@ -93,13 +93,13 @@ export const MANIFEST = {
   },
 
   // ── WorldBuildingScene (Scene 1) ────────────────────────────────────────────
-  wb_bg_village: {
-    id:     'wb_bg_village',
+  wb_bg_intro: {
+    id:     'wb_bg_intro',
     type:   'image',
-    key:    'wb_bg_village',
-    path:   '/assets/scenes/wb/bg_village.png',
+    key:    'wb_bg_intro',
+    path:   '/assets/scenes/wb/bg_intro.png',
     status: 'loaded',
-    note:   'Zone 1 — burning ruined village at night, 1832×859',
+    note:   'Zone 1 — wide intro backdrop, 2172×724, three-screen scroll space',
   },
   wb_bg_steppe: {
     id:     'wb_bg_steppe',

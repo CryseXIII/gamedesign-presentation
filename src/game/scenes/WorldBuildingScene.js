@@ -3,8 +3,8 @@
  *
  * World width: W * 11
  *
- *   Zone 1  (0    → W*2 ):  Burning village. Fire+smoke particles.
- *                            Fire wall blocks the left edge.
+ *   Intro   (0    → W*3 ):  Wide scrolling backdrop, backstory fades, speedup succubus,
+ *                            and a time barrier gate before the forest.
  *   Zone 2  (W*2  → W*8 ):  Steppe path. Backstory portrait stations 3/5/7.
  *                            Storm overlays this zone:
  *                              – rain starts as soon as player enters (stormProgress > 0)
@@ -48,6 +48,13 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._player        = null
     this._transitioning = false
     this._floor         = null
+    this._powerKey      = null
+
+    this._introBackdropWidth = 0
+    this._introCleared       = false
+    this._speedBoostUnlocked = false
+    this._succubusDone       = false
+    this._succubusHintVisible = false
 
     // encounter state
     this._encounterDone   = false
@@ -56,6 +63,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._widowHp         = WIDOW_HP
     this._decisionHandler = null
     this._lastPlayerState = null
+
+    this._timeBarrier = null
+    this._diamondBurst = null
 
     // particles
     this._fireEmitters  = []
@@ -81,6 +91,13 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._stormProgress   = 0
     this._lightningActive = false
     this._lastPlayerState = null
+    this._speedBoostUnlocked = false
+    this._succubusDone = false
+    this._succubusHintVisible = false
+    this._introBackdropWidth = 0
+    this._introCleared = false
+    this._timeBarrier = null
+    this._diamondBurst = null
   }
 
   // ─── create ────────────────────────────────────────────────────────────────
@@ -107,6 +124,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     // ── Zones ─────────────────────────────────────────────────────────────
     this._buildZone1(W, H)
+    this._buildSpeedupSuccubus(W, H)
+    this._buildTimeBarrier(W, H)
     this._buildZone2(W, H)
     this._buildStormOverlay(W, H)
     this._buildWidowZone(W, H)
@@ -115,8 +134,13 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET)
     this.physics.add.collider(this._player.sprite, floorRect)
     this.physics.add.collider(this._player.sprite, this._fireWall)
+    if (this._timeBarrier?.body) {
+      this.physics.add.collider(this._player.sprite, this._timeBarrier.body)
+    }
     this.cameras.main.startFollow(this._player.sprite, true, 0.08, 0.08)
     this.cameras.main.fadeIn(800, 0, 0, 0)
+
+    this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
 
     // ── Encounter decision listener ───────────────────────────────────────
     this._decisionHandler = (e) => this._onEncounterDecision(e.detail)
@@ -134,9 +158,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     const zones = [
       {
-        key:   'wb_bg_village',
-        x:     W * (ZONE.Z1 + (ZONE.Z2 - ZONE.Z1) / 2),
-        zoneW: W * (ZONE.Z2 - ZONE.Z1),
+        key:   'wb_bg_intro',
+        x:     0,
+        zoneW: 0,
       },
       {
         key:   'wb_bg_steppe',
@@ -146,9 +170,18 @@ export default class WorldBuildingScene extends Phaser.Scene {
     ]
     for (const z of zones) {
       if (this.textures.exists(z.key)) {
-        this.add.image(z.x, H / 2, z.key)
-          .setDisplaySize(z.zoneW, H)
+        const img = this.textures.get(z.key).getSourceImage()
+        const scale = img ? (H / img.height) : 1
+        const displayW = img ? img.width * scale : z.zoneW
+        const displayH = img ? img.height * scale : H
+        const x = z.key === 'wb_bg_intro' ? displayW / 2 : z.x
+        this.add.image(x, H / 2, z.key)
+          .setDisplaySize(displayW, displayH)
           .setDepth(-10)
+
+        if (z.key === 'wb_bg_intro') {
+          this._introBackdropWidth = displayW
+        }
       }
     }
   }
@@ -214,6 +247,244 @@ export default class WorldBuildingScene extends Phaser.Scene {
     })
     em.setDepth(3)
     this._smokeEmitters.push(em)
+  }
+
+  _buildSpeedupSuccubus(W, H) {
+    const x = this._introBackdropWidth ? Math.max(0, this._introBackdropWidth - 240) : W * 2.6
+    const y = H - FLOOR_H - 118
+    this._succubusX = x
+    this._succubusY = y
+
+    const glow = this.add.circle(x, y - 12, 86, 0x5cbcff, 0.14).setDepth(2)
+    const body = this.add.graphics().setDepth(3)
+    body.fillStyle(0x173d6a, 0.98)
+    body.fillTriangle(x - 26, y + 30, x + 26, y + 30, x, y - 6)
+    body.fillStyle(0x68c8ff, 0.9)
+    body.fillTriangle(x - 16, y - 26, x + 16, y - 26, x, y + 2)
+    body.fillStyle(0x8de1ff, 0.92)
+    body.fillCircle(x, y - 46, 16)
+    body.fillStyle(0xbbeeff, 0.35)
+    body.fillTriangle(x - 48, y - 12, x - 10, y - 30, x - 16, y + 18)
+    body.fillTriangle(x + 48, y - 12, x + 10, y - 30, x + 16, y + 18)
+
+    this._succubusName = this.add.text(x, y - 108, 'SPEEDUP SUCCUBUS', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '15px',
+      color: '#b8e9ff',
+      stroke: '#052238',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(5).setAlpha(0.78)
+
+    this._succubusHint = this.add.text(x, y + 72, '[ E ]  REDEN', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '16px',
+      color: '#d4f4ff',
+      stroke: '#032040',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(5).setAlpha(0)
+
+    this._succubusNode = { glow, body }
+  }
+
+  _buildTimeBarrier(W, H) {
+    const width = 54
+    const height = Math.min(180, Math.round(H * 0.34))
+    const x = this._introBackdropWidth ? this._introBackdropWidth + 96 : W * 3.1
+    const y = H - FLOOR_H - height / 2 - 8
+
+    const body = this.add.rectangle(x, y, width, height, 0x0d285f)
+      .setDepth(4)
+
+    const glow = this.add.rectangle(x, y, width + 18, height + 18, 0x5a8dff, 0.12)
+      .setDepth(3)
+
+    const silhouette = this.add.rectangle(x, y, width + 8, height + 8, 0x0f6ecf, 0.16)
+      .setDepth(4)
+      .setVisible(false)
+
+    const label = this.add.text(x, y - height / 2 - 28, '01:00', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '18px',
+      color: '#ffffff',
+      stroke: '#001328',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(5)
+
+    this.physics.add.existing(body, true)
+
+    this._timeBarrier = {
+      x,
+      y,
+      width,
+      height,
+      body,
+      glow,
+      silhouette,
+      label,
+      state: 'active',
+      cycleEndsAt: 0,
+      hiddenUntil: 0,
+      blinkTween: null,
+    }
+
+    this._syncTimeBarrierActive()
+    this._setTimeBarrierTimer(60)
+  }
+
+  _syncTimeBarrierActive() {
+    const barrier = this._timeBarrier
+    if (!barrier) return
+
+    barrier.body.visible = true
+    barrier.body.body.enable = true
+    barrier.glow.visible = true
+    barrier.silhouette.visible = false
+    barrier.silhouette.setAlpha(0.16)
+    barrier.label.setAlpha(1)
+
+    if (barrier.blinkTween) {
+      barrier.blinkTween.stop()
+      barrier.blinkTween = null
+    }
+  }
+
+  _hideTimeBarrier() {
+    const barrier = this._timeBarrier
+    if (!barrier || barrier.state === 'hidden') return
+
+    barrier.state = 'hidden'
+    barrier.hiddenUntil = this.time.now + 5000
+    barrier.body.visible = false
+    barrier.body.body.enable = false
+    barrier.glow.visible = false
+    barrier.label.setText('RELOAD 05')
+
+    barrier.silhouette.visible = true
+    barrier.silhouette.setAlpha(0.12)
+    barrier.blinkTween = this.tweens.add({
+      targets: barrier.silhouette,
+      alpha: 0.48,
+      duration: 220,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    })
+  }
+
+  _showTimeBarrier(resetTimer = true) {
+    const barrier = this._timeBarrier
+    if (!barrier) return
+
+    barrier.state = 'active'
+    barrier.hiddenUntil = 0
+    barrier.cycleEndsAt = this.time.now + 60000
+    this._syncTimeBarrierActive()
+    if (resetTimer) {
+      this._setTimeBarrierTimer(60)
+    }
+  }
+
+  _setTimeBarrierTimer(secondsLeft) {
+    const barrier = this._timeBarrier
+    if (!barrier) return
+    const safe = Math.max(0, secondsLeft)
+    barrier.label.setText(`${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`)
+  }
+
+  _updateTimeBarrier() {
+    const barrier = this._timeBarrier
+    if (!barrier) return
+
+    const now = this.time.now
+
+    if (barrier.state === 'active') {
+      const remaining = Math.max(0, Math.ceil((barrier.cycleEndsAt - now) / 1000))
+      this._setTimeBarrierTimer(remaining)
+      if (remaining <= 0) {
+        this._hideTimeBarrier()
+      }
+      return
+    }
+
+    const hiddenLeft = Math.max(0, Math.ceil((barrier.hiddenUntil - now) / 1000))
+    barrier.label.setText(`RELOAD ${String(hiddenLeft).padStart(2, '0')}`)
+    if (hiddenLeft <= 0) {
+      this._showTimeBarrier(true)
+    }
+  }
+
+  _burstDiamond(fromX, fromY, toX, toY) {
+    const diamond = this.add.graphics().setDepth(12)
+    diamond.fillStyle(0xbfe9ff, 1)
+    diamond.fillTriangle(0, -10, 10, 0, 0, 10)
+    diamond.fillTriangle(0, -10, -10, 0, 0, 10)
+
+    const state = { x: fromX, y: fromY }
+    const sync = () => diamond.setPosition(state.x, state.y)
+    sync()
+
+    this.tweens.add({
+      targets: state,
+      x: toX,
+      y: toY,
+      duration: 280,
+      ease: 'Sine.easeOut',
+      onUpdate: sync,
+      onComplete: () => {
+        this.tweens.add({
+          targets: diamond,
+          alpha: 0,
+          duration: 120,
+          onComplete: () => diamond.destroy(),
+        })
+      },
+    })
+  }
+
+  _triggerTimeBarrierBurst() {
+    if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
+    this._burstDiamond(this._player.x + 34, this._player.y - 54, this._timeBarrier.x, this._timeBarrier.y - 16)
+    this._hideTimeBarrier()
+  }
+
+  _showSuccubusPrompt(show) {
+    if (!this._succubusHint) return
+    if (this._succubusHintVisible === show) return
+    this._succubusHintVisible = show
+    this.tweens.killTweensOf(this._succubusHint)
+    this._succubusHint.setAlpha(show ? 1 : 0)
+    if (show) {
+      this.tweens.add({
+        targets: this._succubusHint,
+        alpha: 0.4,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      })
+    }
+  }
+
+  _updateSpeedupSection(playerX) {
+    if (!this._succubusDone && this._succubusHint) {
+      const nearSuccubus = Math.abs(playerX - this._succubusX) < 140
+      this._showSuccubusPrompt(nearSuccubus && !this._encounterActive)
+      if (nearSuccubus && !this._encounterActive && this._player.interactJustDown) {
+        this._encounterActive = true
+        window.dispatchEvent(new CustomEvent('game:encounterChoice', {
+          detail: { id: 'speedup_succubus' },
+        }))
+      }
+    } else {
+      this._showSuccubusPrompt(false)
+    }
+
+    if (this._speedBoostUnlocked && this._timeBarrier && this._timeBarrier.state === 'active') {
+      const nearBarrier = Math.abs(playerX - this._timeBarrier.x) < 190
+      if (nearBarrier && this._powerKey && Phaser.Input.Keyboard.JustDown(this._powerKey)) {
+        this._triggerTimeBarrierBurst()
+      }
+    }
   }
 
   // ─── Zone 2: Steppe Portraits ───────────────────────────────────────────────
@@ -346,6 +617,13 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     const decision = detail?.decision ?? 'cancel'
 
+    if (decision === 'speedup') {
+      this._succubusDone = true
+      this._speedBoostUnlocked = true
+      GameState.speedBoostUnlocked = true
+      return
+    }
+
     if (decision === 'pay') {
       // Player chose the gacha store
       GameState.recordChoice('gacha')
@@ -477,6 +755,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
     const ps = this._player.state
 
     this._updatePortraits(px)
+    this._updateSpeedupSection(px)
+    this._updateTimeBarrier()
     this._updateStormAndRain(px)
     this._updateWidowCombat(px, ps)
 
@@ -503,6 +783,10 @@ export default class WorldBuildingScene extends Phaser.Scene {
         this.scene.start('PlayerGuidanceScene')
       })
       this.cameras.main.fadeOut(700, 0, 0, 0)
+    }
+
+    if (this._timeBarrier && px > this._timeBarrier.x + 96) {
+      this._introCleared = true
     }
   }
 

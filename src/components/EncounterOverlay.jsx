@@ -19,6 +19,7 @@ import '../styles/encounter.css'
 
 export default function EncounterOverlay({ encounter, onClose }) {
   const [showGacha, setShowGacha] = useState(false)
+  const isSpeedup = encounter?.id === 'speedup_succubus'
 
   if (!encounter) return null
 
@@ -44,6 +45,48 @@ export default function EncounterOverlay({ encounter, onClose }) {
 
   if (showGacha) {
     return <GachaStoreOverlay onClose={onGachaClose} />
+  }
+
+  if (isSpeedup) {
+    return (
+      <div className="encounter-backdrop encounter-backdrop--speedup">
+        <div className="encounter-panel encounter-panel--speedup">
+          <p className="encounter-who encounter-who--speedup">SPEEDUP SUCCUBUS</p>
+
+          <div className="encounter-hp-bar-wrap encounter-hp-bar-wrap--speedup">
+            <div className="encounter-hp-bar encounter-hp-bar--speedup" style={{ width: '100%' }} />
+          </div>
+
+          <p className="encounter-speech encounter-speech--speedup">
+            „Du kommst weiter als die anderen.
+            <br />
+            Nimm meinen Diamanten. Ich zeige dir den Riss in der Zeitbarriere.“
+          </p>
+
+          <div className="encounter-choices">
+            <button
+              className="encounter-btn encounter-btn--speedup"
+              onClick={() => decide('speedup')}
+            >
+              <span className="encounter-btn-icon">💠</span>
+              <span className="encounter-btn-label">BOOST ANNEHMEN</span>
+              <span className="encounter-btn-sub">K öffnet spätere Zeitbarrieren.</span>
+            </button>
+
+            <button
+              className="encounter-btn encounter-btn--cancel"
+              onClick={() => decide('cancel')}
+            >
+              <span className="encounter-btn-icon">✕</span>
+              <span className="encounter-btn-label">SPÄTER</span>
+              <span className="encounter-btn-sub">Ich laufe erstmal weiter.</span>
+            </button>
+          </div>
+
+          <p className="encounter-hint encounter-hint--speedup">Die rechte Seite wartet hinter der Barriere.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
