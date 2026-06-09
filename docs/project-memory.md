@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-09 23:29 UTC (intro backdrop and speedup barrier flow)
+Last updated: 2026-06-09 23:53 UTC (player animation crash guard)
 
 ## Project Objective
 
@@ -38,6 +38,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - Workbench scrolling is restored, the edit-map export now keeps the stamped cutout as the background, the default orchestrator URL now uses the public HTTPS route, and `App` now preserves the resolved route on first load so `/workbench` and the Vision subpage no longer flicker through the portal first
 - `gm_main_male_run.png` is now wired into the hero state machine as the new `run` animation, with chroma-key green removed at preload and the sprite display forced to a stable 128×128 size so the old sheet can stay in place for the other animations while they are phased out
 - `wb_bg_intro.png` is now the renamed wide first-screen backdrop, the Scene 1 flow now includes a blue speedup succubus, a diamond burst power-up on `K`, and a dark-blue time barrier that hides for 5 seconds before reappearing; the barrier timer counts down from 01:00 and the non-exception PNGs are still an open optimization pass because the quick resave test inflated several files
+- `PlayerController` now tolerates missing animation frames at startup by falling back to frame 0 instead of crashing on `play`, which fixes the loading-screen hang on CT205 when the player sheets are still incomplete or stale
 - Image Workbench build is now live on CT205: rebuilt `dist/` was streamed into `/root/gamedesign-app/dist`, `gamedesign-prod.service` was restarted, and the public portal still returns `200 OK`
 - Image Workbench rebuilt around the requested workflow: main tab now has drag/drop base loading, a pan/zoom/right-drag cutout viewport with minimap, a FontAwesome stamp button, a modal cutout editor with color-by-stroke paint, right-click continuation, whole-stroke erase, undo/redo, save/close, edit-target generation, output gallery, and checkpoint zip export/import/restore; grid mode is now isolated into its own tab
 - CT215 SillyTavern `SD Generate` now works again from the browser: CT201 Caddy adds CORS preflight/response headers on `sd-orchestrator.gamedesign.152.53.117.246.sslip.io`, the stale duplicate `orchestrator.service` on CT210 was disabled, and the browser now receives `POST /generate/planned` `200` responses with returned image data

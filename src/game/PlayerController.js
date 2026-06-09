@@ -74,7 +74,7 @@ export default class PlayerController {
 
     // ── Animations ────────────────────────────────────────────────────────
     registerPlayerAnimations(scene, this._gender)
-    this.sprite.play(this._animKey(S.IDLE))
+    this._playAnimationSafely(this._animKey(S.IDLE))
 
     // ── State machine ──────────────────────────────────────────────────────
     this._state         = S.IDLE
@@ -150,6 +150,29 @@ export default class PlayerController {
     return getPlayerAnimationKey(this._gender, state)
   }
 
+  _playAnimationSafely(animKey) {
+    try {
+      if (this.scene.anims.exists(animKey)) {
+        this.sprite.play(animKey)
+        return true
+      }
+    } catch (error) {
+      console.error('[GAMERON] sprite.play failed, falling back to frame 0', {
+        requested: animKey,
+        error: error?.message || error,
+      })
+    }
+
+    if (this.sprite?.setFrame) {
+      try {
+        this.sprite.setFrame(0)
+      } catch {
+        // Keep the sprite alive even if the frame can't be set yet.
+      }
+    }
+    return false
+  }
+
   _hasRunFrames() {
     return this._runFrameKeys.every(key => this.scene.textures.exists(key))
   }
@@ -206,23 +229,18 @@ export default class PlayerController {
     if (!this.scene.anims.exists(animKey)) {
       console.error('[GAMERON] missing animation, falling back to idle', { requested: s })
       this._state = S.IDLE
-      this.sprite.play(this._animKey(S.IDLE))
+      this._playAnimationSafely(this._animKey(S.IDLE))
       return
     }
 
-    try {
-      this.sprite.play(animKey)
-      if (s === S.RUN) {
-        this._logSpriteDebug('run')
-      }
-    } catch (error) {
-      console.error('[GAMERON] sprite.play failed, falling back to idle', {
-        requested: s,
-        error: error?.message || error,
-        stack: error?.stack || null,
-      })
+    if (!this._playAnimationSafely(animKey)) {
       this._state = S.IDLE
-      this.sprite.play(this._animKey(S.IDLE))
+      this._playAnimationSafely(this._animKey(S.IDLE))
+      return
+    }
+
+    if (s === S.RUN) {
+      this._logSpriteDebug('run')
     }
   }
 
