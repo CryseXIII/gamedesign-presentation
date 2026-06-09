@@ -15,19 +15,24 @@
  * Controls:
  *   A / ← / D / →   move
  *   W / ↑ / Space    jump (double-jump on second press while airborne)
- *   J                light attack (3-hit combo while grounded; aerial variant)
- *   K                heavy attack (grounded only)
+ *   J                directional attack (up/down/left/right selected by input)
  *   E                interact  (exposed via interactJustDown getter)
  *   Gamepad left stick / dpad, A-button jump
  */
 
 import Phaser from 'phaser'
-import { registerAnimations } from './animConfig.js'
+import GameState from './GameState.js'
+import {
+  getPlayerAnimationKey,
+  getPlayerTextureKey,
+  registerPlayerAnimations,
+} from './animConfig.js'
 
 // ─── Exported constants ────────────────────────────────────────────────────────
 export const FLOOR_H        = 80
 export const MOVE_SPEED     = 380
 export const JUMP_VEL       = -570
+export const ATTACK_RANGE   = 88
 /**
  * Spawn sprite.y this many px above floor top so the body rests cleanly.
  * Derived from: body bottom offset = setOffset.y + setSize.height - frameH/2
@@ -37,17 +42,15 @@ export const SPAWN_Y_OFFSET = 60
 
 // ─── State keys ───────────────────────────────────────────────────────────────
 const S = {
-  IDLE:        'idle',
-  RUN:         'run',
-  JUMP_RISE:   'jumpRise',
-  FALL:        'fall',
-  LAND:        'land',
-  DOUBLE_JUMP: 'doubleJump',
-  LIGHT1:      'light1',
-  LIGHT2:      'light2',
-  LIGHT3:      'light3',
-  HEAVY:       'heavy',
-  AIR_LIGHT:   'airLight',
+  IDLE:          'idle',
+  RUN:           'run',
+  JUMP:          'jump',
+  DOUBLE_JUMP:   'double_jump',
+  HURT:          'hurt',
+  ATTACK_UP:     'attack_up',
+  ATTACK_DOWN:   'attack_down',
+  ATTACK_LEFT:   'attack_left',
+  ATTACK_RIGHT:  'attack_right',
 }
 
 // ─── PlayerController ─────────────────────────────────────────────────────────
@@ -59,9 +62,10 @@ export default class PlayerController {
    */
   constructor(scene, x, y) {
     this.scene = scene
+    this._gender = GameState.gender || 'male'
 
     // ── Sprite & physics ──────────────────────────────────────────────────
-    this.sprite = scene.physics.add.sprite(x, y, 'hero')
+    this.sprite = scene.physics.add.sprite(x, y, getPlayerTextureKey(this._gender, S.IDLE))
     this.sprite.setOrigin(0.5, 0.5)
     this.sprite.setDisplaySize(128, 128)
     this.sprite.body.setSize(38, 84)
@@ -69,14 +73,15 @@ export default class PlayerController {
     this.sprite.setCollideWorldBounds(true)
 
     // ── Animations ────────────────────────────────────────────────────────
-    registerAnimations(scene)
-    this.sprite.play(S.IDLE)
+    registerPlayerAnimations(scene, this._gender)
+    this.sprite.play(this._animKey(S.IDLE))
 
     // ── State machine ──────────────────────────────────────────────────────
     this._state         = S.IDLE
     this._wasOnGround   = false
     this._canDoubleJump = false
-    this._comboQueued   = false
+    this._hurtUntil     = 0
+    this._runFrameKeys  = Array.from({ length: 8 }, (_, i) => getPlayerTextureKey(this._gender, `run_${i}`))
 
     // ── Input ─────────────────────────────────────────────────────────────
     this._cursors  = scene.input.keyboard.createCursorKeys()
@@ -86,7 +91,6 @@ export default class PlayerController {
       right: Phaser.Input.Keyboard.KeyCodes.D,
     })
     this._jKey     = scene.input.keyboard.addKey('J')
-    this._kKey     = scene.input.keyboard.addKey('K')
     this._eKey     = scene.input.keyboard.addKey('E')
     this._spaceKey = scene.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
@@ -113,6 +117,7 @@ export default class PlayerController {
   get y()     { return this.sprite.y }
   get body()  { return this.sprite.body }
   get state() { return this._state }
+  get attackRange() { return ATTACK_RANGE }
 
   /**
    * True on the exact frame the player presses E (or equivalent).
@@ -122,16 +127,63 @@ export default class PlayerController {
     return Phaser.Input.Keyboard.JustDown(this._eKey)
   }
 
+  get isHurt() {
+    return this.scene.time.now < this._hurtUntil
+  }
+
   // ── Private helpers ────────────────────────────────────────────────────────
 
   _isAttacking() {
     return (
-      this._state === S.LIGHT1    ||
-      this._state === S.LIGHT2    ||
-      this._state === S.LIGHT3    ||
-      this._state === S.HEAVY     ||
-      this._state === S.AIR_LIGHT
+      this._state === S.ATTACK_UP    ||
+      this._state === S.ATTACK_DOWN  ||
+      this._state === S.ATTACK_LEFT  ||
+      this._state === S.ATTACK_RIGHT
     )
+  }
+
+  _isAirborne() {
+    return this.sprite?.body ? !this.sprite.body.blocked.down : false
+  }
+
+  _animKey(state) {
+    return getPlayerAnimationKey(this._gender, state)
+  }
+
+  _hasRunFrames() {
+    return this._runFrameKeys.every(key => this.scene.textures.exists(key))
+  }
+
+  _applyRunTexture(now = this.scene.time.now) {
+    if (!this._hasRunFrames()) return
+    const frameIndex = Math.floor(now / 90) % this._runFrameKeys.length
+    const frameKey = this._runFrameKeys[frameIndex]
+    if (this.sprite.texture?.key !== frameKey) {
+      this.sprite.setTexture(frameKey)
+    }
+  }
+
+  _logSpriteDebug(reason) {
+    if (!this.sprite) return
+    console.info('[GAMERON] player sprite', {
+      reason,
+      state: this._state,
+      texture: this.sprite.texture?.key,
+      frame: this.sprite.frame?.name,
+      gender: this._gender,
+    })
+  }
+
+  _groundStateForInput(goLeft, goRight) {
+    return goLeft || goRight ? S.RUN : S.IDLE
+  }
+
+  _resolveAttackState(goUp, goDown, goLeft, goRight) {
+    if (goUp) return S.ATTACK_UP
+    if (goDown) return S.ATTACK_DOWN
+    if (goLeft) return S.ATTACK_LEFT
+    if (goRight) return S.ATTACK_RIGHT
+    return this.sprite.flipX ? S.ATTACK_LEFT : S.ATTACK_RIGHT
   }
 
   /**
@@ -142,63 +194,104 @@ export default class PlayerController {
     if (this._state === s) return
     console.info('[GAMERON] player state', { from: this._state, to: s })
     this._state = s
-    if (!this.scene.anims.exists(s)) {
+
+    if (s === S.RUN) {
+      if (this._hasRunFrames()) {
+        this._applyRunTexture()
+      }
+      return
+    }
+
+    const animKey = this._animKey(s)
+    if (!this.scene.anims.exists(animKey)) {
       console.error('[GAMERON] missing animation, falling back to idle', { requested: s })
       this._state = S.IDLE
-      this.sprite.play(S.IDLE)
+      this.sprite.play(this._animKey(S.IDLE))
       return
     }
 
     try {
-      this.sprite.play(s)
+      this.sprite.play(animKey)
+      if (s === S.RUN) {
+        this._logSpriteDebug('run')
+      }
     } catch (error) {
-      console.error('[GAMERON] sprite.play failed, falling back to idle', { requested: s, error })
+      console.error('[GAMERON] sprite.play failed, falling back to idle', {
+        requested: s,
+        error: error?.message || error,
+        stack: error?.stack || null,
+      })
       this._state = S.IDLE
-      this.sprite.play(S.IDLE)
+      this.sprite.play(this._animKey(S.IDLE))
     }
+  }
+
+  takeHit(sourceX = null, knockback = 260) {
+    const now = this.scene.time.now
+    if (now < this._hurtUntil) return false
+
+    this._hurtUntil = now + 750
+    this._state = S.HURT
+
+    const awayFromSource = sourceX == null
+      ? (this.sprite.flipX ? 1 : -1)
+      : (this.sprite.x < sourceX ? -1 : 1)
+
+    this.sprite.setVelocityX(awayFromSource * knockback)
+    this.sprite.setVelocityY(-120)
+    this.sprite.setTintFill(0xffffff)
+    this.sprite.setAlpha(0.35)
+
+    this.sprite.play(this.scene.anims.exists(this._animKey(S.HURT)) ? this._animKey(S.HURT) : this._animKey(S.IDLE))
+
+    this.scene.tweens.killTweensOf(this.sprite)
+    this.scene.tweens.add({
+      targets: this.sprite,
+      alpha:   1,
+      duration: 80,
+      yoyo:    true,
+      repeat:  5,
+      onComplete: () => {
+        if (this.sprite) {
+          this.sprite.clearTint()
+          if (this.scene.time.now >= this._hurtUntil) {
+            this.sprite.setAlpha(1)
+          }
+        }
+      },
+    })
+
+    return true
   }
 
   _onAnimComplete(key) {
     switch (key) {
-      case 'land':
-        this._setState(S.IDLE)
+      case this._animKey(S.DOUBLE_JUMP):
+        this._setState(
+          this._isAirborne()
+            ? S.JUMP
+            : this._groundStateForInput(
+              this._cursors.left.isDown || this._wasd.left.isDown,
+              this._cursors.right.isDown || this._wasd.right.isDown,
+            )
+        )
         break
 
-      case 'light1':
-        if (this._comboQueued) {
-          this._comboQueued = false
-          this._setState(S.LIGHT2)
-        } else {
-          this._setState(S.IDLE)
-        }
+      case this._animKey(S.ATTACK_UP):
+      case this._animKey(S.ATTACK_DOWN):
+      case this._animKey(S.ATTACK_LEFT):
+      case this._animKey(S.ATTACK_RIGHT):
+        this._setState(
+          this._isAirborne()
+            ? S.JUMP
+            : this._groundStateForInput(
+              this._cursors.left.isDown || this._wasd.left.isDown,
+              this._cursors.right.isDown || this._wasd.right.isDown,
+            )
+        )
         break
 
-      case 'light2':
-        if (this._comboQueued) {
-          this._comboQueued = false
-          this._setState(S.LIGHT3)
-        } else {
-          this._setState(S.IDLE)
-        }
-        break
-
-      case 'light3':
-      case 'heavy':
-        this._comboQueued = false
-        this._setState(S.IDLE)
-        break
-
-      case 'airLight':
-        this._comboQueued = false
-        // Decide based on current physics state
-        if (this.sprite.body.blocked.down) {
-          this._setState(S.IDLE)
-        } else {
-          this._setState(S.FALL)
-        }
-        break
-
-      // jumpRise / doubleJump: fall transition handled in update()
+      // jump stays active while airborne; grounded transitions are handled in update()
       default:
         break
     }
@@ -214,8 +307,21 @@ export default class PlayerController {
 
     const body      = this.sprite.body
     const onGround  = body.blocked.down
-    const velY      = body.velocity.y
-    const justLanded = !this._wasOnGround && onGround
+    const now       = this.scene.time.now
+
+    if (this._hurtUntil && now >= this._hurtUntil) {
+      this._hurtUntil = 0
+      this.sprite.clearTint()
+      this.sprite.setAlpha(1)
+      if (this._state === S.HURT) {
+        this._setState(onGround ? S.IDLE : S.JUMP)
+      }
+    }
+
+    if (this._hurtUntil && now < this._hurtUntil) {
+      this._wasOnGround = onGround
+      return
+    }
 
     // ── Gamepad ─────────────────────────────────────────────────────────────
     const pad          = this._gamepad
@@ -228,14 +334,16 @@ export default class PlayerController {
     // ── Directional + jump input ─────────────────────────────────────────────
     const goLeft  = this._cursors.left.isDown  || this._wasd.left.isDown  || padLeft
     const goRight = this._cursors.right.isDown || this._wasd.right.isDown || padRight
+    const goUp    = this._cursors.up.isDown    || this._wasd.up.isDown
+    const goDown  = this._cursors.down?.isDown ?? false
     const jumpJust =
       Phaser.Input.Keyboard.JustDown(this._cursors.up)    ||
       Phaser.Input.Keyboard.JustDown(this._wasd.up)       ||
       Phaser.Input.Keyboard.JustDown(this._spaceKey)      ||
       padJumpJust
 
-    const lightJust = Phaser.Input.Keyboard.JustDown(this._jKey)
-    const heavyJust = Phaser.Input.Keyboard.JustDown(this._kKey)
+    const attackJust = Phaser.Input.Keyboard.JustDown(this._jKey)
+    const jumpInputJust = !attackJust && jumpJust
 
     // ── Flip sprite ──────────────────────────────────────────────────────────
     if (!this._isAttacking()) {
@@ -254,11 +362,11 @@ export default class PlayerController {
     }
 
     // ── Jump ─────────────────────────────────────────────────────────────────
-    if (jumpJust) {
+    if (jumpInputJust) {
       if (onGround) {
         this.sprite.setVelocityY(JUMP_VEL)
         this._canDoubleJump = true
-        this._setState(S.JUMP_RISE)
+        this._setState(S.JUMP)
       } else if (this._canDoubleJump && this._state !== S.DOUBLE_JUMP) {
         this._canDoubleJump = false
         this.sprite.setVelocityY(JUMP_VEL * 0.85)
@@ -267,59 +375,42 @@ export default class PlayerController {
     }
 
     // ── Airborne state transitions ────────────────────────────────────────────
-    if (!onGround && !justLanded) {
-      if (
-        (this._state === S.JUMP_RISE || this._state === S.DOUBLE_JUMP) &&
-        velY > 50
-      ) {
-        this._setState(S.FALL)
-      }
+    if (!onGround && !this._isAttacking()) {
       // Edge case: player walks off a ledge
       if (this._state === S.IDLE || this._state === S.RUN) {
-        this._setState(velY < 0 ? S.JUMP_RISE : S.FALL)
+        this._setState(S.JUMP)
       }
     }
 
-    // ── Landing ──────────────────────────────────────────────────────────────
-    if (justLanded) {
+    // ── Landing / grounded movement ───────────────────────────────────────────
+    if (onGround && !this._isAttacking()) {
       this._canDoubleJump = false
-      if (this._state !== S.LAND) {
-        this._setState(S.LAND)
+      if (this._state === S.DOUBLE_JUMP || this._state === S.JUMP) {
+        this._setState(this._groundStateForInput(goLeft, goRight))
       }
     }
 
     // ── Combat input ──────────────────────────────────────────────────────────
-    if (lightJust) {
-      if (onGround && !this._isAttacking()) {
-        this._comboQueued = false
-        this._setState(S.LIGHT1)
-      } else if (
-        onGround &&
-        (this._state === S.LIGHT1 || this._state === S.LIGHT2)
-      ) {
-        // Buffer next combo hit
-        this._comboQueued = true
-      } else if (!onGround && this._state !== S.AIR_LIGHT) {
-        this._setState(S.AIR_LIGHT)
-      }
-    }
-
-    if (heavyJust && onGround && !this._isAttacking()) {
-      this._setState(S.HEAVY)
+    if (attackJust && !this._isAttacking()) {
+      this._setState(this._resolveAttackState(goUp, goDown, goLeft, goRight))
     }
 
     // ── Grounded movement animations ──────────────────────────────────────────
     if (
       onGround &&
       !this._isAttacking() &&
-      this._state !== S.LAND &&
-      this._state !== S.JUMP_RISE
+      this._state !== S.JUMP &&
+      this._state !== S.DOUBLE_JUMP
     ) {
-      if (goLeft || goRight) {
-        if (this._state !== S.RUN)  this._setState(S.RUN)
-      } else {
-        if (this._state !== S.IDLE) this._setState(S.IDLE)
+      const nextGroundState = this._groundStateForInput(goLeft, goRight)
+      if (this._state !== nextGroundState) {
+        this._setState(nextGroundState)
       }
+    }
+
+    if (this._state === S.RUN) {
+      this._applyRunTexture(now)
+      this._logSpriteDebug('run-frame')
     }
 
     this._wasOnGround = onGround

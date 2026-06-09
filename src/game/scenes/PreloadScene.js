@@ -5,7 +5,7 @@
  * bar, then starts WorldBuildingScene once complete.
  *
  * Assets loaded here (available to all subsequent scenes):
- *   'hero'           — dark_fantasy_hero_sprite_sheet.png  (128 × 128 frames)
+ *   player_<gender>_<state> sheets for the selected gender
  *   'endcredits'     — endcredits.mp3
  *
  * WorldBuilding assets are loaded conditionally — missing assets are skipped
@@ -14,8 +14,20 @@
  */
 
 import Phaser from 'phaser'
-import { HERO_ATLAS, RUN_ATLAS } from '../animConfig.js'
+import GameState from '../GameState.js'
+import {
+  PLAYER_FRAME_SIZE,
+  PLAYER_STATE_DEFS,
+  getPlayerTextureKey,
+} from '../animConfig.js'
 import { MANIFEST } from '../assets/manifest.js'
+
+function shadeColor(hex, factor) {
+  const r = Math.max(0, Math.min(255, Math.round(((hex >> 16) & 0xff) * factor)))
+  const g = Math.max(0, Math.min(255, Math.round(((hex >> 8) & 0xff) * factor)))
+  const b = Math.max(0, Math.min(255, Math.round((hex & 0xff) * factor)))
+  return (r << 16) | (g << 8) | b
+}
 
 function getTextureSourceImage(texture) {
   return texture?.getSourceImage?.() || texture?.source?.[0]?.image || null
@@ -91,51 +103,88 @@ function makeTrimmedFrameCanvas(image, sx, sy, sw, sh, targetSize) {
   return canvas
 }
 
-function buildRunTexture(scene) {
-  if (scene.textures.exists(RUN_ATLAS.key) || !scene.textures.exists(RUN_ATLAS.sourceKey)) {
+function buildRunFrameTextures(scene, gender, sourceKey) {
+  const baseKey = `player_${gender}_run`
+  const firstFrameKey = `${baseKey}_0`
+
+  if (scene.textures.exists(firstFrameKey) || !scene.textures.exists(sourceKey)) {
     console.info('[GAMERON] run texture skipped', {
-      exists: scene.textures.exists(RUN_ATLAS.key),
-      sourceExists: scene.textures.exists(RUN_ATLAS.sourceKey),
+      key: baseKey,
+      exists: scene.textures.exists(firstFrameKey),
+      sourceExists: scene.textures.exists(sourceKey),
     })
     return
   }
 
-  const sourceImage = getTextureSourceImage(scene.textures.get(RUN_ATLAS.sourceKey))
+  const sourceImage = getTextureSourceImage(scene.textures.get(sourceKey))
   if (!sourceImage) {
-    console.warn('[GAMERON] run texture source missing')
+    console.warn('[GAMERON] run texture source missing', { sourceKey })
     return
   }
 
-  console.info('[GAMERON] building run texture', {
-    sourceWidth: sourceImage.width,
-    sourceHeight: sourceImage.height,
-    frames: RUN_ATLAS.frameCount,
+  const cols = 4
+  const rows = 2
+  const tileW = Math.floor(sourceImage.width / cols)
+  const tileH = Math.floor(sourceImage.height / rows)
+  const frames = []
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      frames.push(
+        makeTrimmedFrameCanvas(
+          sourceImage,
+          col * tileW,
+          row * tileH,
+          tileW,
+          tileH,
+          PLAYER_FRAME_SIZE,
+        )
+      )
+    }
+  }
+
+  frames.forEach((frameCanvas, index) => {
+    const frameKey = `${baseKey}_${index}`
+    scene.textures.addCanvas(frameKey, frameCanvas)
   })
 
-  const halfWidth = Math.round(sourceImage.width / RUN_ATLAS.frameCount)
-  const frames = [
-    makeTrimmedFrameCanvas(sourceImage, 0, 0, halfWidth, sourceImage.height, RUN_ATLAS.frameW),
-    makeTrimmedFrameCanvas(sourceImage, halfWidth, 0, halfWidth, sourceImage.height, RUN_ATLAS.frameW),
-  ]
+  console.info('[GAMERON] run texture ready', { key: baseKey, sourceKey, frames: frames.length })
+}
 
-  const stripCanvas = document.createElement('canvas')
-  stripCanvas.width = RUN_ATLAS.frameW * RUN_ATLAS.frameCount
-  stripCanvas.height = RUN_ATLAS.frameH
-  const stripCtx = stripCanvas.getContext('2d')
-  stripCtx.imageSmoothingEnabled = false
-  stripCtx.drawImage(frames[0], 0, 0)
-  stripCtx.drawImage(frames[1], RUN_ATLAS.frameW, 0)
+function buildPlaceholderPlayerTexture(scene, textureKey, state, def) {
+  const canvas = document.createElement('canvas')
+  canvas.width = PLAYER_FRAME_SIZE * def.frameCount
+  canvas.height = PLAYER_FRAME_SIZE
 
-  const canvasTexture = scene.textures.addCanvas(RUN_ATLAS.canvasKey, stripCanvas)
-  scene.textures.addSpriteSheet(RUN_ATLAS.key, canvasTexture, {
-    frameWidth:  RUN_ATLAS.frameW,
-    frameHeight: RUN_ATLAS.frameH,
-  })
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = false
 
-  console.info('[GAMERON] run texture ready', {
-    key: RUN_ATLAS.key,
-    frameWidth: RUN_ATLAS.frameW,
-    frameHeight: RUN_ATLAS.frameH,
+  for (let frame = 0; frame < def.frameCount; frame += 1) {
+    const x = frame * PLAYER_FRAME_SIZE
+    const fillColor = shadeColor(def.color, 0.82 + (frame * 0.08))
+    const accentColor = shadeColor(def.color, 1.12 - (frame * 0.04))
+
+    ctx.fillStyle = `#${fillColor.toString(16).padStart(6, '0')}`
+    ctx.fillRect(x, 0, PLAYER_FRAME_SIZE, PLAYER_FRAME_SIZE)
+
+    ctx.strokeStyle = `#${accentColor.toString(16).padStart(6, '0')}`
+    ctx.lineWidth = 2
+    ctx.strokeRect(x + 2, 2, PLAYER_FRAME_SIZE - 4, PLAYER_FRAME_SIZE - 4)
+
+    ctx.fillStyle = '#00000055'
+    ctx.fillRect(x + 10, 18, PLAYER_FRAME_SIZE - 20, 28)
+
+    ctx.fillStyle = '#ffffffcc'
+    ctx.font = '10px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(state, x + PLAYER_FRAME_SIZE / 2, 39)
+  }
+
+  const canvasKey = `${textureKey}_canvas`
+  const canvasTexture = scene.textures.addCanvas(canvasKey, canvas)
+  scene.textures.addSpriteSheet(textureKey, canvasTexture, {
+    frameWidth:  PLAYER_FRAME_SIZE,
+    frameHeight: PLAYER_FRAME_SIZE,
   })
 }
 
@@ -147,6 +196,7 @@ export default class PreloadScene extends Phaser.Scene {
   preload() {
     const W = this.scale.width
     const H = this.scale.height
+    const gender = GameState.gender || 'male'
 
     // ── Loading bar ──────────────────────────────────────────────────────────
     const barW = Math.min(W * 0.5, 400)
@@ -176,20 +226,30 @@ export default class PreloadScene extends Phaser.Scene {
       fill.width = barW * v
     })
 
-    // ── Shared assets (always load) ──────────────────────────────────────────
-    if (!this.textures.exists('hero')) {
-      this.load.spritesheet('hero', HERO_ATLAS.path, {
-        frameWidth:  HERO_ATLAS.frameW,
-        frameHeight: HERO_ATLAS.frameH,
-      })
-    }
-
     if (!this.cache.audio.has('endcredits')) {
       this.load.audio('endcredits', '/assets/endcredits.mp3')
     }
 
-    if (!this.textures.exists(RUN_ATLAS.sourceKey)) {
-      this.load.image(RUN_ATLAS.sourceKey, RUN_ATLAS.path)
+    // ── Player sheets for the selected gender ───────────────────────────────
+    const playerAssets = Object.values(MANIFEST).filter(
+      asset => asset.id.startsWith(`player_${gender}_`) && asset.status === 'loaded'
+    )
+
+    for (const asset of playerAssets) {
+      if (asset.id === `player_${gender}_run`) {
+        const sourceKey = `${asset.key}_source`
+        if (!this.textures.exists(sourceKey)) {
+          this.load.image(sourceKey, asset.path)
+        }
+        continue
+      }
+
+      if (!this.textures.exists(asset.key)) {
+        this.load.spritesheet(asset.key, asset.path, {
+          frameWidth:  asset.frameConfig?.frameWidth  || PLAYER_FRAME_SIZE,
+          frameHeight: asset.frameConfig?.frameHeight || PLAYER_FRAME_SIZE,
+        })
+      }
     }
 
     // ── WorldBuilding assets (load only if status === 'loaded') ──────────────
@@ -213,8 +273,20 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    console.info('[GAMERON] preload create -> build run texture')
-    buildRunTexture(this)
+    const gender = GameState.gender || 'male'
+    console.info('[GAMERON] preload create -> build player placeholders', { gender })
+
+    if (gender === 'male') {
+      buildRunFrameTextures(this, gender, `player_${gender}_run_source`)
+    }
+
+    for (const [state, def] of Object.entries(PLAYER_STATE_DEFS)) {
+      const textureKey = getPlayerTextureKey(gender, state)
+      if (state === 'run' && this.textures.exists(`${textureKey}_0`)) continue
+      if (this.textures.exists(textureKey)) continue
+      buildPlaceholderPlayerTexture(this, textureKey, state, def)
+    }
+
     this.scene.start('WorldBuildingScene')
   }
 }

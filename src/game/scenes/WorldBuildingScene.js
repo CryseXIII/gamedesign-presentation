@@ -13,7 +13,7 @@
  *                            Approaching within 220px → encounter overlay fires.
  *                            KAUFEN  → GachaStoreOverlay → recordChoice('gacha')
  *                            ABBRECHEN → cancel → J-prompt shown near widow;
- *                              each new J/K attack state while within 180px = 25 HP;
+ *                              each new directional attack state while within 180px = 25 HP;
  *                              4 hits → recordChoice('fight') → widow defeated.
  *                            Walking past without encountering = neutral (no score).
  *
@@ -40,7 +40,7 @@ const PORTRAIT_STATIONS = [2, 3.2, 4.4]
 const WIDOW_X_FACTOR  = 6
 const WIDOW_HP        = 100
 const HIT_DAMAGE      = 25
-const ATTACK_STATES   = ['light1', 'light2', 'light3', 'heavy']
+const ATTACK_STATES   = ['attack_up', 'attack_down', 'attack_left', 'attack_right']
 
 export default class WorldBuildingScene extends Phaser.Scene {
   constructor() {
@@ -442,10 +442,11 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._lightningActive = this._stormProgress > 0.5
   }
 
-  // ─── J-hit detection ────────────────────────────────────────────────────────
+  // ─── Attack hit detection ───────────────────────────────────────────────────
   _updateWidowCombat(playerX, playerState) {
     if (!this._widowCancelled || this._encounterDone) return
-    if (Math.abs(playerX - this._widowTriggerX) > 180) return
+    const attackRange = this._player?.attackRange ?? 88
+    if (Math.abs(playerX - this._widowTriggerX) > attackRange) return
 
     // Register a hit only when the player transitions INTO a new attack state
     if (
