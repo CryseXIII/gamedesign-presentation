@@ -311,6 +311,20 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.audio(asset.key, asset.path)
       }
     }
+
+    // ── All other 'loaded' image assets (pgs_, gm_, etc.) ───────────────────
+    const SKIP_PREFIXES = ['wb_', 'player_', 'charsel_', 'gm_main_male_run']
+    const otherAssets = Object.values(MANIFEST).filter(a =>
+      a.status === 'loaded' &&
+      a.type   === 'image'  &&
+      a.key    !== null     &&
+      !SKIP_PREFIXES.some(p => a.id.startsWith(p))
+    )
+    for (const asset of otherAssets) {
+      if (!this.textures.exists(asset.key)) {
+        this.load.image(asset.key, asset.path)
+      }
+    }
   }
 
   create() {
