@@ -257,9 +257,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
     this._succubusBlocker = this.add.rectangle(
-      x - 42,
+      x - Math.round(spriteW * 0.5) - 24,
       y - Math.round(spriteH * 0.48),
-      62,
+      24,
       Math.round(spriteH * 0.9),
       0x000000,
     )
@@ -271,9 +271,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _buildTimeBarrier(W, H) {
     const width = 54
-    const height = H + 60
+    const height = H + 240
     const x = W * WIDOW_X_FACTOR + 140
-    const y = H / 2 - 4
+    const y = H / 2 - 120
 
     const body = this.add.rectangle(x, y, width, height, 0x0d285f)
       .setDepth(4)
@@ -285,7 +285,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       .setDepth(4)
       .setVisible(false)
 
-    const label = this.add.text(x, Math.max(28, y - height / 2 + 34), '01:00', {
+    const label = this.add.text(x, 32, '01:00', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '18px',
       color: '#ffffff',
@@ -747,9 +747,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       this._transitioning = true
       this.cameras.main.fadeOut(700, 0, 0, 0)
       this.time.delayedCall(760, () => {
-        if (this.scene.isActive('WorldBuildingScene')) {
-          this.scene.start('PlayerGuidanceScene')
-        }
+        this.scene.start('PlayerGuidanceScene')
       })
     }
 

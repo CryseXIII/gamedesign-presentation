@@ -99,10 +99,19 @@ export default class PlayerController {
 
     this._gamepad        = null
     this._padJumpWasDown = false
+    this._jumpRequested  = false
+
+    this._onJumpKeyDown = () => {
+      this._jumpRequested = true
+    }
 
     if (scene.input.gamepad) {
       scene.input.gamepad.on('connected', pad => { this._gamepad = pad })
     }
+
+    scene.input.keyboard.on('keydown-W', this._onJumpKeyDown)
+    scene.input.keyboard.on('keydown-SPACE', this._onJumpKeyDown)
+    scene.input.keyboard.on('keydown-UP', this._onJumpKeyDown)
 
     // ── Animation complete ─────────────────────────────────────────────────
     this.sprite.on('animationcomplete', (anim) => {
@@ -372,7 +381,8 @@ export default class PlayerController {
       padJumpJust
 
     const attackJust = Phaser.Input.Keyboard.JustDown(this._jKey)
-    const jumpInputJust = !attackJust && jumpJust
+    const jumpInputJust = !attackJust && (jumpJust || this._jumpRequested)
+    this._jumpRequested = false
     const moveSpeed = GameState.speedBoostUnlocked ? MOVE_SPEED * 1.5 : MOVE_SPEED
 
     // ── Flip sprite ──────────────────────────────────────────────────────────
@@ -464,6 +474,11 @@ export default class PlayerController {
     if (this.sprite) {
       this.sprite.destroy()
       this.sprite = null
+    }
+    if (this.scene?.input?.keyboard && this._onJumpKeyDown) {
+      this.scene.input.keyboard.off('keydown-W', this._onJumpKeyDown)
+      this.scene.input.keyboard.off('keydown-SPACE', this._onJumpKeyDown)
+      this.scene.input.keyboard.off('keydown-UP', this._onJumpKeyDown)
     }
   }
 }
