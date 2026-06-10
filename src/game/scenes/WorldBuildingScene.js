@@ -266,18 +266,18 @@ export default class WorldBuildingScene extends Phaser.Scene {
   }
 
   _buildTimeBarrier(W, H) {
-    const width = 54
+    const width = 64
     const height = H + 600
-    const x = W * WIDOW_X_FACTOR + 140
-    const y = H / 2 - 300
+    const x = W * WIDOW_X_FACTOR + 260
+    const y = H / 2
 
     const body = this.add.rectangle(x, y, width, height, 0x0d285f)
       .setDepth(4)
 
-    const glow = this.add.rectangle(x, y, width + 18, height + 18, 0x5a8dff, 0.12)
+    const glow = this.add.rectangle(x, y, width + 20, height + 20, 0x5a8dff, 0.12)
       .setDepth(3)
 
-    const silhouette = this.add.rectangle(x, y, width + 8, height + 8, 0x0f6ecf, 0.16)
+    const silhouette = this.add.rectangle(x, y, width + 10, height + 10, 0x0f6ecf, 0.16)
       .setDepth(4)
       .setVisible(false)
 
@@ -314,28 +314,30 @@ export default class WorldBuildingScene extends Phaser.Scene {
     const x = this._roomWidth - 130
     const y = H - FLOOR_H - 90
 
-    const shield = this.add.graphics().setDepth(8)
-    shield.fillStyle(0x1b2c42, 1)
-    shield.fillRoundedRect(x - 42, y - 50, 84, 108, 16)
-    shield.lineStyle(4, 0xd9f0ff, 0.95)
-    shield.strokeRoundedRect(x - 42, y - 50, 84, 108, 16)
-    shield.fillStyle(0x8bd4ff, 1)
-    shield.fillTriangle(x - 10, y - 10, x + 18, y, x - 10, y + 10)
-    shield.fillTriangle(x + 18, y, x - 2, y - 16, x - 2, y + 16)
+    const sign = this.add.graphics().setDepth(8)
+    sign.fillStyle(0x24170f, 1)
+    sign.fillRoundedRect(x - 46, y - 58, 92, 116, 10)
+    sign.lineStyle(3, 0x8b6b3e, 0.95)
+    sign.strokeRoundedRect(x - 46, y - 58, 92, 116, 10)
+    sign.fillStyle(0x0d0b12, 1)
+    sign.fillTriangle(x, y - 12, x + 18, y + 2, x, y + 16)
+    sign.fillTriangle(x, y - 12, x - 18, y + 2, x, y + 16)
+    sign.fillStyle(0x8b6b3e, 0.9)
+    sign.fillRect(x - 22, y - 10, 44, 4)
 
     this.add.text(x, y + 72, 'WEITER', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '16px',
-      color: '#d9f0ff',
-      stroke: '#08131f',
+      color: '#d8c089',
+      stroke: '#1a120a',
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(9)
 
     this.add.text(x, y - 72, '▶', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '22px',
-      color: '#8bd4ff',
-      stroke: '#08131f',
+      color: '#c59e57',
+      stroke: '#1a120a',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(9)
   }
@@ -452,7 +454,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _triggerTimeBarrierBurst() {
     if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
-    this._burstDiamond(this._player.x + 34, this._player.y - 54, this._timeBarrier.x, this._timeBarrier.y - 16)
+    this._burstDiamond(this._player.x + 34, this._player.y - 54, this._timeBarrier.x, this._player.y - 54)
     this._hideTimeBarrier()
   }
 
