@@ -164,11 +164,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
         .setDepth(-10)
       this._introBackdropWidth = RW
     }
-
-    // Underlay bands keep the far zones readable even without extra bg art.
-    this._zoneRect(0, W * ZONE.Z2, W, H, 0x120803)
-    this._zoneRect(W * ZONE.Z2, W * ZONE.WIDOW, W, H, 0x0d0c08)
-    this._zoneRect(W * ZONE.WIDOW, W * ZONE.END, W, H, 0x08040e)
   }
 
   _zoneRect(xStart, xEnd, W, H, color) {
@@ -264,7 +259,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
-    this._succubusBlocker = this.add.rectangle(x + 6, y - Math.round(spriteH * 0.55), 130, Math.round(spriteH * 0.8), 0x000000)
+    this._succubusBlocker = this.add.rectangle(x + 8, y - Math.round(spriteH * 0.5), spriteW + 140, spriteH + 50, 0x000000)
       .setAlpha(0)
     this.physics.add.existing(this._succubusBlocker, true)
 
@@ -481,17 +476,17 @@ export default class WorldBuildingScene extends Phaser.Scene {
       const keyBase = `wb_portrait_${gender}_${i + 1}`
       let portraitObj
 
-    if (this.textures.exists(keyBase)) {
+      if (this.textures.exists(keyBase)) {
         const img = this.textures.get(keyBase).getSourceImage()
-        const targetH = Math.round(H * 0.66)
+        const targetH = Math.round(H * 0.74)
         const aspect = img ? (img.width / img.height) : 0.7
-        const targetW = Math.max(180, Math.min(Math.round(targetH * aspect), Math.round(W * 0.3)))
+        const targetW = Math.max(160, Math.min(Math.round(targetH * aspect), Math.round(W * 0.24)))
         portraitObj = this.add.image(centerX, H / 2 - FLOOR_H, keyBase)
           .setDisplaySize(targetW, targetH)
           .setDepth(1)
           .setAlpha(0)
       } else {
-        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, Math.round(W * 0.26), Math.round(H * 0.66), 0x1a1208)
+        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, Math.round(W * 0.22), Math.round(H * 0.74), 0x1a1208)
           .setDepth(1)
           .setAlpha(0)
         this.add.text(centerX, H / 2 - FLOOR_H, `missing_id:${keyBase}`, {

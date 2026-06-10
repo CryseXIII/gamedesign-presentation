@@ -28,6 +28,56 @@
   background: rgba(5, 10, 26, 0.78);
 }
 
+.encounter-backdrop--dialog {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 2vw 3vh;
+}
+
+.encounter-dialog-box {
+  width: min(1100px, 96vw);
+  min-height: 120px;
+  border: 1px solid #7fc7ff;
+  background: linear-gradient(180deg, rgba(9, 27, 50, 0.96), rgba(9, 18, 34, 0.98));
+  box-shadow: 0 0 36px rgba(94, 167, 255, 0.25), 0 10px 30px rgba(0, 0, 0, 0.7);
+  padding: 1rem 1.25rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeSlideIn 0.25s ease forwards;
+}
+
+.encounter-dialog-box--speedup {
+  border-color: #a9ddff;
+}
+
+.encounter-dialog-text {
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  color: #d3efff;
+  line-height: 1.5;
+  text-shadow: 0 0 10px rgba(120, 183, 255, 0.2);
+}
+
+.encounter-dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-cinzel, 'Cinzel', Georgia, serif);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: #7fb9e6;
+  text-transform: uppercase;
+}
+
+.encounter-dialog-step {
+  opacity: 0.8;
+}
+
+.encounter-dialog-advance {
+  color: #bde8ff;
+}
+
 .encounter-panel--speedup {
   background: linear-gradient(170deg, #07111f 0%, #0b1d31 100%);
   border-color: #5ea7ff;
