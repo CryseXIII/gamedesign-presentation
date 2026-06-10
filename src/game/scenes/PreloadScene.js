@@ -252,6 +252,10 @@ export default class PreloadScene extends Phaser.Scene {
       }
     }
 
+    if (!this.textures.exists('gm_main_male_run')) {
+      this.load.image('gm_main_male_run', '/assets/gm_main_male_run.png')
+    }
+
     // ── WorldBuilding assets (load only if status === 'loaded') ──────────────
     // New assets start as 'missing' in the manifest.  Once the PNG/MP3 files
     // are placed in public/assets/scenes/wb/ and the manifest is updated to
@@ -276,9 +280,8 @@ export default class PreloadScene extends Phaser.Scene {
     const gender = GameState.gender || 'male'
     console.info('[GAMERON] preload create -> build player placeholders', { gender })
 
-    if (gender === 'male') {
-      buildRunFrameTextures(this, gender, `player_${gender}_run_source`)
-    }
+    buildRunFrameTextures(this, 'male', 'gm_main_male_run')
+    buildRunFrameTextures(this, 'female', 'gm_main_male_run')
 
     for (const [state, def] of Object.entries(PLAYER_STATE_DEFS)) {
       const textureKey = getPlayerTextureKey(gender, state)

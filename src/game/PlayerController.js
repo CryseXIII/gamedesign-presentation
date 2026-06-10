@@ -81,6 +81,7 @@ export default class PlayerController {
     this._wasOnGround   = false
     this._canDoubleJump = false
     this._hurtUntil     = 0
+    this._moveDirection = 0
     this._runFrameKeys  = Array.from({ length: 8 }, (_, i) => getPlayerTextureKey(this._gender, `run_${i}`))
 
     // ── Input ─────────────────────────────────────────────────────────────
@@ -350,8 +351,18 @@ export default class PlayerController {
     this._padJumpWasDown = padJumpNow
 
     // ── Directional + jump input ─────────────────────────────────────────────
-    const goLeft  = this._cursors.left.isDown  || this._wasd.left.isDown  || padLeft
-    const goRight = this._cursors.right.isDown || this._wasd.right.isDown || padRight
+    const rawLeft  = this._cursors.left.isDown  || this._wasd.left.isDown  || padLeft
+    const rawRight = this._cursors.right.isDown || this._wasd.right.isDown || padRight
+    if (rawLeft && !rawRight) {
+      this._moveDirection = -1
+    } else if (rawRight && !rawLeft) {
+      this._moveDirection = 1
+    } else if (!rawLeft && !rawRight) {
+      this._moveDirection = 0
+    }
+
+    const goLeft  = this._moveDirection < 0
+    const goRight = this._moveDirection > 0
     const goUp    = this._cursors.up.isDown    || this._wasd.up.isDown
     const goDown  = this._cursors.down?.isDown ?? false
     const jumpJust =

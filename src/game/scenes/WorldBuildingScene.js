@@ -3,27 +3,19 @@
  *
  * World width: W * 11
  *
- *   Intro   (0    → W*3 ):  Wide scrolling backdrop, backstory fades, speedup succubus,
+ *   Intro   (0    → W*3 ):  Wide backdrop, backstory fades, speedup succubus,
  *                            and a time barrier gate before the forest.
  *   Zone 2  (W*2  → W*8 ):  Steppe path. Backstory portrait stations 3/5/7.
  *                            Storm overlays this zone:
  *                              – rain starts as soon as player enters (stormProgress > 0)
  *                              – lightning adds when stormProgress > 0.5
- *   Widow   (W*8  → W*11):  FOMO Widow stands at W*9.
- *                            Approaching within 220px → encounter overlay fires.
- *                            KAUFEN  → GachaStoreOverlay → recordChoice('gacha')
- *                            ABBRECHEN → cancel → J-prompt shown near widow;
- *                              each new directional attack state while within 180px = 25 HP;
- *                              4 hits → recordChoice('fight') → widow defeated.
- *                            Walking past without encountering = neutral (no score).
- *
  * Exit: player.x >= roomWidth − 180 → fade → PlayerGuidanceScene
  *
  * Window events dispatched (→ React):
- *   'game:encounterChoice'   { id: 'fomo_widow', hp: 100 }
+ *   'game:encounterChoice'   { id: 'speedup_succubus' }
  *
  * Window events received (← React):
- *   'game:encounterDecision' { decision: 'pay' | 'cancel' }
+ *   'game:encounterDecision' { decision: 'speedup' | 'cancel' }
  */
 
 import Phaser from 'phaser'
@@ -55,6 +47,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._speedBoostUnlocked = false
     this._succubusDone       = false
     this._succubusHintVisible = false
+    this._widowTriggerX      = Number.NaN
 
     // encounter state
     this._encounterDone   = false
@@ -79,6 +72,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     // lightning
     this._lightningTimer = null
+
+    this._succubusBlocker = null
   }
 
   // ─── init ──────────────────────────────────────────────────────────────────
@@ -94,10 +89,12 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._speedBoostUnlocked = false
     this._succubusDone = false
     this._succubusHintVisible = false
+    this._widowTriggerX = Number.NaN
     this._introBackdropWidth = 0
     this._introCleared = false
     this._timeBarrier = null
     this._diamondBurst = null
+    this._succubusBlocker = null
   }
 
   // ─── create ────────────────────────────────────────────────────────────────
@@ -135,13 +132,15 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._buildTimeBarrier(W, H)
     this._buildZone2(W, H)
     this._buildStormOverlay(W, H)
-    this._buildWidowZone(W, H)
 
     // ── Player ────────────────────────────────────────────────────────────
     this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET - 12)
     this.physics.add.collider(this._player.sprite, floorRect)
     this.physics.add.collider(this._player.sprite, safetyFloor)
     this.physics.add.collider(this._player.sprite, this._fireWall)
+    if (this._succubusBlocker) {
+      this.physics.add.collider(this._player.sprite, this._succubusBlocker)
+    }
     if (this._timeBarrier?.body) {
       this.physics.add.collider(this._player.sprite, this._timeBarrier.body)
     }
@@ -158,41 +157,18 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   // ─── Backgrounds ───────────────────────────────────────────────────────────
   _buildBackgrounds(W, H, RW) {
-    // Zone 1: deep orange-black
-    this._zoneRect(0, W * ZONE.Z2, W, H, 0x120803)
-    // Zone 2: muted steppe dusk
-    this._zoneRect(W * ZONE.Z2, W * ZONE.WIDOW, W, H, 0x0d0c08)
-    // Widow area: dark purple-black
-    this._zoneRect(W * ZONE.WIDOW, W * ZONE.END, W, H, 0x08040e)
-
-    const zones = [
-      {
-        key:   'wb_bg_intro',
-        x:     0,
-        zoneW: 0,
-      },
-      {
-        key:   'wb_bg_steppe',
-        x:     W * (ZONE.Z2 + (ZONE.END - ZONE.Z2) / 2),
-        zoneW: W * (ZONE.END - ZONE.Z2),
-      },
-    ]
-    for (const z of zones) {
-      if (this.textures.exists(z.key)) {
-        const img = this.textures.get(z.key).getSourceImage()
-        const scale = img ? (H / img.height) : 1
-        const displayW = img ? img.width * scale : z.zoneW
-        const displayH = img ? img.height * scale : H
-        const x = z.key === 'wb_bg_intro' ? displayW / 2 : z.x
-        this.add.image(x, H / 2, z.key)
-          .setDisplaySize(displayW, displayH)
-          .setDepth(-10)
-
-        if (z.key === 'wb_bg_intro') {
-          this._introBackdropWidth = displayW
-        }
-      }
+    // Single backdrop stretched across the entire scene; other bg images are not needed.
+    if (this.textures.exists('wb_bg_intro')) {
+      this.add.image(RW / 2, H / 2, 'wb_bg_intro')
+        .setDisplaySize(RW, H)
+        .setDepth(-10)
+      this._introBackdropWidth = RW
     }
+
+    // Underlay bands keep the far zones readable even without extra bg art.
+    this._zoneRect(0, W * ZONE.Z2, W, H, 0x120803)
+    this._zoneRect(W * ZONE.Z2, W * ZONE.WIDOW, W, H, 0x0d0c08)
+    this._zoneRect(W * ZONE.WIDOW, W * ZONE.END, W, H, 0x08040e)
   }
 
   _zoneRect(xStart, xEnd, W, H, color) {
@@ -259,19 +235,20 @@ export default class WorldBuildingScene extends Phaser.Scene {
   }
 
   _buildSpeedupSuccubus(W, H) {
-    const x = this._introBackdropWidth ? Math.max(0, this._introBackdropWidth - 240) : W * 2.6
+    const x = W * WIDOW_X_FACTOR - 180
     const y = H - FLOOR_H
-    const spriteSize = 240
+    const spriteH = Math.round(H * 0.56)
+    const spriteW = Math.round(spriteH * 0.72)
     this._succubusX = x
     this._succubusY = y
 
-    const glow = this.add.circle(x, y - 120, 98, 0x5cbcff, 0.14).setDepth(2)
+    const glow = this.add.circle(x, y - Math.round(spriteH * 0.55), 98, 0x5cbcff, 0.14).setDepth(2)
     const body = this.add.image(x, y, 'wb_speedup_succubus')
       .setOrigin(0.5, 1)
-      .setDisplaySize(spriteSize, spriteSize)
+      .setDisplaySize(spriteW, spriteH)
       .setDepth(3)
 
-    this._succubusName = this.add.text(x, y - spriteSize - 18, 'SPEEDUP SUCCUBUS', {
+    this._succubusName = this.add.text(x, y - spriteH - 18, 'SPEEDUP SUCCUBUS', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '15px',
       color: '#b8e9ff',
@@ -279,7 +256,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0.78)
 
-    this._succubusHint = this.add.text(x, y - 42, '[ E ]  REDEN', {
+    this._succubusHint = this.add.text(x, y - Math.round(spriteH * 0.12), '[ E ]  REDEN', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '16px',
       color: '#d4f4ff',
@@ -287,13 +264,17 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
+    this._succubusBlocker = this.add.rectangle(x + 6, y - Math.round(spriteH * 0.55), 130, Math.round(spriteH * 0.8), 0x000000)
+      .setAlpha(0)
+    this.physics.add.existing(this._succubusBlocker, true)
+
     this._succubusNode = { glow, body }
   }
 
   _buildTimeBarrier(W, H) {
     const width = 54
     const height = Math.min(180, Math.round(H * 0.34))
-    const x = this._introBackdropWidth ? this._introBackdropWidth + 96 : W * 3.1
+    const x = W * WIDOW_X_FACTOR + 140
     const y = H - FLOOR_H - height / 2 - 8
 
     const body = this.add.rectangle(x, y, width, height, 0x0d285f)
@@ -500,13 +481,17 @@ export default class WorldBuildingScene extends Phaser.Scene {
       const keyBase = `wb_portrait_${gender}_${i + 1}`
       let portraitObj
 
-      if (this.textures.exists(keyBase)) {
+    if (this.textures.exists(keyBase)) {
+        const img = this.textures.get(keyBase).getSourceImage()
+        const targetH = Math.round(H * 0.66)
+        const aspect = img ? (img.width / img.height) : 0.7
+        const targetW = Math.max(180, Math.min(Math.round(targetH * aspect), Math.round(W * 0.3)))
         portraitObj = this.add.image(centerX, H / 2 - FLOOR_H, keyBase)
-          .setDisplaySize(W * 0.55, H * 0.6)
+          .setDisplaySize(targetW, targetH)
           .setDepth(1)
           .setAlpha(0)
       } else {
-        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, W * 0.55, H * 0.6, 0x1a1208)
+        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, Math.round(W * 0.26), Math.round(H * 0.66), 0x1a1208)
           .setDepth(1)
           .setAlpha(0)
         this.add.text(centerX, H / 2 - FLOOR_H, `missing_id:${keyBase}`, {
@@ -558,63 +543,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._lightningTimer.delay = Phaser.Math.Between(4000, 8000)
   }
 
-  // ─── Widow zone ─────────────────────────────────────────────────────────────
-  _buildWidowZone(W, H) {
-    const widowX = W * WIDOW_X_FACTOR
-    this._widowTriggerX = widowX
-
-    // Eerie glow
-    this.add.circle(widowX, H - FLOOR_H - 80, 120, 0x7700cc, 0.18).setDepth(0)
-    this.add.circle(widowX, H - FLOOR_H - 80, 60,  0xbb44ff, 0.12).setDepth(0)
-
-    // Widow sprite / placeholder
-    if (this.textures.exists('wb_fomo_widow')) {
-      this._widowSprite = this.add.image(widowX, H - FLOOR_H - 120, 'wb_fomo_widow')
-        .setDisplaySize(160, 280)
-        .setDepth(4)
-    } else {
-      this._widowSprite = this.add.rectangle(widowX, H - FLOOR_H - 120, 90, 220, 0x440055)
-        .setDepth(4)
-      this.add.text(widowX, H - FLOOR_H - 120, 'missing_id:wb_fomo_widow', {
-        fontFamily: '"Cinzel", Georgia, serif',
-        fontSize:   '10px',
-        color:      '#bb44ff',
-      }).setOrigin(0.5).setDepth(5)
-    }
-
-    // Floating name label
-    this._widowLabel = this.add.text(widowX, H - FLOOR_H - 250, 'FOMO WIDOW', {
-      fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '16px',
-      color:      '#bb44ff',
-    }).setOrigin(0.5).setDepth(5).setAlpha(0.7)
-
-    // HP bar
-    const hpBgW = 140
-    this._widowHpBg  = this.add.rectangle(widowX, H - FLOOR_H - 230, hpBgW, 8, 0x220033).setDepth(5)
-    this._widowHpBar = this.add.rectangle(widowX - hpBgW / 2, H - FLOOR_H - 230, hpBgW, 8, 0xaa00ff)
-      .setOrigin(0, 0.5).setDepth(6)
-    this._widowHpBarW = hpBgW
-
-    // J-prompt — hidden until player cancels the overlay
-    this._jPrompt = this.add.text(widowX, H - FLOOR_H - 290, '[ J ]  ANGREIFEN', {
-      fontFamily:      '"Cinzel", Georgia, serif',
-      fontSize:        '18px',
-      color:           '#ffcc44',
-      stroke:          '#000000',
-      strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(10).setAlpha(0)
-
-    // Exit label
-    this.add.text(
-      this._roomWidth - 250,
-      H - FLOOR_H - 20,
-      '▷  WEITER',
-      { fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#c9a84c' }
-    ).setOrigin(0.5, 1).setAlpha(0.5)
-  }
-
-  // ─── Encounter decision ─────────────────────────────────────────────────────
+    // Scene 1 no longer spawns Widow; that encounter is reserved for the next screen.
+    // ─── Encounter decision ─────────────────────────────────────────────────────
   _onEncounterDecision(detail) {
     if (!this._encounterActive) return
     this._encounterActive = false
@@ -625,6 +555,17 @@ export default class WorldBuildingScene extends Phaser.Scene {
       this._succubusDone = true
       this._speedBoostUnlocked = true
       GameState.speedBoostUnlocked = true
+      if (this._succubusBlocker) {
+        this._succubusBlocker.body.enable = false
+        this._succubusBlocker.destroy()
+        this._succubusBlocker = null
+      }
+      const fadeOut = (t) => { if (t) this.tweens.add({ targets: t, alpha: 0, duration: 350, onComplete: () => t.destroy?.() }) }
+      fadeOut(this._succubusNode?.glow)
+      fadeOut(this._succubusNode?.body)
+      fadeOut(this._succubusName)
+      fadeOut(this._succubusHint)
+      this._showSuccubusPrompt(false)
       return
     }
 
@@ -773,26 +714,15 @@ export default class WorldBuildingScene extends Phaser.Scene {
     // Must update AFTER combat check so we detect state transitions
     this._lastPlayerState = ps
 
-    // ── FOMO Widow trigger ──────────────────────────────────────────────────
-    if (
-      !this._encounterDone &&
-      !this._encounterActive &&
-      !this._widowCancelled &&
-      Math.abs(px - this._widowTriggerX) < 220
-    ) {
-      this._encounterActive = true
-      window.dispatchEvent(new CustomEvent('game:encounterChoice', {
-        detail: { id: 'fomo_widow', hp: WIDOW_HP },
-      }))
-    }
-
     // ── Exit ────────────────────────────────────────────────────────────────
     if (px >= this._roomWidth - 180) {
       this._transitioning = true
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('PlayerGuidanceScene')
-      })
       this.cameras.main.fadeOut(700, 0, 0, 0)
+      this.time.delayedCall(760, () => {
+        if (this.scene.isActive('WorldBuildingScene')) {
+          this.scene.start('PlayerGuidanceScene')
+        }
+      })
     }
 
     if (this._timeBarrier && px > this._timeBarrier.x + 96) {

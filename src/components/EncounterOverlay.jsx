@@ -58,9 +58,9 @@ export default function EncounterOverlay({ encounter, onClose }) {
           </div>
 
           <p className="encounter-speech encounter-speech--speedup">
-            „Du kommst weiter als die anderen.
+            „Du hast den Angriff überlebt.
             <br />
-            Nimm meinen Diamanten. Ich zeige dir den Riss in der Zeitbarriere.“
+            Interessant. Zeig mir, wie weit du kommst.
           </p>
 
           <div className="encounter-choices">
@@ -69,8 +69,8 @@ export default function EncounterOverlay({ encounter, onClose }) {
               onClick={() => decide('speedup')}
             >
               <span className="encounter-btn-icon">💠</span>
-              <span className="encounter-btn-label">BOOST ANNEHMEN</span>
-              <span className="encounter-btn-sub">K öffnet spätere Zeitbarrieren.</span>
+              <span className="encounter-btn-label">DIAMANT ANNEHMEN</span>
+              <span className="encounter-btn-sub">Damit kommst du schneller voran.</span>
             </button>
 
             <button
@@ -78,12 +78,12 @@ export default function EncounterOverlay({ encounter, onClose }) {
               onClick={() => decide('cancel')}
             >
               <span className="encounter-btn-icon">✕</span>
-              <span className="encounter-btn-label">SPÄTER</span>
-              <span className="encounter-btn-sub">Ich laufe erstmal weiter.</span>
+              <span className="encounter-btn-label">NOCH NICHT</span>
+              <span className="encounter-btn-sub">Ich komme später wieder.</span>
             </button>
           </div>
 
-          <p className="encounter-hint encounter-hint--speedup">Die rechte Seite wartet hinter der Barriere.</p>
+          <p className="encounter-hint encounter-hint--speedup">Die Barriere wartet weiter rechts.</p>
         </div>
       </div>
     )

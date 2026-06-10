@@ -114,8 +114,8 @@ export const MANIFEST = {
     type:   'image',
     key:    'wb_bg_steppe',
     path:   '/assets/scenes/wb/bg_steppe.png',
-    status: 'loaded',
-    note:   'Zone 2 + widow area — open dead steppe toward storm horizon, 1832×859',
+    status: 'missing',
+    note:   'Unused after the single-backdrop intro layout; kept only as a future fallback',
   },
   wb_portrait_male_1: {
     id:     'wb_portrait_male_1',

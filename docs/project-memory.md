@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-10 02:54 UTC (intro floor + speed boost)
+Last updated: 2026-06-10 09:43 UTC (portrait sizing + exit fix)
 
 ## Project Objective
 
@@ -35,6 +35,9 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
+- Zone 2 copper-stich portraits are now sized as tall portrait cards instead of square blocks, the brown intro underlay rectangles were removed, and the Scene 1 exit now uses a delayed fallback start so the transition is less fragile
+- Scene 1 now uses a single full-width intro backdrop instead of a clipped steppe/widow image chain; the speedup succubus and time barrier now occupy the old widow zone, the speedup dialog is player-initiated, and the Widow encounter is reserved for a later screen
+- Run animation now builds frame textures for both genders from the shared `gm_main_male_run.png` strip, so left/right movement animates even when the selected hero is female
 - The intro now has an invisible safety floor, a hard vertical ground clamp, and a slightly higher spawn so the player can stay grounded, reach the speedup waifu, and continue to the next screen with WASD; the unlocked speed boost now also increases movement speed
 - The speedup waifu asset was further cut down to `512x512` so the first intro load is a bit lighter
 - The speedup waifu is now a real scene asset: `wb_speedup_succubus.png` was imported from Downloads, keyed out to transparent green-screen cutout, resized to `512x512`, added to the manifest, and placed in `WorldBuildingScene` as a floor-anchored image so it no longer falls through the ground
