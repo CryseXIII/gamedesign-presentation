@@ -152,11 +152,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
     this._kHandler = () => {
       if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
-      const px = this._player?.x ?? 0
-      const nearBarrier = Math.abs(px - this._timeBarrier.x) < 190
-      if (nearBarrier) {
-        this._triggerTimeBarrierBurst()
-      }
+      this._triggerTimeBarrierBurst()
     }
     this.input.keyboard.on('keydown-K', this._kHandler)
 
@@ -271,9 +267,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _buildTimeBarrier(W, H) {
     const width = 54
-    const height = H + 240
+    const height = H + 600
     const x = W * WIDOW_X_FACTOR + 140
-    const y = H / 2 - 120
+    const y = H / 2 - 300
 
     const body = this.add.rectangle(x, y, width, height, 0x0d285f)
       .setDepth(4)
@@ -493,10 +489,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }
 
     if (this._speedBoostUnlocked && this._timeBarrier && this._timeBarrier.state === 'active') {
-      const nearBarrier = Math.abs(playerX - this._timeBarrier.x) < 190
-      if (nearBarrier && this._powerKey && Phaser.Input.Keyboard.JustDown(this._powerKey)) {
-        this._triggerTimeBarrierBurst()
-      }
     }
   }
 
