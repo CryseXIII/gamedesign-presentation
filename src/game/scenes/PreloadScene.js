@@ -106,13 +106,12 @@ function makeTrimmedFrameCanvas(image, sx, sy, sw, sh, targetSize) {
 }
 
 function buildRunFrameTextures(scene, gender, sourceKey) {
-  const baseKey = `player_${gender}_run`
-  const firstFrameKey = `${baseKey}_0`
+  const texKey = `player_${gender}_run`
 
-  if (scene.textures.exists(firstFrameKey) || !scene.textures.exists(sourceKey)) {
+  if (scene.textures.exists(texKey) || !scene.textures.exists(sourceKey)) {
     console.info('[GAMERON] run texture skipped', {
-      key: baseKey,
-      exists: scene.textures.exists(firstFrameKey),
+      key: texKey,
+      exists: scene.textures.exists(texKey),
       sourceExists: scene.textures.exists(sourceKey),
     })
     return
@@ -124,33 +123,34 @@ function buildRunFrameTextures(scene, gender, sourceKey) {
     return
   }
 
-  const cols = 4
-  const rows = 2
-  const tileW = Math.floor(sourceImage.width / cols)
+  const cols  = 4
+  const rows  = 2
+  const tileW = Math.floor(sourceImage.width  / cols)
   const tileH = Math.floor(sourceImage.height / rows)
-  const frames = []
+  const FRAME = PLAYER_FRAME_SIZE
+  const total = cols * rows
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      frames.push(
-        makeTrimmedFrameCanvas(
-          sourceImage,
-          col * tileW,
-          row * tileH,
-          tileW,
-          tileH,
-          PLAYER_FRAME_SIZE,
-        )
-      )
+  // Build one wide spritesheet canvas — all frames side by side
+  const sheet    = document.createElement('canvas')
+  sheet.width    = FRAME * total
+  sheet.height   = FRAME
+  const sheetCtx = sheet.getContext('2d')
+  sheetCtx.imageSmoothingEnabled = false
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const idx         = row * cols + col
+      const frameCanvas = makeTrimmedFrameCanvas(sourceImage, col * tileW, row * tileH, tileW, tileH, FRAME)
+      sheetCtx.drawImage(frameCanvas, idx * FRAME, 0, FRAME, FRAME)
     }
   }
 
-  frames.forEach((frameCanvas, index) => {
-    const frameKey = `${baseKey}_${index}`
-    scene.textures.addCanvas(frameKey, frameCanvas)
+  scene.textures.addSpriteSheet(texKey, sheet, {
+    frameWidth:  FRAME,
+    frameHeight: FRAME,
   })
 
-  console.info('[GAMERON] run texture ready', { key: baseKey, sourceKey, frames: frames.length })
+  console.info('[GAMERON] run texture ready', { key: texKey, sourceKey, frames: total })
 }
 
 function buildPlaceholderPlayerTexture(scene, textureKey, state, def) {
@@ -218,8 +218,8 @@ function buildPlaceholderPlayerTexture(scene, textureKey, state, def) {
   }
 
   const canvasKey     = `${textureKey}_canvas`
-  const canvasTexture = scene.textures.addCanvas(canvasKey, canvas)
-  scene.textures.addSpriteSheet(textureKey, canvasTexture, {
+  scene.textures.addCanvas(canvasKey, canvas)
+  scene.textures.addSpriteSheet(textureKey, canvas, {
     frameWidth:  PLAYER_FRAME_SIZE,
     frameHeight: PLAYER_FRAME_SIZE,
   })
@@ -336,8 +336,7 @@ export default class PreloadScene extends Phaser.Scene {
 
     for (const [state, def] of Object.entries(PLAYER_STATE_DEFS)) {
       const textureKey = getPlayerTextureKey(gender, state)
-      if (state === 'run' && this.textures.exists(`${textureKey}_0`)) continue
-      if (this.textures.exists(textureKey)) continue
+      if (this.textures.exists(textureKey)) continue   // run sheet already built; others might exist too
       buildPlaceholderPlayerTexture(this, textureKey, state, def)
     }
 

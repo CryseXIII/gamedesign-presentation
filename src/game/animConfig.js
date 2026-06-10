@@ -18,7 +18,6 @@ export const PLAYER_STATE_DEFS = {
     frameRate: 12,
     repeat:    -1,
     color:      0xc9a84c,
-    usesFrameTextures: true,
   },
   jump: {
     frameCount: 2,
@@ -81,15 +80,13 @@ export function registerPlayerAnimations(scene, gender) {
     const key = getPlayerAnimationKey(gender, state)
     if (scene.anims.exists(key)) continue
 
-    const frames = def.usesFrameTextures
-      ? Array.from({ length: def.frameCount }, (_, frame) => ({
-          key: `${getPlayerTextureKey(gender, state)}_${frame}`,
-          frame: '__BASE',
-        }))
-      : Array.from({ length: def.frameCount }, (_, frame) => ({
-          key: getPlayerTextureKey(gender, state),
-          frame,
-        }))
+    const texKey = getPlayerTextureKey(gender, state)
+    if (!scene.textures.exists(texKey)) continue   // skip if texture not ready yet
+
+    const frames = Array.from({ length: def.frameCount }, (_, frame) => ({
+      key: texKey,
+      frame,
+    }))
 
     scene.anims.create({
       key,
