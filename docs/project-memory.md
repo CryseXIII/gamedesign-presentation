@@ -35,7 +35,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
-- The speedup waifu is now a real scene asset: `wb_speedup_succubus.png` was imported from Downloads, resized to `800x800`, added to the manifest, and placed in `WorldBuildingScene` as a floor-anchored image so it no longer falls through the ground
+- The speedup waifu is now a real scene asset: `wb_speedup_succubus.png` was imported from Downloads, keyed out to transparent green-screen cutout, resized to `640x640`, added to the manifest, and placed in `WorldBuildingScene` as a floor-anchored image so it no longer falls through the ground
 - Scene 1 camera framing is tightened with a 1.08 zoom, round-pixel rendering, and a deadzone so the intro reads more grounded in-browser; the rain emitter now follows camera Y as well as X
 - Workbench scrolling is restored, the edit-map export now keeps the stamped cutout as the background, the default orchestrator URL now uses the public HTTPS route, and `App` now preserves the resolved route on first load so `/workbench` and the Vision subpage no longer flicker through the portal first
 - `gm_main_male_run.png` is now wired into the hero state machine as the new `run` animation, with chroma-key green removed at preload and the sprite display forced to a stable 128×128 size so the old sheet can stay in place for the other animations while they are phased out
