@@ -74,6 +74,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._lightningTimer = null
 
     this._succubusBlocker = null
+    this._exitTrigger = null
+    this._exitHandler = null
   }
 
   // ─── init ──────────────────────────────────────────────────────────────────
@@ -95,6 +97,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._timeBarrier = null
     this._diamondBurst = null
     this._succubusBlocker = null
+    this._exitTrigger = null
+    this._exitHandler = null
   }
 
   // ─── create ────────────────────────────────────────────────────────────────
@@ -159,6 +163,17 @@ export default class WorldBuildingScene extends Phaser.Scene {
     // ── Encounter decision listener ───────────────────────────────────────
     this._decisionHandler = (e) => this._onEncounterDecision(e.detail)
     window.addEventListener('game:encounterDecision', this._decisionHandler)
+
+    this._exitHandler = () => {
+      if (this._transitioning) return
+      this._transitioning = true
+      this.cameras.main.fadeOut(700, 0, 0, 0)
+      this.time.delayedCall(760, () => this.scene.start('PlayerGuidanceScene'))
+    }
+
+    if (this._exitTrigger) {
+      this.physics.add.overlap(this._player.sprite, this._exitTrigger, this._exitHandler, undefined, this)
+    }
   }
 
   // ─── Backgrounds ───────────────────────────────────────────────────────────
@@ -311,19 +326,24 @@ export default class WorldBuildingScene extends Phaser.Scene {
   }
 
   _buildExitSign(W, H) {
-    const x = this._roomWidth - 130
-    const y = H - FLOOR_H - 90
+    const x = this._roomWidth - 220
+    const y = H - FLOOR_H - 112
+
+    this._exitTrigger = this.add.rectangle(this._roomWidth - 180, H / 2, 240, H + 600, 0x000000).setAlpha(0)
+    this.physics.add.existing(this._exitTrigger, true)
 
     const sign = this.add.graphics().setDepth(8)
     sign.fillStyle(0x24170f, 1)
     sign.fillRoundedRect(x - 46, y - 58, 92, 116, 10)
     sign.lineStyle(3, 0x8b6b3e, 0.95)
     sign.strokeRoundedRect(x - 46, y - 58, 92, 116, 10)
-    sign.fillStyle(0x0d0b12, 1)
-    sign.fillTriangle(x, y - 12, x + 18, y + 2, x, y + 16)
-    sign.fillTriangle(x, y - 12, x - 18, y + 2, x, y + 16)
-    sign.fillStyle(0x8b6b3e, 0.9)
-    sign.fillRect(x - 22, y - 10, 44, 4)
+    sign.fillStyle(0x3d2b18, 1)
+    sign.fillRect(x - 5, y - 86, 10, 28)
+    sign.fillStyle(0x0b0a0f, 1)
+    sign.fillTriangle(x, y - 18, x + 16, y + 4, x, y + 22)
+    sign.fillTriangle(x, y - 18, x - 16, y + 4, x, y + 22)
+    sign.fillStyle(0x7a5a32, 0.95)
+    sign.fillRect(x - 20, y - 14, 40, 4)
 
     this.add.text(x, y + 72, 'WEITER', {
       fontFamily: '"Cinzel", Georgia, serif',
@@ -736,15 +756,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     // Must update AFTER combat check so we detect state transitions
     this._lastPlayerState = ps
 
-    // ── Exit ────────────────────────────────────────────────────────────────
-    if (px >= this._roomWidth - 40) {
-      this._transitioning = true
-      this.cameras.main.fadeOut(700, 0, 0, 0)
-      this.time.delayedCall(760, () => {
-        this.scene.start('PlayerGuidanceScene')
-      })
-    }
-
     if (this._timeBarrier && px > this._timeBarrier.x + 96) {
       this._introCleared = true
     }
@@ -761,5 +772,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._portraits     = []
     if (this._lightningTimer) this._lightningTimer.remove()
     if (this._kHandler) this.input.keyboard.off('keydown-K', this._kHandler)
+    if (this._exitTrigger) { this._exitTrigger.destroy(); this._exitTrigger = null }
   }
 }
