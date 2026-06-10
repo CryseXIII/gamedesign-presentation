@@ -4,27 +4,15 @@ import GameState      from '../game/GameState.js'
 import EncounterOverlay from './EncounterOverlay.jsx'
 import '../styles/gallery.css'
 
-/**
- * Full-screen wrapper that mounts a Phaser game into a React-managed div.
- *
- * Handles cross-boundary events from Phaser scenes:
- *   game:showGalleryItem   → opens the gallery text overlay
- *   game:encounterChoice   → opens the encounter choice overlay (EncounterOverlay)
- *   game:exit              → calls onExit (returns to title screen)
- *
- * When overlays close, dispatches the corresponding response events back to Phaser.
- */
 export default function GameScreen({ gender = 'male', onExit }) {
   const containerRef = useRef(null)
   const [galleryItem,  setGalleryItem]  = useState(null)
   const [encounter,    setEncounter]    = useState(null)
+  const [videoUrl,     setVideoUrl]     = useState(null)
 
-  // ── Mount Phaser ──────────────────────────────────────────────────────────
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    console.info('[GAMERON] mount game screen', { gender })
-    // Reset GameState so a fresh playthrough starts clean
     GameState.reset()
     GameState.gender = gender
     const game = createGame(el, null, gender)
@@ -32,12 +20,8 @@ export default function GameScreen({ gender = 'male', onExit }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const onError = (event) => {
-      console.error('[GAMERON] window error', event.error || event.message || event)
-    }
-    const onRejection = (event) => {
-      console.error('[GAMERON] unhandled rejection', event.reason)
-    }
+    const onError = (event) => { console.error('[GAMERON] window error', event.error || event.message || event) }
+    const onRejection = (event) => { console.error('[GAMERON] unhandled rejection', event.reason) }
     window.addEventListener('error', onError)
     window.addEventListener('unhandledrejection', onRejection)
     return () => {
@@ -46,34 +30,28 @@ export default function GameScreen({ gender = 'male', onExit }) {
     }
   }, [])
 
-  // ── Window event listeners ────────────────────────────────────────────────
   useEffect(() => {
-    const onShow     = (e) => setGalleryItem(e.detail)
+    const onShow      = (e) => setGalleryItem(e.detail)
     const onEncounter = (e) => setEncounter(e.detail)
     const onGameExit  = () => { if (onExit) onExit() }
+    const onVideo     = (e) => setVideoUrl(e.detail?.url)
 
     window.addEventListener('game:showGalleryItem', onShow)
     window.addEventListener('game:encounterChoice', onEncounter)
     window.addEventListener('game:exit',            onGameExit)
+    window.addEventListener('game:showVideo',       onVideo)
     return () => {
       window.removeEventListener('game:showGalleryItem', onShow)
       window.removeEventListener('game:encounterChoice', onEncounter)
       window.removeEventListener('game:exit',            onGameExit)
+      window.removeEventListener('game:showVideo',       onVideo)
     }
   }, [onExit])
 
-  // ── Close gallery overlay ─────────────────────────────────────────────────
-  const closeGallery = useCallback(() => {
-    setGalleryItem(null)
-    window.dispatchEvent(new CustomEvent('game:galleryItemClosed'))
-  }, [])
+  const closeGallery   = useCallback(() => { setGalleryItem(null); window.dispatchEvent(new CustomEvent('game:galleryItemClosed')) }, [])
+  const closeEncounter = useCallback(() => { setEncounter(null) }, [])
+  const closeVideo     = useCallback(() => { setVideoUrl(null); window.dispatchEvent(new CustomEvent('game:videoClosed')) }, [])
 
-  // ── Close encounter overlay ───────────────────────────────────────────────
-  const closeEncounter = useCallback(() => {
-    setEncounter(null)
-  }, [])
-
-  // ── Keyboard: Escape to close gallery ────────────────────────────────────
   useEffect(() => {
     if (!galleryItem) return
     const handler = (e) => { if (e.key === 'Escape') closeGallery() }
@@ -81,26 +59,61 @@ export default function GameScreen({ gender = 'male', onExit }) {
     return () => window.removeEventListener('keydown', handler)
   }, [galleryItem, closeGallery])
 
+  useEffect(() => {
+    if (!videoUrl) return
+    const handler = (e) => { if (e.key === 'Escape') closeVideo() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [videoUrl, closeVideo])
+
   return (
     <>
-      {/* Phaser canvas container */}
       <div ref={containerRef} style={{ position: 'fixed', inset: 0, overflow: 'hidden' }} />
 
-      {/* Gallery overlay */}
       {galleryItem && (
         <div className="gallery-overlay" onClick={closeGallery}>
           <div className="gallery-overlay__panel" onClick={e => e.stopPropagation()}>
             <div className="gallery-overlay__title">{galleryItem.title}</div>
             <div className="gallery-overlay__content">{galleryItem.content}</div>
-            <button className="gallery-overlay__close" onClick={closeGallery}>
-              [ESC]  CLOSE
-            </button>
+            <button className="gallery-overlay__close" onClick={closeGallery}>[ESC]  CLOSE</button>
           </div>
         </div>
       )}
 
-      {/* Encounter overlay (FOMO Widow + Gacha Store) */}
       <EncounterOverlay encounter={encounter} onClose={closeEncounter} />
+
+      {videoUrl && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 500,
+          background: 'rgba(0,0,0,0.88)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <iframe
+            src={videoUrl}
+            width="900" height="506"
+            style={{ maxWidth: '96vw', maxHeight: '54vw', border: '2px solid #5a3c12' }}
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            title="Half-Life"
+          />
+          <button
+            onClick={closeVideo}
+            style={{
+              marginTop: '1.2rem',
+              fontFamily: '"Cinzel", Georgia, serif',
+              fontSize: '14px',
+              color: '#c9a84c',
+              background: 'transparent',
+              border: '1px solid #5a3c12',
+              padding: '0.5rem 1.5rem',
+              cursor: 'pointer',
+              letterSpacing: '0.2em',
+            }}
+          >
+            [ESC] SCHLIEßEN
+          </button>
+        </div>
+      )}
     </>
   )
 }

@@ -153,6 +153,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(Math.round(W * 0.22), Math.round(H * 0.24))
     this.cameras.main.fadeIn(800, 0, 0, 0)
 
+    this.input.keyboard.enableGlobalCapture()
     this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
     this._kHandler = () => {
       if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
@@ -296,7 +297,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       .setDepth(4)
       .setVisible(false)
 
-    const label = this.add.text(x, 32, '01:00', {
+    const label = this.add.text(x, H - FLOOR_H - 160, '01:00', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '18px',
       color: '#ffffff',
@@ -474,8 +475,36 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _triggerTimeBarrierBurst() {
     if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
-    this._burstDiamond(this._player.x + 34, this._player.y - 54, this._timeBarrier.x, this._player.y - 54)
-    this._hideTimeBarrier()
+
+    const MAX_RANGE = 700
+    const fromX = this._player.x + 34
+    const fromY = this._player.y - 54
+    const gateX = this._timeBarrier.x
+    const distToGate = gateX - this._player.x
+    const hitsGate = distToGate > 0 && distToGate <= MAX_RANGE
+    const toX = hitsGate ? gateX : fromX + MAX_RANGE
+
+    const diamond = this.add.graphics().setDepth(12)
+    diamond.fillStyle(0xbfe9ff, 1)
+    diamond.fillTriangle(0, -10, 10, 0, 0, 10)
+    diamond.fillTriangle(0, -10, -10, 0, 0, 10)
+
+    const pos = { x: fromX, y: fromY }
+    const sync = () => diamond.setPosition(pos.x, pos.y)
+    sync()
+
+    this.tweens.add({
+      targets: pos,
+      x: toX,
+      y: fromY,
+      duration: 320,
+      ease: 'Linear',
+      onUpdate: sync,
+      onComplete: () => {
+        if (hitsGate) this._hideTimeBarrier()
+        this.tweens.add({ targets: diamond, alpha: 0, duration: 100, onComplete: () => diamond.destroy() })
+      },
+    })
   }
 
   _showSuccubusPrompt(show) {

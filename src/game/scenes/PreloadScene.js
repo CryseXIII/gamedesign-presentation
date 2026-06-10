@@ -155,34 +155,69 @@ function buildRunFrameTextures(scene, gender, sourceKey) {
 
 function buildPlaceholderPlayerTexture(scene, textureKey, state, def) {
   const canvas = document.createElement('canvas')
-  canvas.width = PLAYER_FRAME_SIZE * def.frameCount
+  canvas.width  = PLAYER_FRAME_SIZE * def.frameCount
   canvas.height = PLAYER_FRAME_SIZE
 
   const ctx = canvas.getContext('2d')
   ctx.imageSmoothingEnabled = false
 
+  const S = PLAYER_FRAME_SIZE
+  const isRun    = state === 'run'
+  const isJump   = state === 'jump' || state === 'double_jump'
+  const isAttack = state.startsWith('attack')
+  const isHurt   = state === 'hurt'
+
   for (let frame = 0; frame < def.frameCount; frame += 1) {
-    const x = frame * PLAYER_FRAME_SIZE
-    const fillColor = shadeColor(def.color, 0.82 + (frame * 0.08))
-    const accentColor = shadeColor(def.color, 1.12 - (frame * 0.04))
+    const ox = frame * S
+    // animate: alternate slight shifts per frame for a sense of motion
+    const bob = (frame % 2 === 0) ? 0 : (isRun ? 2 : 0)
 
-    ctx.fillStyle = `#${fillColor.toString(16).padStart(6, '0')}`
-    ctx.fillRect(x, 0, PLAYER_FRAME_SIZE, PLAYER_FRAME_SIZE)
+    // transparent background
+    ctx.clearRect(ox, 0, S, S)
 
-    ctx.strokeStyle = `#${accentColor.toString(16).padStart(6, '0')}`
-    ctx.lineWidth = 2
-    ctx.strokeRect(x + 2, 2, PLAYER_FRAME_SIZE - 4, PLAYER_FRAME_SIZE - 4)
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'
+    ctx.fillEllipse ? ctx.fillEllipse(ox + S/2, S - 6 + bob, 26, 8)
+      : (() => { ctx.beginPath(); ctx.ellipse(ox + S/2, S - 6 + bob, 13, 4, 0, 0, Math.PI * 2); ctx.fill() })()
 
-    ctx.fillStyle = '#00000055'
-    ctx.fillRect(x + 10, 18, PLAYER_FRAME_SIZE - 20, 28)
+    // legs
+    const legColor = isHurt ? '#555' : '#1c1a24'
+    ctx.fillStyle = legColor
+    ctx.fillRect(ox + 18, 38 + bob, 10, 18)  // left leg
+    ctx.fillRect(ox + 36, 38 + bob, 10, 18)  // right leg
 
-    ctx.fillStyle = '#ffffffcc'
-    ctx.font = '10px monospace'
-    ctx.textAlign = 'center'
-    ctx.fillText(state, x + PLAYER_FRAME_SIZE / 2, 39)
+    // torso
+    const torsoColor = isHurt ? '#888' : (isAttack ? '#4a1a2a' : '#2a2636')
+    ctx.fillStyle = torsoColor
+    ctx.fillRect(ox + 14, 18 + bob, 36, 22)
+
+    // arms
+    const armOff = isAttack ? (state.includes('right') ? 12 : (state.includes('left') ? -12 : 0)) : 0
+    ctx.fillStyle = '#1e1c28'
+    ctx.fillRect(ox + 4 + armOff,  22 + bob, 12, 14)  // left arm
+    ctx.fillRect(ox + 48 - armOff, 22 + bob, 12, 14)  // right arm
+
+    // head
+    const headY = isJump ? (8 + bob - 6) : (8 + bob)
+    ctx.fillStyle = '#28243a'
+    ctx.fillRect(ox + 22, headY, 20, 18)
+
+    // eyes
+    ctx.fillStyle = isHurt ? '#ff4444' : (isAttack ? '#ffaa00' : '#c8a8ff')
+    ctx.fillRect(ox + 24, headY + 5, 5, 4)
+    ctx.fillRect(ox + 34, headY + 5, 5, 4)
+
+    // weapon hint for attack states
+    if (isAttack) {
+      ctx.fillStyle = '#c8a84c'
+      if (state.includes('right')) ctx.fillRect(ox + 52, 16 + bob, 8, 28)
+      else if (state.includes('left'))  ctx.fillRect(ox + 4,  16 + bob, 8, 28)
+      else if (state.includes('up'))    ctx.fillRect(ox + 28, 0,        8, 22)
+      else                              ctx.fillRect(ox + 28, 36 + bob, 8, 22)
+    }
   }
 
-  const canvasKey = `${textureKey}_canvas`
+  const canvasKey     = `${textureKey}_canvas`
   const canvasTexture = scene.textures.addCanvas(canvasKey, canvas)
   scene.textures.addSpriteSheet(textureKey, canvasTexture, {
     frameWidth:  PLAYER_FRAME_SIZE,
