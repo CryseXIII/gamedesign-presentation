@@ -381,6 +381,24 @@ export const MANIFEST = {
     note:   'Female hero hurt state, 64x64 frames, white flicker overlay and knockback in gameplay, no death state',
   },
 
+  // ── PlayerGuidanceScene assets (Scene 2) ───────────────────────────────────
+  pgs_bg_castle: {
+    id:     'pgs_bg_castle',
+    type:   'image',
+    key:    'pgs_bg_castle',
+    path:   '/assets/scenes/pgs/bg_castle.png',
+    status: 'loaded',
+    note:   'Scene 2 castle background, 2048×768 pixel-art, central ornate picture frame for video embed',
+  },
+  pgs_red_dot_waifu: {
+    id:     'pgs_red_dot_waifu',
+    type:   'image',
+    key:    'pgs_red_dot_waifu',
+    path:   '/assets/scenes/pgs/red_dot_waifu.png',
+    status: 'loaded',
+    note:   'Scene 2 — Red Dot Gacha Waifu, 640×640 transparent (green-keyed), floor-anchored at scene center',
+  },
+
   gm_bg_training_arena: {
     id:     'gm_bg_training_arena',
     type:   'image',
@@ -395,7 +413,7 @@ export const MANIFEST = {
     key:    'gm_enemy_autoplay_lady',
     path:   '/assets/gm_enemy_autoplay_lady.png',
     status: 'loaded',
-    note:   'GameScene — Autoplay Lady enemy sprite, 1086×1448',
+    note:   'Scene 3 (GalleryScene) — Lady Autoplay enemy sprite, 512×683 transparent (green-keyed), marionette demon with AUTO orb',
   },
 }
 

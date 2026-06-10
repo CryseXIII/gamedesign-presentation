@@ -138,6 +138,25 @@ export default class GalleryScene extends Phaser.Scene {
       { fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#c9a84c' }
     ).setOrigin(0.5, 1).setAlpha(0.5)
 
+    // ── Lady Autoplay — looms near the exit ──────────────────────────────────
+    const autoH  = Math.round(H * 0.72)
+    const autoW  = Math.round(autoH * (512 / 683))
+    this._autoplay = this.add.image(roomW - 340, H - FLOOR_H, 'gm_enemy_autoplay_lady')
+      .setOrigin(0.5, 1)
+      .setDisplaySize(autoW, autoH)
+      .setDepth(3)
+      .setAlpha(0)
+
+    this._autoplayLabel = this.add.text(roomW - 340, H - FLOOR_H - autoH - 8, 'LADY AUTOPLAY', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize:   '15px',
+      color:      '#cc44ff',
+      stroke:     '#1a0030',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 1).setDepth(4).setAlpha(0)
+
+    this._autoplayTriggered = false
+
     this.add.rectangle(14, (H - FLOOR_H) / 2, 28, H - FLOOR_H, 0x16120a)
 
     // ── Player ───────────────────────────────────────────────────────────────
@@ -217,6 +236,12 @@ export default class GalleryScene extends Phaser.Scene {
     }
 
     // ── Room exit ─────────────────────────────────────────────────────────────
+    // Reveal Lady Autoplay when player passes the last pedestal
+    if (!this._autoplayTriggered && this.player.x > roomW * 0.68) {
+      this._autoplayTriggered = true
+      this.tweens.add({ targets: [this._autoplay, this._autoplayLabel], alpha: 1, duration: 800 })
+    }
+
     if (!this.galleryOpen && this.player.x > roomW - 120) {
       this._exitTo('CreditsScene')
     }

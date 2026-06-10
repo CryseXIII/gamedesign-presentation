@@ -40,6 +40,9 @@ export function createGame(container, _charConfig, gender = 'male') {
       pixelArt: true,
       antialias: false,
     },
+    dom: {
+      createContainer: true,
+    },
     input: {
       gamepad: true,
     },
