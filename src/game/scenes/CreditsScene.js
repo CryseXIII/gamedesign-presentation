@@ -149,19 +149,30 @@ export default class CreditsScene extends Phaser.Scene {
     const W = this.scale.width
     const H = this.scale.height
 
-    if (this.textures.exists('credits_endscreen')) {
-      this.cameras.main.fadeIn(0, 0, 0, 0)   // ensure black frame
-      const img = this.add.image(W / 2, H / 2, 'credits_endscreen')
+    // Pick end screen based on gender + whale queen outcome
+    const gender = GameState.gender
+    const wqo    = GameState.whaleQueenOutcome   // 'victory' | 'defeat' | null
+    let texKey = 'credits_endscreen'   // default: male + WQ victory or no WQ
+
+    if (gender === 'female' && wqo === 'victory') {
+      texKey = 'credits_endscreen_f_wqv'
+    } else if (gender === 'female' && wqo === 'defeat') {
+      texKey = 'credits_endscreen_f_wqd'
+    } else if (gender === 'male' && wqo === 'defeat') {
+      texKey = 'credits_endscreen_m_wqd'
+    }
+    // Fallback to default if specific texture not loaded
+    if (!this.textures.exists(texKey)) texKey = 'credits_endscreen'
+
+    if (this.textures.exists(texKey)) {
+      this.cameras.main.fadeIn(0, 0, 0, 0)
+      const img = this.add.image(W / 2, H / 2, texKey)
         .setDisplaySize(W, H).setDepth(100).setAlpha(0)
       this.tweens.add({ targets: img, alpha: 1, duration: 1200, ease: 'Quad.easeIn' })
 
-      // Press any key after 1.5 s to exit
       this.time.delayedCall(1500, () => {
         this.input.keyboard.once('keydown', () => { this._finish() })
-        if (this.input.gamepad) {
-          this.input.gamepad.once('down', () => { this._finish() })
-        }
-        // hint
+        if (this.input.gamepad) this.input.gamepad.once('down', () => { this._finish() })
         this.add.text(W / 2, H - 24, '[beliebige Taste]  Beenden', {
           fontFamily: '"Cinzel", Georgia, serif',
           fontSize:   '12px',

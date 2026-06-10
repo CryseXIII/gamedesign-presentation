@@ -58,9 +58,9 @@ export default class WhaleQueenScene extends Phaser.Scene {
       g.fillRect(0, 0, W, H)
     }
 
-    // ── Floor ────────────────────────────────────────────────────────────────
-    const floorTopY = H - FLOOR_H
-    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H * 2, 0x000000, 0)
+    // ── Floor (bg image visual floor at ~88% of H) ────────────────────────────
+    const floorTopY = Math.round(H * 0.88)
+    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────
@@ -97,22 +97,25 @@ export default class WhaleQueenScene extends Phaser.Scene {
   }
 
   _buildQueen(W, H, floorTopY) {
-    const x  = Math.round(W * 0.65)
-    const ph = 160
+    // Position on the throne — throne appears at ~60% x and ~75% y in background
+    const x  = Math.round(W * 0.60)
+    const throneY = Math.round(H * 0.78)   // throne seat level
+    const ph = 280
     if (this.textures.exists('wq_whale_queen')) {
       const tex  = this.textures.get('wq_whale_queen')
       const srcH = tex.getSourceImage().height
       const srcW = tex.getSourceImage().width
       const rw   = Math.round(srcW * (ph / srcH))
-      this._queenSprite = this.add.image(x, floorTopY, 'wq_whale_queen')
+      this._queenSprite = this.add.image(x, throneY, 'wq_whale_queen')
         .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(5)
+      try { this.textures.get('wq_whale_queen').setFilter(Phaser.Textures.FilterMode.LINEAR) } catch {}
     } else {
       const g = this.add.graphics().setDepth(5)
       g.fillStyle(0x2244aa, 0.85)
-      g.fillRect(x - 36, floorTopY - ph, 72, ph)
+      g.fillRect(x - 36, throneY - ph, 72, ph)
       this._queenSprite = g
     }
-    this._queenLabel = this.add.text(x, floorTopY - ph - 6, 'WHALE QUEEN', {
+    this._queenLabel = this.add.text(x, throneY - ph - 6, 'WHALE QUEEN', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize:   '13px',
       color:      '#aaddff',
@@ -237,26 +240,57 @@ export default class WhaleQueenScene extends Phaser.Scene {
   _onPaymentChoice(choice) {
     const W = this._W
     const H = this._H
-    const texKey = choice === 'pay' ? 'wq_defeat' : 'wq_victory'
+    const isFemale = GameState.gender === 'female'
+    const isDefeat = choice === 'pay'
 
-    if (this.textures.exists(texKey)) {
-      const img = this.add.image(W / 2, H / 2, texKey)
-        .setDisplaySize(W, H).setDepth(70).setAlpha(0)
-      this.tweens.add({ targets: img, alpha: 1, duration: 500 })
+    // Track outcome in GameState
+    GameState.whaleQueenOutcome = isDefeat ? 'defeat' : 'victory'
+    if (isDefeat) GameState.recordChoice?.('gacha')
 
-      if (choice === 'pay') {
-        GameState.recordChoice?.('gacha')
-      }
-
-      this.time.delayedCall(5000, () => {
-        this.tweens.add({ targets: img, alpha: 0, duration: 500, onComplete: () => {
-          try { img.destroy() } catch {}
-          this._dismissQueen()
-        }})
-      })
+    // Pick the right image key
+    let texKey
+    if (isDefeat) {
+      texKey = isFemale && this.textures.exists('wq_defeat_f') ? 'wq_defeat_f' : 'wq_defeat'
     } else {
-      this._dismissQueen()
+      texKey = isFemale && this.textures.exists('wq_victory_f') ? 'wq_victory_f' : 'wq_victory'
     }
+
+    // Dialog lines for each outcome
+    const victoryLines = [
+      '[lacht laut auf]',
+      'Ablehnen? ABLEHNEN?! Weißt du, wer ich bin?!',
+      'Ich bin die WHALE QUEEN. Niemand lehnt mich ab.',
+      '...außer dir. Heute.',
+      '[erpresst sichtlich]  Geh. Aus meinen Augen.',
+    ]
+    const defeatLines = [
+      '[streckt die Hand aus]  5.000 Diamanten. Klug von dir.',
+      'Ich schätze Weisheit. Und Großzügigkeit.',
+      'Dein Beutel ist leichter. Dein Herz auch.',
+      '[lächelt süffisant]  Bis zum nächsten Mal, Krieger.',
+    ]
+
+    const showScreen = () => {
+      if (this.textures.exists(texKey)) {
+        const img = this.add.image(W / 2, H / 2, texKey)
+          .setDisplaySize(W, H).setDepth(70).setAlpha(0)
+        this.tweens.add({ targets: img, alpha: 1, duration: 600 })
+
+        // Show dialog on top of the image
+        this.time.delayedCall(800, () => {
+          this._showDialog(isDefeat ? defeatLines : victoryLines, () => {
+            this.tweens.add({ targets: img, alpha: 0, duration: 500, onComplete: () => {
+              try { img.destroy() } catch {}
+              this._dismissQueen()
+            }})
+          })
+        })
+      } else {
+        this._dismissQueen()
+      }
+    }
+
+    showScreen()
   }
 
   _dismissQueen() {

@@ -95,6 +95,10 @@ export default function App() {
       <CharacterSelect
         onStart={(selectedGender) => {
           setGender(selectedGender)
+          // Strip any ?scene= debug param so game always starts at scene 1
+          const url = new URL(window.location.href)
+          url.searchParams.delete('scene')
+          window.history.replaceState(null, '', url.toString())
           navigate('game')
         }}
       />

@@ -37,12 +37,17 @@ export function createGame(container, _charConfig, gender = 'male') {
   const config = {
     type: Phaser.AUTO,
     parent: container,
-    width: w,
-    height: h,
     backgroundColor: '#000000',
+    // Fixed 1280×720 canvas — scales to fit any viewport while keeping consistent positions
+    width:  1280,
+    height:  720,
+    scale: {
+      mode:       Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
     render: {
-      pixelArt: true,
-      antialias: false,
+      pixelArt:  false,   // photorealistic backgrounds — bilinear upscale
+      antialias: true,
     },
     dom: {
       createContainer: true,

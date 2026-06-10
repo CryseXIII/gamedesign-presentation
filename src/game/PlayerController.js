@@ -28,7 +28,7 @@ import {
 // ─── Exported constants ────────────────────────────────────────────────────────
 export const FLOOR_H        = 80
 export const MOVE_SPEED     = 380
-export const JUMP_VEL       = -570
+export const JUMP_VEL       = -650
 export const ATTACK_RANGE   = 88
 /** Spawn sprite.y so physics body bottom rests on floor top. */
 export const SPAWN_Y_OFFSET = 60

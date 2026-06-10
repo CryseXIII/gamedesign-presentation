@@ -125,22 +125,21 @@ export default class BannerSirenScene extends Phaser.Scene {
       vg.fillRect(W - 18 + i * 3, 0, 18 - i * 3, totalH)
     }
 
-    // ── Hole cover (hides shaft opening until floor collapses) ───────────────
-    this._holeCover = this.add.graphics().setDepth(2)
-    // Covers roughly the centre of the floor where the hole is
-    const holeW = Math.round(W * 0.4)
-    const holeX = W / 2 - holeW / 2
-    this._holeCover.fillStyle(0x08050e, 1)
-    this._holeCover.fillRect(holeX, H - FLOOR_H, holeW, FLOOR_H + 20)
+    // ── Hole cover: full black overlay hiding the shaft below the top floor ────
+    // Removed only when floor collapses
+    this._holeCover = this.add.graphics().setDepth(15)
+    this._holeCover.fillStyle(0x000000, 1)
+    this._holeCover.fillRect(0, H - FLOOR_H, W, SHAFT_DEPTH + H * 2)
 
     // ── Top floor (breakable) ────────────────────────────────────────────────
-    const floorTopY = H - FLOOR_H
+    const floorTopY = Math.round(H * 0.88)
     this._buildBreakableFloor(W, floorTopY)
 
-    // ── Bottom landing floor ─────────────────────────────────────────────────
-    const bottomLandY = botY + FLOOR_H / 2
-    const bFloor = this.add.rectangle(W / 2, bottomLandY, W, FLOOR_H * 2, 0x000000, 0)
+    // ── Bottom landing floor — visual floor of bs_bg_bot at ~88% ────────────
+    const botFloorTopY = botY + Math.round(H * 0.88)
+    const bFloor = this.add.rectangle(W / 2, botFloorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(bFloor, true)
+    this._botFloorTopY = botFloorTopY
 
     // ── Shaft walls ──────────────────────────────────────────────────────────
     const wallH = worldH + 200
@@ -149,7 +148,7 @@ export default class BannerSirenScene extends Phaser.Scene {
     this.physics.add.existing(wallL, true)
     this.physics.add.existing(wallR, true)
 
-    // ── Player ───────────────────────────────────────────────────────────────
+    // ── Player — spawn at siren level (top of scene) ────────────────────────
     const spawnX = Math.round(W * 0.15)
     const spawnY = floorTopY - SPAWN_Y_OFFSET
     this._player = new PlayerController(this, spawnX, spawnY)
@@ -202,7 +201,7 @@ export default class BannerSirenScene extends Phaser.Scene {
   _buildSiren(W, H, floorTopY) {
     const x  = Math.round(W * 0.74)
     const y  = floorTopY
-    const ph = 160
+    const ph = 280
 
     if (this.textures.exists('bs_banner_siren')) {
       const tex  = this.textures.get('bs_banner_siren')
@@ -211,6 +210,7 @@ export default class BannerSirenScene extends Phaser.Scene {
       const rw   = Math.round(srcW * (ph / srcH))
       this._sirenSprite = this.add.image(x, y, 'bs_banner_siren')
         .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(6)
+      try { this.textures.get('bs_banner_siren').setFilter(Phaser.Textures.FilterMode.LINEAR) } catch {}
     } else {
       const g = this.add.graphics().setDepth(6)
       g.fillStyle(0x9944cc, 0.85)
@@ -344,13 +344,24 @@ export default class BannerSirenScene extends Phaser.Scene {
     this._phase = 'fall'
     this._fallStartTime = this.time.now
 
+    // Black flash transition: hole cover disappears after a brief blackout
+    this.cameras.main.flash(400, 0, 0, 0, true)
+    this.time.delayedCall(400, () => {
+      // Remove hole cover to reveal the shaft
+      this._holeCover?.destroy()
+      this._holeCover = null
+    })
+
     this.physics.world.gravity.y = FALL_GRAVITY
     this._player.sprite.body.setMaxVelocityY(TERMINAL_VEL)
     this._player.unfreeze()
 
+    // Camera follows player down, offset keeps player in upper third
+    this.cameras.main.setFollowOffset(0, -80)
+
     this._spikeTimer = this.time.addEvent({
-      delay:    SPIKE_INTERVAL,
-      loop:     true,
+      delay: SPIKE_INTERVAL,
+      loop:  true,
       callback: this._spawnSpikeWave,
       callbackScope: this,
     })
@@ -459,6 +470,8 @@ export default class BannerSirenScene extends Phaser.Scene {
     if (this._fallTimerEvt) { this._fallTimerEvt.remove(); this._fallTimerEvt = null }
     this._clearSpikes()
 
+    // Black flash transition before showing bottom room
+    this.cameras.main.flash(500, 0, 0, 0, true)
     this.time.delayedCall(600, () => this._startBottomDialog())
   }
 
@@ -473,20 +486,7 @@ export default class BannerSirenScene extends Phaser.Scene {
 
   // ── Bottom dialog ─────────────────────────────────────────────────────────
   _startBottomDialog() {
-    const botY = this._H + SHAFT_DEPTH
-    const sirenX = Math.round(this._W * 0.72)
-
-    if (this.textures.exists('bs_banner_siren')) {
-      const tex  = this.textures.get('bs_banner_siren')
-      const srcH = tex.getSourceImage().height
-      const srcW = tex.getSourceImage().width
-      const ph   = 160
-      const rw   = Math.round(srcW * (ph / srcH))
-      const s2 = this.add.image(sirenX, botY + FLOOR_H, 'bs_banner_siren')
-        .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(6).setAlpha(0)
-      this.tweens.add({ targets: s2, alpha: 1, duration: 500 })
-    }
-
+    // Siren gloats via dialog only — no sprite in bottom section
     this._showDialog([
       '[schaut nach unten und lacht]',
       'Nun ja. Schön, dich... losgeworden zu sein.',
@@ -522,9 +522,9 @@ export default class BannerSirenScene extends Phaser.Scene {
       console.error('[BSS] player update error', err)
     }
 
-    // Bottom detection
+    // Bottom detection — player reaches the bottom landing floor
     if (this._phase === 'fall') {
-      const bottomTrigger = this._H + SHAFT_DEPTH - 80
+      const bottomTrigger = this._botFloorTopY - 80
       if (this._player.sprite.y >= bottomTrigger) {
         this._onReachBottom()
       }

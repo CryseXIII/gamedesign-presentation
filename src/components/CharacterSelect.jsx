@@ -27,6 +27,8 @@ export default function CharacterSelect({ onStart }) {
     if (firedRef.current) return
     firedRef.current = true
     setSelected(gender)
+    // Clear any debug scene so CharacterSelect always starts at scene 1
+    localStorage.removeItem('gameron:debugScene')
     if (audioRef.current) {
       audioRef.current.currentTime = 0
       audioRef.current.play().catch(() => {})
@@ -99,20 +101,6 @@ export default function CharacterSelect({ onStart }) {
               onMouseEnter={() => setFocused(card.gender)}
               onClick={() => choose(card.gender)}
             >
-              <div className="charsel-portrait">
-                {imgFailed[card.gender] ? (
-                  <div className="charsel-portrait__placeholder">⚔</div>
-                ) : (
-                  <img
-                    src={card.portrait}
-                    alt={card.name}
-                    draggable="false"
-                    onError={() => handleImgError(card.gender)}
-                  />
-                )}
-                <div className="charsel-portrait__label">{card.label}</div>
-              </div>
-
               {isActive && !isChosen && (
                 <div className="charsel-card-select-hint">[ AUSWÄHLEN ]</div>
               )}
@@ -121,6 +109,20 @@ export default function CharacterSelect({ onStart }) {
                   ✦ GEWÄHLT ✦
                 </div>
               )}
+
+              <div className="charsel-portrait">
+                {imgFailed[card.gender] ? (
+                  <div className="charsel-portrait__placeholder">⚔</div>
+                ) : (
+                  <img
+                    src={card.portrait}
+                    alt={card.label}
+                    draggable="false"
+                    onError={() => handleImgError(card.gender)}
+                  />
+                )}
+                <div className="charsel-portrait__label">{card.label}</div>
+              </div>
             </div>
           )
         })}

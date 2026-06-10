@@ -69,9 +69,9 @@ export default class TaskmasterScene extends Phaser.Scene {
       g.fillStyle(0x08060e, 1); g.fillRect(0, 0, W, H)
     }
 
-    // ── Floor ────────────────────────────────────────────────────────────────
-    const floorTopY = H - FLOOR_H
-    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H * 2, 0, 0)
+    // ── Floor (bg visual floor at ~88% of H) ─────────────────────────────────
+    const floorTopY = Math.round(H * 0.88)
+    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ export default class TaskmasterScene extends Phaser.Scene {
     this._buildTaskmaster(W, H, floorTopY)
 
     // ── Clipboard stand (interactable zone) ──────────────────────────────────
-    const clipX = Math.round(W * 0.52)
+    const clipX = Math.round(W * 0.45)
     this._buildClipboardStand(clipX, floorTopY)
 
     // ── Dialog HUD ────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export default class TaskmasterScene extends Phaser.Scene {
 
   _buildTaskmaster(W, H, floorTopY) {
     const x  = Math.round(W * 0.72)
-    const ph = 160
+    const ph = 280
     if (this.textures.exists('tm_taskmaster')) {
       const tex  = this.textures.get('tm_taskmaster')
       const srcH = tex.getSourceImage().height
@@ -121,6 +121,7 @@ export default class TaskmasterScene extends Phaser.Scene {
       const rw   = Math.round(srcW * (ph / srcH))
       this._mastSprite = this.add.image(x, floorTopY, 'tm_taskmaster')
         .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(5)
+      try { this.textures.get('tm_taskmaster').setFilter(Phaser.Textures.FilterMode.LINEAR) } catch {}
     } else {
       const g = this.add.graphics().setDepth(5)
       g.fillStyle(0x663322, 0.85)
@@ -230,15 +231,17 @@ export default class TaskmasterScene extends Phaser.Scene {
 
   _startIntroDialog() {
     this._showDialog([
-      'Du. Steh gerade.',
-      'Ich bin Taskmaster. Du bist hier in meinem Bereich.',
-      'Und hier gibt es Regeln. Pflichtaufgaben. Tägliche Tasks.',
-      'Aufgabe 1: Spring 3 Mal.',
+      '[knallt die Peitsche auf den Boden]  STILLGESTANDEN.',
+      'Ich bin Taskmaster. Und du... bist in meinem Revier.',
+      'Hier gibt es Regeln. Pflichten. Aufgaben.',
+      '[schlägt das Clipboard auf]  Ich habe hier DREI Aufgaben für dich.',
+      'Aufgabe 1: Spring 3 Mal. [lacht]  Unmöglich für jemanden wie dich.',
       'Aufgabe 2: Lauf 3 Mal von einer Seite zur anderen.',
-      'Aufgabe 3: Geh zum Clipboard und erledige die Aufgaben.',
-      'Diese Aufgaben sind unmöglich zu scheitern.',
-      'Los.',
-    ], () => { /* Tasks now active */ })
+      '            Viel zu anstrengend. Du wirst zusammenbrechen.',
+      'Aufgabe 3: Das Clipboard. Vollständig ausfüllen.',
+      '            Diese Aufgaben wurden so konzipiert, dass sie NICHT zu lösen sind.',
+      '[verschränkt die Arme]  Fang an. Du wirst scheitern.',
+    ], () => { /* tasks now active */ })
   }
 
   _onJumpKey() {
@@ -273,17 +276,28 @@ export default class TaskmasterScene extends Phaser.Scene {
   _showVictory() {
     const W = this._W
     const H = this._H
+    const isFemale = GameState.gender === 'female'
+    const texKey = isFemale && this.textures.exists('tm_victory_f') ? 'tm_victory_f' : 'tm_victory'
 
-    if (this.textures.exists('tm_victory')) {
-      const img = this.add.image(W / 2, H / 2, 'tm_victory')
+    if (this.textures.exists(texKey)) {
+      const img = this.add.image(W / 2, H / 2, texKey)
         .setDisplaySize(W, H).setDepth(70).setAlpha(0)
       this.tweens.add({ targets: img, alpha: 1, duration: 500 })
 
-      this.time.delayedCall(5000, () => {
-        this.tweens.add({ targets: img, alpha: 0, duration: 400, onComplete: () => {
-          try { img.destroy() } catch {}
-          this._taskMasterDeathRattle()
-        }})
+      // E to advance past the victory screen
+      this.time.delayedCall(600, () => {
+        this._showDialog([
+          'Was... DAS KANN NICHT SEIN.',
+          'Diese Aufgaben... sollten UNMÖGLICH sein!',
+          '[knallt die Peitsche]  Wer hat dir das beigebracht?!',
+          'ICH... ICH WERDE—',
+          '[explodiert in einem schrillen Aufschrei]',
+        ], () => {
+          this.tweens.add({ targets: img, alpha: 0, duration: 400, onComplete: () => {
+            try { img.destroy() } catch {}
+            this._taskMasterDeathRattle()
+          }})
+        }, 'Taskmaster')
       })
     } else {
       this._taskMasterDeathRattle()
@@ -291,27 +305,18 @@ export default class TaskmasterScene extends Phaser.Scene {
   }
 
   _taskMasterDeathRattle() {
-    this._showDialog([
-      'Was... DAS KANN NICHT SEIN.',
-      'Diese Aufgaben... sollten unmöglich sein!',
-      'ICH... ICH...',
-      '[explodiert in einem schrillen Aufschrei]',
-    ], () => {
-      // Fade out Taskmaster
-      const targets = [this._mastSprite].filter(Boolean)
-      if (targets.length) this.tweens.add({ targets, alpha: 0, duration: 600 })
+    // Fade out Taskmaster
+    const targets = [this._mastSprite].filter(Boolean)
+    if (targets.length) this.tweens.add({ targets, alpha: 0, duration: 600 })
 
-      this._transitioning = true
-      this.cameras.main.fadeOut(700, 0, 0, 0)
-      this.time.delayedCall(760, () => this.scene.start('FomoWidowScene'))
-    })
+    this._transitioning = true
+    this.cameras.main.fadeOut(700, 0, 0, 0)
+    this.time.delayedCall(760, () => this.scene.start('FomoWidowScene'))
   }
 
   update() {
     if (!this._player || this._transitioning) return
     if (this._dialogVisible) { this._player.freeze(); return }
-
-    this._nearClipboard = false
 
     try { this._player.update() } catch {}
 
@@ -321,30 +326,27 @@ export default class TaskmasterScene extends Phaser.Scene {
       if (px < this._W * RUN_EDGE_PCT) {
         if (this._lastSide !== 'left') {
           this._lastSide = 'left'
-          if (this._runCount < RUN_GOAL) {
-            this._runCount++
-            this._updateTaskHUD()
-            this._checkAllDone()
-          }
+          if (this._runCount < RUN_GOAL) { this._runCount++; this._updateTaskHUD(); this._checkAllDone() }
         }
       } else if (px > this._W * (1 - RUN_EDGE_PCT)) {
         if (this._lastSide !== 'right') {
           this._lastSide = 'right'
-          if (this._runCount < RUN_GOAL) {
-            this._runCount++
-            this._updateTaskHUD()
-            this._checkAllDone()
-          }
+          if (this._runCount < RUN_GOAL) { this._runCount++; this._updateTaskHUD(); this._checkAllDone() }
         }
       }
     }
 
-    // E near clipboard
-    if (this._nearClipboard && !this._clipDone && !this._tasksComplete) {
-      const eJust = Phaser.Input.Keyboard.JustDown(
-        this.input.keyboard.addKey('E')
-      )
-      if (eJust) this._openClipboard()
+    // E near clipboard — live proximity check (no overlap flag)
+    if (!this._clipDone && !this._tasksComplete && this._clipboardZone) {
+      const px = this._player.sprite.x
+      const py = this._player.sprite.y
+      const cz = this._clipboardZone
+      const dx = Math.abs(px - cz.x)
+      const dy = Math.abs(py - cz.y)
+      if (dx < 80 && dy < 100) {
+        const eJust = Phaser.Input.Keyboard.JustDown(this.input.keyboard.addKey('E'))
+        if (eJust) this._openClipboard()
+      }
     }
   }
 

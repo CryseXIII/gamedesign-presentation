@@ -139,7 +139,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._buildExitSign(W, H)
 
     // ── Player ────────────────────────────────────────────────────────────
-    this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET - 12)
+    this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET)
     this.physics.add.collider(this._player.sprite, floorRect)
     this.physics.add.collider(this._player.sprite, safetyFloor)
     this.physics.add.collider(this._player.sprite, this._fireWall)

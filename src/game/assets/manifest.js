@@ -484,7 +484,15 @@ export const MANIFEST = {
     key:    'wq_victory',
     path:   '/assets/scenes/wq/victory.jpg',
     status: 'loaded',
-    note:   'Scene 4 — Whale Queen victory screen (refused payment), 1023×576',
+    note:   'Scene 4 — WQ victory (refused), male player, 1023×576',
+  },
+  wq_victory_f: {
+    id:     'wq_victory_f',
+    type:   'image',
+    key:    'wq_victory_f',
+    path:   '/assets/scenes/wq/victory_f.jpg',
+    status: 'loaded',
+    note:   'Scene 4 — WQ victory (refused), female player, 1023×576',
   },
   wq_defeat: {
     id:     'wq_defeat',
@@ -492,7 +500,15 @@ export const MANIFEST = {
     key:    'wq_defeat',
     path:   '/assets/scenes/wq/defeat.jpg',
     status: 'loaded',
-    note:   'Scene 4 — Whale Queen defeat screen (paid 5000 diamonds), 1023×576',
+    note:   'Scene 4 — WQ defeat (paid), male player, 1023×576',
+  },
+  wq_defeat_f: {
+    id:     'wq_defeat_f',
+    type:   'image',
+    key:    'wq_defeat_f',
+    path:   '/assets/scenes/wq/defeat_f.jpg',
+    status: 'loaded',
+    note:   'Scene 4 — WQ defeat (paid), female player, 1023×576',
   },
 
   // ── TaskmasterScene assets (Scene 5) ──────────────────────────────────────
@@ -518,7 +534,15 @@ export const MANIFEST = {
     key:    'tm_victory',
     path:   '/assets/scenes/tm/victory.jpg',
     status: 'loaded',
-    note:   'Scene 5 — Taskmaster victory screen, 1023×576',
+    note:   'Scene 5 — Taskmaster victory (male), 1023×576',
+  },
+  tm_victory_f: {
+    id:     'tm_victory_f',
+    type:   'image',
+    key:    'tm_victory_f',
+    path:   '/assets/scenes/tm/victory_f.jpg',
+    status: 'loaded',
+    note:   'Scene 5 — Taskmaster victory (female), 1023×576',
   },
 
   // ── FomoWidowScene assets (Scene 6) ────────────────────────────────────────
@@ -538,7 +562,31 @@ export const MANIFEST = {
     key:    'credits_endscreen',
     path:   '/assets/scenes/credits/endscreen.jpg',
     status: 'loaded',
-    note:   'Credits end screen shown after scroll completes, 1023×576',
+    note:   'Credits end screen — male + WQ victory (default)',
+  },
+  credits_endscreen_f_wqv: {
+    id:     'credits_endscreen_f_wqv',
+    type:   'image',
+    key:    'credits_endscreen_f_wqv',
+    path:   '/assets/scenes/credits/endscreen_f_wqv.jpg',
+    status: 'loaded',
+    note:   'Credits end screen — female + WQ victory',
+  },
+  credits_endscreen_f_wqd: {
+    id:     'credits_endscreen_f_wqd',
+    type:   'image',
+    key:    'credits_endscreen_f_wqd',
+    path:   '/assets/scenes/credits/endscreen_f_wqd.jpg',
+    status: 'loaded',
+    note:   'Credits end screen — female + WQ defeat',
+  },
+  credits_endscreen_m_wqd: {
+    id:     'credits_endscreen_m_wqd',
+    type:   'image',
+    key:    'credits_endscreen_m_wqd',
+    path:   '/assets/scenes/credits/endscreen_m_wqd.jpg',
+    status: 'loaded',
+    note:   'Credits end screen — male + WQ defeat',
   },
 
 }

@@ -33,22 +33,24 @@ const MAX_DIAMOND_RANGE = 1400
 // Video embed URL  (20:40 = 1240 s)
 const VIDEO_URL = 'https://www.youtube.com/embed/OK4koZJcook?autoplay=1&start=1240'
 
-// Picture-frame position/size as fractions of canvas — matches ornate frame in bg_castle
+// Picture-frame: ornate frame in bg_castle, tuned for 1280×720 canvas
 const FRAME_CX_FRAC = 0.500
-const FRAME_CY_FRAC = 0.540
-const FRAME_IW_FRAC = 0.230
-const FRAME_IH_FRAC = 0.350
+const FRAME_CY_FRAC = 0.430
+const FRAME_IW_FRAC = 0.195
+const FRAME_IH_FRAC = 0.290
 
-// Platform definitions: xFrac = centre X / W,  yOffBot = px above floor top
-// Positions tuned to match doorway openings in bg_castle.png
+// Platform positions tuned for bg_castle.png displayed at 1280×720
+// Castle visual floor ≈ H*0.86.  Portals at ~50% and ~68% of H from top.
+const PGS_FLOOR_TOP_FRAC = 0.86   // castle's walkable surface as fraction of H
+
 const PLAT_DEFS = [
-  { id: 'oben-links',   xFrac: 0.22, yOffBot: 298, label: 'I'   },
-  { id: 'oben-rechts',  xFrac: 0.79, yOffBot: 298, label: 'II'  },
-  { id: 'unten-links',  xFrac: 0.22, yOffBot: 118, label: 'III' },
-  { id: 'unten-rechts', xFrac: 0.79, yOffBot: 118, label: 'IV'  },
+  { id: 'oben-links',   xFrac: 0.165, yFrac: 0.46, label: 'I'   },
+  { id: 'oben-rechts',  xFrac: 0.836, yFrac: 0.46, label: 'II'  },
+  { id: 'unten-links',  xFrac: 0.165, yFrac: 0.63, label: 'III' },
+  { id: 'unten-rechts', xFrac: 0.836, yFrac: 0.63, label: 'IV'  },
 ]
-const PLAT_W_FRAC = 0.10   // platform width as fraction of W
-const PLAT_H_PX   = 20     // physics body height
+const PLAT_W_FRAC = 0.10
+const PLAT_H_PX   = 20
 
 // ── Scene ──────────────────────────────────────────────────────────────────────
 export default class PlayerGuidanceScene extends Phaser.Scene {
@@ -129,35 +131,31 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       .setDisplaySize(W, H)
       .setDepth(-10)
 
-    // ── Floor (static, invisible) ───────────────────────────────────────────
-    // Height = FLOOR_H so physics top lands exactly at floorTopY = H − FLOOR_H
-    const floorY = H - FLOOR_H / 2
-    const floor  = this.add.rectangle(W / 2, floorY, W, FLOOR_H, 0x000000, 0)
+    // ── Floor (castle visual floor at PGS_FLOOR_TOP_FRAC of H) ────────────────
+    const floorTopY = Math.round(H * PGS_FLOOR_TOP_FRAC)
+    const floorCY   = floorTopY + FLOOR_H / 2
+    const floor     = this.add.rectangle(W / 2, floorCY, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(floor, true)
 
-    // ── Boundary walls (invisible) — stop player leaving play area ──────────
+    // ── Boundary walls ──────────────────────────────────────────────────────
     const wallH = H + 400
     const wallL = this.add.rectangle(Math.round(W * 0.11), H / 2, 12, wallH, 0x000000, 0)
     const wallR = this.add.rectangle(Math.round(W * 0.89), H / 2, 12, wallH, 0x000000, 0)
     this.physics.add.existing(wallL, true)
     this.physics.add.existing(wallR, true)
 
-    // ── Platforms: invisible physics, door arch visuals ────────────────────
-    const platW  = Math.round(W * PLAT_W_FRAC)
-    const floorTopY = H - FLOOR_H
+    // ── Platforms (yFrac from top) ─────────────────────────────────────────
+    const platW = Math.round(W * PLAT_W_FRAC)
 
     PLAT_DEFS.forEach((def, idx) => {
       const px   = Math.round(W * def.xFrac)
-      const topY = floorTopY - def.yOffBot
+      const topY = Math.round(H * def.yFrac)
       const midY = topY + PLAT_H_PX / 2
 
-      // Invisible platform slab
-      const slab = this.add.rectangle(px, midY, platW, PLAT_H_PX, 0x777788, 0)
+      const slab = this.add.rectangle(px, midY, platW, PLAT_H_PX, 0x000000, 0)
       this.physics.add.existing(slab, true)
 
-      // Door arch visual on platform surface
       this._drawDoorArch(px, topY, platW, idx)
-
       this._platforms.push({ x: px, topY, w: platW, slab, body: slab.body })
     })
 
@@ -298,10 +296,9 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     const def  = PLAT_DEFS[this._correctDoor]
     const px   = Math.round(this._W * def.xFrac)
-    const floorTopY = this._H - FLOOR_H
-    const topY = floorTopY - def.yOffBot
+    const topY = Math.round(this._H * def.yFrac)   // platform surface Y from top
 
-    // Torch beside the correct door (on the platform)
+    // Torch beside the correct door
     const torchX = px + Math.round(this._W * PLAT_W_FRAC / 2) + 18
     this._drawTorch(torchX, topY - 4)
 
@@ -310,7 +307,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       const wrongs = PLAT_DEFS.filter((_, i) => i !== this._correctDoor)
       const wd  = Phaser.Utils.Array.GetRandom(wrongs)
       const wdx = Math.round(this._W * wd.xFrac)
-      const wdY = floorTopY - wd.yOffBot  // on the platform surface
+      const wdY = Math.round(this._H * wd.yFrac)
 
       const g = this.add.graphics().setDepth(5)
       // Paint spill shape — ellipse + drips
@@ -327,7 +324,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       const wrongs2 = PLAT_DEFS.filter((_, i) => i !== this._correctDoor)
       wrongs2.forEach(ad => {
         const adx  = Math.round(this._W * ad.xFrac)
-        const adY  = floorTopY - ad.yOffBot - 50   // above the door on the platform
+        const adY  = Math.round(this._H * ad.yFrac) - 50   // above the door
 
         const ag = this.add.graphics().setDepth(6)
         ag.fillStyle(0xffffff, 0.90)
@@ -472,17 +469,18 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
   // ── Red Dot Waifu sprite ───────────────────────────────────────────────────
   _buildWaifu(W, H) {
+    const floorTopY = Math.round(H * PGS_FLOOR_TOP_FRAC)
     const x  = Math.round(W * 0.38)
-    const y  = H - FLOOR_H
-
-    // Player-scale render: ≈160px tall, preserve aspect ratio of 640×640 source
-    const ph = 160
-    const pw = 160   // 1:1 source
+    const y  = floorTopY
+    const ph = 280
+    const pw = 280   // source is 1:1
 
     this._waifuSprite = this.add.image(x, y, 'pgs_red_dot_waifu')
       .setOrigin(0.5, 1)
       .setDisplaySize(pw, ph)
       .setDepth(6)
+    // Bilinear for the photo-style portrait
+    try { this.textures.get('pgs_red_dot_waifu').setFilter(Phaser.Textures.FilterMode.LINEAR) } catch {}
 
     this._waifuLabel = this.add.text(x, y - ph - 4, 'RED DOT WAIFU', {
       fontFamily: '"Cinzel", Georgia, serif',
@@ -637,8 +635,8 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
   _respawnPlayer() {
     if (!this._player?.sprite) return
-    const floorTopY = this._H - FLOOR_H
-    this._player.sprite.setPosition(Math.round(this._W * 0.12), floorTopY - SPAWN_Y_OFFSET)
+    const floorTopY = Math.round(this._H * PGS_FLOOR_TOP_FRAC)
+    this._player.sprite.setPosition(Math.round(this._W * 0.14), floorTopY - SPAWN_Y_OFFSET)
     this._player.sprite.setVelocity(0, 0)
   }
 
@@ -831,7 +829,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     }
 
     // Hard floor clamp (safety)
-    const maxY = this._H - FLOOR_H - SPAWN_Y_OFFSET
+    const maxY = Math.round(this._H * PGS_FLOOR_TOP_FRAC) - SPAWN_Y_OFFSET
     if (this._player.sprite.y > maxY + 8) {
       this._player.sprite.setY(maxY)
       this._player.sprite.setVelocityY(0)
