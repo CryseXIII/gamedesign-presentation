@@ -150,6 +150,15 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this.cameras.main.fadeIn(800, 0, 0, 0)
 
     this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
+    this._kHandler = () => {
+      if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
+      const px = this._player?.x ?? 0
+      const nearBarrier = Math.abs(px - this._timeBarrier.x) < 190
+      if (nearBarrier) {
+        this._triggerTimeBarrierBurst()
+      }
+    }
+    this.input.keyboard.on('keydown-K', this._kHandler)
 
     // ── Encounter decision listener ───────────────────────────────────────
     this._decisionHandler = (e) => this._onEncounterDecision(e.detail)
@@ -248,9 +257,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
     this._succubusBlocker = this.add.rectangle(
-      x - 120,
+      x - 42,
       y - Math.round(spriteH * 0.48),
-      90,
+      62,
       Math.round(spriteH * 0.9),
       0x000000,
     )
@@ -759,5 +768,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._rainEmitter   = null
     this._portraits     = []
     if (this._lightningTimer) this._lightningTimer.remove()
+    if (this._kHandler) this.input.keyboard.off('keydown-K', this._kHandler)
   }
 }
