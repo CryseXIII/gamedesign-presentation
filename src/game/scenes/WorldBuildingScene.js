@@ -246,7 +246,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
-    this._succubusBlocker = this.add.rectangle(x + 12, y - Math.round(spriteH * 0.46), spriteW + 220, spriteH + 90, 0x000000)
+    this._succubusBlocker = this.add.rectangle(x, y - Math.round(spriteH * 0.48), spriteW + 28, Math.round(spriteH * 0.9), 0x000000)
       .setAlpha(0)
     this.physics.add.existing(this._succubusBlocker, true)
 
