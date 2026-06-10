@@ -325,7 +325,7 @@ export default class PlayerController {
     if (!this.sprite || !this.sprite.body) return
 
     const body      = this.sprite.body
-    const onGround  = body.blocked.down
+    const onGround  = !!(body.blocked.down || body.touching.down || (typeof body.onFloor === 'function' && body.onFloor()))
     const now       = this.scene.time.now
 
     if (this._hurtUntil && now >= this._hurtUntil) {

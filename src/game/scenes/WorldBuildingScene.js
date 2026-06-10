@@ -132,6 +132,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._buildTimeBarrier(W, H)
     this._buildZone2(W, H)
     this._buildStormOverlay(W, H)
+    this._buildExitSign(W, H)
 
     // ── Player ────────────────────────────────────────────────────────────
     this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET - 12)
@@ -247,9 +248,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
     this._succubusBlocker = this.add.rectangle(
-      x + Math.round(spriteW * 0.58),
+      x - 120,
       y - Math.round(spriteH * 0.48),
-      110,
+      90,
       Math.round(spriteH * 0.9),
       0x000000,
     )
@@ -261,9 +262,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _buildTimeBarrier(W, H) {
     const width = 54
-    const height = Math.min(180, Math.round(H * 0.34))
+    const height = H + 60
     const x = W * WIDOW_X_FACTOR + 140
-    const y = H - FLOOR_H - height / 2 - 8
+    const y = H / 2 - 4
 
     const body = this.add.rectangle(x, y, width, height, 0x0d285f)
       .setDepth(4)
@@ -275,7 +276,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       .setDepth(4)
       .setVisible(false)
 
-    const label = this.add.text(x, y - height / 2 - 28, '01:00', {
+    const label = this.add.text(x, Math.max(28, y - height / 2 + 34), '01:00', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '18px',
       color: '#ffffff',
@@ -302,6 +303,36 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     this._syncTimeBarrierActive()
     this._setTimeBarrierTimer(60)
+  }
+
+  _buildExitSign(W, H) {
+    const x = this._roomWidth - 130
+    const y = H - FLOOR_H - 90
+
+    const shield = this.add.graphics().setDepth(8)
+    shield.fillStyle(0x1b2c42, 1)
+    shield.fillRoundedRect(x - 42, y - 50, 84, 108, 16)
+    shield.lineStyle(4, 0xd9f0ff, 0.95)
+    shield.strokeRoundedRect(x - 42, y - 50, 84, 108, 16)
+    shield.fillStyle(0x8bd4ff, 1)
+    shield.fillTriangle(x - 10, y - 10, x + 18, y, x - 10, y + 10)
+    shield.fillTriangle(x + 18, y, x - 2, y - 16, x - 2, y + 16)
+
+    this.add.text(x, y + 72, 'WEITER', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '16px',
+      color: '#d9f0ff',
+      stroke: '#08131f',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(9)
+
+    this.add.text(x, y - 72, '▶', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '22px',
+      color: '#8bd4ff',
+      stroke: '#08131f',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(9)
   }
 
   _syncTimeBarrierActive() {
@@ -703,7 +734,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._lastPlayerState = ps
 
     // ── Exit ────────────────────────────────────────────────────────────────
-    if (px >= this._roomWidth - 180) {
+    if (px >= this._roomWidth - 40) {
       this._transitioning = true
       this.cameras.main.fadeOut(700, 0, 0, 0)
       this.time.delayedCall(760, () => {
