@@ -112,6 +112,8 @@ export default class WorldBuildingScene extends Phaser.Scene {
     // ── World & camera ────────────────────────────────────────────────────
     this.physics.world.setBounds(0, 0, RW, H + 600)
     this.cameras.main.setBounds(0, 0, RW, H)
+    this.cameras.main.setZoom(1.08)
+    this.cameras.main.setRoundPixels(true)
 
     // ── Backgrounds ───────────────────────────────────────────────────────
     this._buildBackgrounds(W, H, RW)
@@ -138,6 +140,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       this.physics.add.collider(this._player.sprite, this._timeBarrier.body)
     }
     this.cameras.main.startFollow(this._player.sprite, true, 0.08, 0.08)
+    this.cameras.main.setDeadzone(Math.round(W * 0.22), Math.round(H * 0.24))
     this.cameras.main.fadeIn(800, 0, 0, 0)
 
     this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
@@ -251,23 +254,18 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _buildSpeedupSuccubus(W, H) {
     const x = this._introBackdropWidth ? Math.max(0, this._introBackdropWidth - 240) : W * 2.6
-    const y = H - FLOOR_H - 118
+    const y = H - FLOOR_H
+    const spriteSize = 240
     this._succubusX = x
     this._succubusY = y
 
-    const glow = this.add.circle(x, y - 12, 86, 0x5cbcff, 0.14).setDepth(2)
-    const body = this.add.graphics().setDepth(3)
-    body.fillStyle(0x173d6a, 0.98)
-    body.fillTriangle(x - 26, y + 30, x + 26, y + 30, x, y - 6)
-    body.fillStyle(0x68c8ff, 0.9)
-    body.fillTriangle(x - 16, y - 26, x + 16, y - 26, x, y + 2)
-    body.fillStyle(0x8de1ff, 0.92)
-    body.fillCircle(x, y - 46, 16)
-    body.fillStyle(0xbbeeff, 0.35)
-    body.fillTriangle(x - 48, y - 12, x - 10, y - 30, x - 16, y + 18)
-    body.fillTriangle(x + 48, y - 12, x + 10, y - 30, x + 16, y + 18)
+    const glow = this.add.circle(x, y - 120, 98, 0x5cbcff, 0.14).setDepth(2)
+    const body = this.add.image(x, y, 'wb_speedup_succubus')
+      .setOrigin(0.5, 1)
+      .setDisplaySize(spriteSize, spriteSize)
+      .setDepth(3)
 
-    this._succubusName = this.add.text(x, y - 108, 'SPEEDUP SUCCUBUS', {
+    this._succubusName = this.add.text(x, y - spriteSize - 18, 'SPEEDUP SUCCUBUS', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '15px',
       color: '#b8e9ff',
@@ -275,7 +273,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0.78)
 
-    this._succubusHint = this.add.text(x, y + 72, '[ E ]  REDEN', {
+    this._succubusHint = this.add.text(x, y - 42, '[ E ]  REDEN', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '16px',
       color: '#d4f4ff',
@@ -713,7 +711,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       this._rainEmitter.setActive(rainActive).setVisible(rainActive)
       // Follow camera so rain always covers the viewport
       const cam = this.cameras.main
-      this._rainEmitter.setPosition(cam.scrollX, -30)
+      this._rainEmitter.setPosition(cam.scrollX, cam.scrollY - 30)
     }
 
     // Lightning unlocks after 50% stormProgress

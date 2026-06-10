@@ -101,6 +101,14 @@ export const MANIFEST = {
     status: 'loaded',
     note:   'Zone 1 — wide intro backdrop, 2172×724, three-screen scroll space',
   },
+  wb_speedup_succubus: {
+    id:     'wb_speedup_succubus',
+    type:   'image',
+    key:    'wb_speedup_succubus',
+    path:   '/assets/scenes/wb/wb_speedup_succubus.png',
+    status: 'loaded',
+    note:   'Zone 1 — speedup waifu / succubus encounter art, 800×800, grounded on the intro floor',
+  },
   wb_bg_steppe: {
     id:     'wb_bg_steppe',
     type:   'image',
