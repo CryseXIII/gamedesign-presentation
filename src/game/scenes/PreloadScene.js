@@ -218,7 +218,6 @@ function buildPlaceholderPlayerTexture(scene, textureKey, state, def) {
   }
 
   const canvasKey     = `${textureKey}_canvas`
-  scene.textures.addCanvas(canvasKey, canvas)
   scene.textures.addSpriteSheet(textureKey, canvas, {
     frameWidth:  PLAYER_FRAME_SIZE,
     frameHeight: PLAYER_FRAME_SIZE,

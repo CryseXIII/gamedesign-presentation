@@ -527,7 +527,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _updateSpeedupSection(playerX) {
     if (!this._succubusDone && this._succubusHint) {
-      const nearSuccubus = Math.abs(playerX - this._succubusX) < 140
+      const nearSuccubus = Math.abs(playerX - this._succubusX) < 320
       this._showSuccubusPrompt(nearSuccubus && !this._encounterActive)
       if (nearSuccubus && !this._encounterActive && this._player.interactJustDown) {
         this._encounterActive = true
