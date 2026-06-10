@@ -362,6 +362,7 @@ export default class PlayerController {
 
     const attackJust = Phaser.Input.Keyboard.JustDown(this._jKey)
     const jumpInputJust = !attackJust && jumpJust
+    const moveSpeed = GameState.speedBoostUnlocked ? MOVE_SPEED * 1.25 : MOVE_SPEED
 
     // ── Flip sprite ──────────────────────────────────────────────────────────
     if (!this._isAttacking()) {
@@ -371,8 +372,8 @@ export default class PlayerController {
 
     // ── Horizontal velocity ──────────────────────────────────────────────────
     if (!this._isAttacking()) {
-      if      (goLeft)  this.sprite.setVelocityX(-MOVE_SPEED)
-      else if (goRight) this.sprite.setVelocityX( MOVE_SPEED)
+      if      (goLeft)  this.sprite.setVelocityX(-moveSpeed)
+      else if (goRight) this.sprite.setVelocityX( moveSpeed)
       else              this.sprite.setVelocityX(0)
     } else {
       // Dampen momentum during grounded attacks; let air physics run free

@@ -124,6 +124,11 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._floor = floorRect
     this.add.rectangle(RW / 2, H - FLOOR_H, RW, 2, 0x38260e)
 
+    // Invisible safety floor below the visible strip so the intro cannot tunnel through.
+    const safetyFloor = this.add.rectangle(RW / 2, H + 30, RW, 220, 0x000000).setAlpha(0)
+    this.physics.add.existing(safetyFloor, true)
+    this._safetyFloor = safetyFloor
+
     // ── Zones ─────────────────────────────────────────────────────────────
     this._buildZone1(W, H)
     this._buildSpeedupSuccubus(W, H)
@@ -133,8 +138,9 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._buildWidowZone(W, H)
 
     // ── Player ────────────────────────────────────────────────────────────
-    this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET)
+    this._player = new PlayerController(this, 200, H - FLOOR_H - SPAWN_Y_OFFSET - 12)
     this.physics.add.collider(this._player.sprite, floorRect)
+    this.physics.add.collider(this._player.sprite, safetyFloor)
     this.physics.add.collider(this._player.sprite, this._fireWall)
     if (this._timeBarrier?.body) {
       this.physics.add.collider(this._player.sprite, this._timeBarrier.body)
