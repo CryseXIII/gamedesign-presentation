@@ -69,12 +69,12 @@ export default function CharacterSelect({ onStart }) {
     {
       gender: 'male',
       label:  'Männlich',
-      portrait: '/assets/charsel_portrait_male.jpg',
+      portrait: '/assets/charsel_portrait_male.png',
     },
     {
       gender: 'female',
       label:  'Weiblich',
-      portrait: '/assets/charsel_portrait_female.jpg',
+      portrait: '/assets/charsel_portrait_female.png',
     },
   ]
 

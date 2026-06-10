@@ -69,8 +69,8 @@ export default class WhaleQueenScene extends Phaser.Scene {
     }
 
     // ── Floor (bg image visual floor at ~88% of H) ────────────────────────────
-    const floorTopY = Math.round(H * 0.88)
-    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
+    const floorTopY = H - FLOOR_H
+    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────
@@ -135,14 +135,14 @@ export default class WhaleQueenScene extends Phaser.Scene {
   }
 
   _buildDialogHUD(W, H) {
-    const boxH = 90
+    const boxH = 130
     const boxY = H - boxH / 2 - 4
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x030616)
       .setScrollFactor(0).setAlpha(0).setDepth(80).setStrokeStyle(2, 0x2244aa)
-    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
+    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 10, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '16px', color: '#aaddff',
     }).setScrollFactor(0).setAlpha(0).setDepth(81)
-    this._dialogText = this.add.text(18, boxY - boxH / 2 + 28, '', {
+    this._dialogText = this.add.text(18, boxY - boxH / 2 + 40, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#c8e8ff',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(81)

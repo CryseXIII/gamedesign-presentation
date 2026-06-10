@@ -518,7 +518,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x08040f)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0xcc2244)
 
-    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
+    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 10, '', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize:   '18px',
       color:      '#ff8899',

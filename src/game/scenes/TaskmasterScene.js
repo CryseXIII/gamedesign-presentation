@@ -78,8 +78,8 @@ export default class TaskmasterScene extends Phaser.Scene {
     }
 
     // ── Floor (bg visual floor at ~88% of H) ─────────────────────────────────
-    const floorTopY = Math.round(H * 0.88)
-    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0, 0)
+    const floorTopY = H - FLOOR_H
+    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H, 0, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────
@@ -169,14 +169,14 @@ export default class TaskmasterScene extends Phaser.Scene {
   }
 
   _buildDialogHUD(W, H) {
-    const boxH = 90
+    const boxH = 130
     const boxY = H - boxH / 2 - 4
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x07050a)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x8b4a22)
-    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
+    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 10, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#ffbb88',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
-    this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
+    this._dialogText = this.add.text(18, boxY - boxH / 2 + 40, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#ffe0c0',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)

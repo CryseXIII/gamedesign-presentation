@@ -79,17 +79,17 @@ export const MANIFEST = {
     id:     'charsel_portrait_male',
     type:   'image',
     key:    null,
-    path:   '/assets/charsel_portrait_male.jpg',
+    path:   '/assets/charsel_portrait_male.png',
     status: 'loaded',
-    note:   'CharacterSelect card — male warrior portrait, 621×900 JPEG',
+    note:   'CharacterSelect card — male portrait, green-keyed transparent PNG',
   },
   charsel_portrait_female: {
     id:     'charsel_portrait_female',
     type:   'image',
     key:    null,
-    path:   '/assets/charsel_portrait_female.jpg',
+    path:   '/assets/charsel_portrait_female.png',
     status: 'loaded',
-    note:   'CharacterSelect card — female warrior portrait, 675×900 JPEG',
+    note:   'CharacterSelect card — female portrait, green-keyed transparent PNG',
   },
 
   // ── WorldBuildingScene (Scene 1) ────────────────────────────────────────────

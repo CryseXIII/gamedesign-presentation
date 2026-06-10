@@ -131,19 +131,18 @@ export default class BannerSirenScene extends Phaser.Scene {
       vg.fillRect(W - 18 + i * 3, 0, 18 - i * 3, totalH)
     }
 
-    // ── Hole cover: full black overlay hiding the shaft below the top floor ────
-    // Removed only when floor collapses
+    // ── Hole cover: full black overlay hiding the shaft ──────────────────────
     this._holeCover = this.add.graphics().setDepth(15)
     this._holeCover.fillStyle(0x000000, 1)
     this._holeCover.fillRect(0, H - FLOOR_H, W, SHAFT_DEPTH + H * 2)
 
-    // ── Top floor (breakable) ────────────────────────────────────────────────
-    const floorTopY = Math.round(H * 0.88)
+    // ── Top floor (standard position) ────────────────────────────────────────
+    const floorTopY = H - FLOOR_H
     this._buildBreakableFloor(W, floorTopY)
 
-    // ── Bottom landing floor — visual floor of bs_bg_bot at ~88% ────────────
-    const botFloorTopY = botY + Math.round(H * 0.88)
-    const bFloor = this.add.rectangle(W / 2, botFloorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
+    // ── Bottom landing floor (standard: botY + H - FLOOR_H) ────────────────
+    const botFloorTopY = botY + H - FLOOR_H
+    const bFloor = this.add.rectangle(W / 2, botY + H - FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(bFloor, true)
     this._botFloorTopY = botFloorTopY
 
@@ -180,7 +179,8 @@ export default class BannerSirenScene extends Phaser.Scene {
     // ── Camera ───────────────────────────────────────────────────────────────
     this.cameras.main.fadeIn(600, 0, 0, 0)
     this.cameras.main.startFollow(this._player.sprite, true, 0.08, 0.06)
-    this.cameras.main.setFollowOffset(0, 60)
+    // Offset so player appears in lower-center, showing more of the room above
+    this.cameras.main.setFollowOffset(0, 160)
 
     // ── Input ────────────────────────────────────────────────────────────────
     this.input.keyboard.enableGlobalCapture()
@@ -235,14 +235,14 @@ export default class BannerSirenScene extends Phaser.Scene {
 
   // ── Dialog HUD ─────────────────────────────────────────────────────────────
   _buildDialogHUD(W, H) {
-    const boxH = 90
+    const boxH = 130
     const boxY = H - boxH / 2 - 4
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x08040f)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x8833cc)
-    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
+    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 10, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#cc88ff',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
-    this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
+    this._dialogText = this.add.text(18, boxY - boxH / 2 + 40, '', {
       fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#e0c0ff',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
