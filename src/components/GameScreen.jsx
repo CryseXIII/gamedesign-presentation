@@ -14,12 +14,21 @@ const SCENE_LIST = [
   { key: 'FomoWidowScene',      label: 'S6 Fomo' },
   { key: 'GalleryScene',        label: 'Gallery' },
   { key: 'CreditsScene',        label: 'Credits' },
+  { key: '__select__',          label: '← CharSelect' },
 ]
 
 function ScenePicker() {
   const [open, setOpen] = useState(false)
   const current = new URLSearchParams(window.location.search).get('scene') || 'WorldBuildingScene'
   const pick = (key) => {
+    if (key === '__select__') {
+      // Navigate to character select without ?scene= param
+      const u = new URL(window.location.href)
+      u.searchParams.delete('scene')
+      u.hash = '#/select'
+      window.location.href = u.toString()
+      return
+    }
     localStorage.setItem('gameron:debugScene', key)
     const u = new URL(window.location.href)
     u.searchParams.set('scene', key)
@@ -35,7 +44,7 @@ function ScenePicker() {
               style={{
                 cursor: 'pointer',
                 padding: '2px 6px',
-                color: s.key === current ? '#cc88ff' : '#7755aa',
+                color: s.key === current ? '#cc88ff' : s.key === '__select__' ? '#ffcc44' : '#7755aa',
                 background: s.key === current ? '#1e0e30' : 'transparent',
                 borderRadius: 3,
                 marginBottom: 1,

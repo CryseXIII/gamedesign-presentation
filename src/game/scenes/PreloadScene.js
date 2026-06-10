@@ -335,9 +335,24 @@ export default class PreloadScene extends Phaser.Scene {
 
     for (const [state, def] of Object.entries(PLAYER_STATE_DEFS)) {
       const textureKey = getPlayerTextureKey(gender, state)
-      if (this.textures.exists(textureKey)) continue   // run sheet already built; others might exist too
+      if (this.textures.exists(textureKey)) continue
       buildPlaceholderPlayerTexture(this, textureKey, state, def)
     }
+
+    // Apply bilinear filter to all photorealistic scene images
+    // (pixelArt: true sets global NEAREST; scene images need LINEAR)
+    const PHOTO_PREFIXES = ['pgs_', 'bs_bg', 'wq_', 'tm_', 'fw_', 'credits_', 'wb_bg', 'wb_speedup', 'wb_fomo', 'wb_portrait']
+    Object.values(MANIFEST).forEach(a => {
+      if (a.key && a.status === 'loaded' && a.type === 'image') {
+        if (PHOTO_PREFIXES.some(p => a.id.startsWith(p))) {
+          try {
+            if (this.textures.exists(a.key)) {
+              this.textures.get(a.key).setFilter(Phaser.Textures.FilterMode.LINEAR)
+            }
+          } catch {}
+        }
+      }
+    })
 
     const debugScene = getDebugScene()
     this.scene.start(debugScene || 'WorldBuildingScene')

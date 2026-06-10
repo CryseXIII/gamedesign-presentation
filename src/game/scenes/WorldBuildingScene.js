@@ -255,7 +255,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     this._succubusName = this.add.text(x, y - spriteH - 18, 'SPEEDUP SUCCUBUS', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize: '15px',
+      fontSize: '22px',
       color: '#b8e9ff',
       stroke: '#052238',
       strokeThickness: 3,
@@ -300,7 +300,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
     const label = this.add.text(x, H - FLOOR_H - 160, '01:00', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize: '18px',
+      fontSize: '26px',
       color: '#ffffff',
       stroke: '#001328',
       strokeThickness: 3,
@@ -568,7 +568,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
           .setAlpha(0)
         this.add.text(centerX, H / 2 - FLOOR_H, `missing_id:${keyBase}`, {
           fontFamily: '"Cinzel", Georgia, serif',
-          fontSize:   '11px',
+          fontSize:   '18px',
           color:      '#4a3820',
         }).setOrigin(0.5).setDepth(2).setAlpha(0)
       }

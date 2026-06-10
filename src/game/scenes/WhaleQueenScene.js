@@ -40,6 +40,16 @@ export default class WhaleQueenScene extends Phaser.Scene {
 
   init() { this._reset() }
 
+  preload() {
+    const load = (key, path) => { if (!this.textures.exists(key)) this.load.image(key, path) }
+    load('wq_bg',         '/assets/scenes/wq/bg.jpg')
+    load('wq_whale_queen','/assets/scenes/wq/whale_queen.png')
+    load('wq_victory',    '/assets/scenes/wq/victory.jpg')
+    load('wq_victory_f',  '/assets/scenes/wq/victory_f.jpg')
+    load('wq_defeat',     '/assets/scenes/wq/defeat.jpg')
+    load('wq_defeat_f',   '/assets/scenes/wq/defeat_f.jpg')
+  }
+
   create() {
     const W = this.scale.width
     const H = this.scale.height
@@ -117,7 +127,7 @@ export default class WhaleQueenScene extends Phaser.Scene {
     }
     this._queenLabel = this.add.text(x, throneY - ph - 6, 'WHALE QUEEN', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '13px',
+      fontSize:   '20px',
       color:      '#aaddff',
       stroke:     '#001030',
       strokeThickness: 3,
@@ -128,17 +138,17 @@ export default class WhaleQueenScene extends Phaser.Scene {
     const boxH = 90
     const boxY = H - boxH / 2 - 4
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x030616)
-      .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x2244aa)
+      .setScrollFactor(0).setAlpha(0).setDepth(80).setStrokeStyle(2, 0x2244aa)
     this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#aaddff',
-    }).setScrollFactor(0).setAlpha(0).setDepth(61)
-    this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#c8e8ff',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '16px', color: '#aaddff',
+    }).setScrollFactor(0).setAlpha(0).setDepth(81)
+    this._dialogText = this.add.text(18, boxY - boxH / 2 + 28, '', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#c8e8ff',
       wordWrap: { width: W - 36 },
-    }).setScrollFactor(0).setAlpha(0).setDepth(61)
+    }).setScrollFactor(0).setAlpha(0).setDepth(81)
     this._dialogHint = this.add.text(W - 18, H - 10, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#446688',
-    }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '16px', color: '#446688',
+    }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(81)
   }
 
   _showDialog(lines, onComplete, speaker = 'Whale Queen') {
@@ -197,29 +207,28 @@ export default class WhaleQueenScene extends Phaser.Scene {
     const W = this._W
     const H = this._H
 
-    // Choice overlay (Phaser DOM or pure graphics)
-    const panelBg = this.add.rectangle(W / 2, H / 2, 480, 160, 0x030616)
+    const panelBg = this.add.rectangle(W / 2, H / 2, 580, 200, 0x030616)
       .setDepth(65).setStrokeStyle(2, 0x2244aa)
 
-    const titleTxt = this.add.text(W / 2, H / 2 - 56, '— 5.000 DIAMANTEN ZAHLEN? —', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '15px', color: '#aaddff',
+    const titleTxt = this.add.text(W / 2, H / 2 - 70, '— 5.000 DIAMANTEN ZAHLEN? —', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#aaddff',
     }).setOrigin(0.5).setDepth(66)
 
-    // Pay button
-    const payBtn = this.add.text(W / 2 - 110, H / 2, '💎 ZAHLEN', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#ffdd44',
-      backgroundColor: '#1a3060', padding: { x: 18, y: 8 },
+    const payBtn = this.add.text(W / 2 - 130, H / 2 + 4, '[Q]  💎 ZAHLEN', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#ffdd44',
+      backgroundColor: '#1a3060', padding: { x: 18, y: 10 },
     }).setOrigin(0.5).setDepth(66).setInteractive({ useHandCursor: true })
 
-    const refuseBtn = this.add.text(W / 2 + 110, H / 2, '✕ ABLEHNEN', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#ccddff',
-      backgroundColor: '#1a1040', padding: { x: 18, y: 8 },
+    const refuseBtn = this.add.text(W / 2 + 130, H / 2 + 4, '[E]  ✕ ABLEHNEN', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#ccddff',
+      backgroundColor: '#1a1040', padding: { x: 18, y: 10 },
     }).setOrigin(0.5).setDepth(66).setInteractive({ useHandCursor: true })
 
-    const hintTxt = this.add.text(W / 2, H / 2 + 48, '[E] ablehnen   /   Klick', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '10px', color: '#446688',
+    const hintTxt = this.add.text(W / 2, H / 2 + 64, 'Q = Zahlen   •   E = Ablehnen', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#446688',
     }).setOrigin(0.5).setDepth(66)
 
+    let choiceKeyFn = null
     const dismiss = (choice) => {
       try { payBtn.removeAllListeners(); refuseBtn.removeAllListeners() } catch {}
       try { panelBg.destroy(); titleTxt.destroy(); payBtn.destroy(); refuseBtn.destroy(); hintTxt.destroy() } catch {}
@@ -230,8 +239,8 @@ export default class WhaleQueenScene extends Phaser.Scene {
     payBtn.on('pointerdown', () => dismiss('pay'))
     refuseBtn.on('pointerdown', () => dismiss('refuse'))
 
-    let choiceKeyFn = null
     choiceKeyFn = (e) => {
+      if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); dismiss('pay') }
       if (e.key === 'e' || e.key === 'E') { e.preventDefault(); dismiss('refuse') }
     }
     window.addEventListener('keydown', choiceKeyFn, true)
@@ -304,7 +313,7 @@ export default class WhaleQueenScene extends Phaser.Scene {
 
     // Hint
     this.add.text(this._W - 80, this._H - FLOOR_H - 30, '→ WEITER', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '13px', color: '#aaddff',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#aaddff',
       stroke: '#001030', strokeThickness: 2,
     }).setOrigin(0.5, 1).setDepth(10)
   }

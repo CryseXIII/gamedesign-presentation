@@ -70,7 +70,13 @@ export default class BannerSirenScene extends Phaser.Scene {
   }
 
   // ── preload ─────────────────────────────────────────────────────────────────
-  // Assets already loaded by PreloadScene; nothing to do here.
+  preload() {
+    const load = (key, path) => { if (!this.textures.exists(key)) this.load.image(key, path) }
+    load('bs_bg_top',      '/assets/scenes/bs/bg_top.jpg')
+    load('bs_bg_mid',      '/assets/scenes/bs/bg_mid.jpg')
+    load('bs_bg_bot',      '/assets/scenes/bs/bg_bot.jpg')
+    load('bs_banner_siren','/assets/scenes/bs/banner_siren.png')
+  }
 
   // ── create ──────────────────────────────────────────────────────────────────
   create() {
@@ -220,7 +226,7 @@ export default class BannerSirenScene extends Phaser.Scene {
 
     this._sirenLabel = this.add.text(x, floorTopY - ph - 6, 'BANNER SIREN', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '13px',
+      fontSize:   '20px',
       color:      '#cc88ff',
       stroke:     '#200030',
       strokeThickness: 3,
@@ -234,14 +240,14 @@ export default class BannerSirenScene extends Phaser.Scene {
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x08040f)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x8833cc)
     this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#cc88ff',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#cc88ff',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#e0c0ff',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#e0c0ff',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogHint = this.add.text(W - 18, H - 10, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#7744aa',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#7744aa',
     }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
   }
 

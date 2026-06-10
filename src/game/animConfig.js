@@ -10,25 +10,25 @@ export const PLAYER_STATE_DEFS = {
   idle: {
     frameCount: 5,
     frameRate:  8,
-    repeat:    -1,
+    repeat:    -1,   // loop
     color:      0x3f6f7a,
   },
   run: {
     frameCount: 8,
     frameRate: 12,
-    repeat:    -1,
+    repeat:    -1,   // loop
     color:      0xc9a84c,
   },
   jump: {
     frameCount: 2,
-    frameRate: 10,
-    repeat:    -1,
+    frameRate:  8,
+    repeat:     0,   // play once, hold last frame while airborne
     color:      0x6b7ed6,
   },
   double_jump: {
     frameCount: 4,
     frameRate: 12,
-    repeat:     0,
+    repeat:     0,   // play once
     color:      0x9a6be0,
   },
   attack_up: {

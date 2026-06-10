@@ -224,13 +224,18 @@ export default class PlayerController {
   _onAnimComplete(key) {
     switch (key) {
       case this._animKey(S.DOUBLE_JUMP):
-        this._setState(this._isAirborne()
-          ? S.JUMP
-          : this._groundStateForInput(
+        // Only transition if already landed; otherwise stay in jump state visually
+        if (!this._isAirborne()) {
+          this._setState(this._groundStateForInput(
             this._cursors.left.isDown || this._wasd.left.isDown,
             this._cursors.right.isDown || this._wasd.right.isDown,
-          )
-        )
+          ))
+        }
+        // If still airborne: hold last frame — state machine handles landing
+        break
+
+      case this._animKey(S.JUMP):
+        // Jump is repeat:0 — animation played once, holding last frame. Nothing to do here.
         break
 
       case this._animKey(S.ATTACK_UP):

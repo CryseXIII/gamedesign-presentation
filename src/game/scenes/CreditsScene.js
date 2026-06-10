@@ -77,6 +77,14 @@ export default class CreditsScene extends Phaser.Scene {
 
   // preload() removed — 'endcredits' is loaded by PreloadScene
 
+  preload() {
+    const load = (key, path) => { if (!this.textures.exists(key)) this.load.image(key, path) }
+    load('credits_endscreen',       '/assets/scenes/credits/endscreen.jpg')
+    load('credits_endscreen_f_wqv', '/assets/scenes/credits/endscreen_f_wqv.jpg')
+    load('credits_endscreen_f_wqd', '/assets/scenes/credits/endscreen_f_wqd.jpg')
+    load('credits_endscreen_m_wqd', '/assets/scenes/credits/endscreen_m_wqd.jpg')
+  }
+
   create() {
     const W = this.scale.width
     const H = this.scale.height

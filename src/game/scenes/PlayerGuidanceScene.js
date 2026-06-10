@@ -114,6 +114,16 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this._speedBoost = !!GameState.speedBoostUnlocked
   }
 
+  // ── preload ─────────────────────────────────────────────────────────────────
+  preload() {
+    if (!this.textures.exists('pgs_bg_castle'))
+      this.load.image('pgs_bg_castle', '/assets/scenes/pgs/bg_castle.png')
+    if (!this.textures.exists('pgs_red_dot_waifu'))
+      this.load.image('pgs_red_dot_waifu', '/assets/scenes/pgs/red_dot_waifu.png')
+    if (!this.textures.exists('pgs_rdw_victory'))
+      this.load.image('pgs_rdw_victory', '/assets/scenes/pgs/rdw_victory.jpg')
+  }
+
   // ── create ──────────────────────────────────────────────────────────────────
   create() {
     const W = this.scale.width
@@ -350,29 +360,35 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
   }
 
   _drawTorch(x, y) {
-    // Handle
     const g = this.add.graphics().setDepth(8)
+    // Handle
     g.fillStyle(0x3a2810, 1)
-    g.fillRect(x - 3, y, 6, 24)
+    g.fillRect(x - 3, y, 6, 22)
+    // Cup / bowl
+    g.fillStyle(0x6a4820, 1)
+    g.fillRect(x - 5, y - 4, 10, 6)
+    // Glow halo (soft circle)
+    g.fillStyle(0xff8800, 0.12)
+    g.fillCircle(x, y - 8, 26)
+    g.fillStyle(0xff8800, 0.18)
+    g.fillCircle(x, y - 8, 18)
+    // Flame shape (triangle)
+    g.fillStyle(0xff6600, 0.85)
+    g.fillTriangle(x, y - 22, x - 7, y - 4, x + 7, y - 4)
+    g.fillStyle(0xffcc00, 0.9)
+    g.fillTriangle(x, y - 16, x - 4, y - 4, x + 4, y - 4)
+    this._torchObjs.push(g)
 
-    // Glow ring
-    g.fillStyle(0xff8800, 0.08)
-    g.fillCircle(x, y, 28)
-
-    // Particles
-    const flame = this.add.particles(x, y - 2, undefined, {
-      lifespan:  { min: 240, max: 440 },
-      speed:     { min: 16, max: 48 },
-      angle:     { min: 254, max: 286 },
-      scale:     { start: 0.46, end: 0 },
-      alpha:     { start: 1, end: 0 },
-      tint:      [0xff7700, 0xffaa00, 0xffcc44],
-      quantity:  2,
-      frequency: 32,
-      blendMode: 'ADD',
-    }).setDepth(9)
-
-    this._torchObjs.push(g, flame)
+    // Pulsing tween for the glow
+    const pulse = this.add.graphics().setDepth(7)
+    pulse.fillStyle(0xff8800, 0.08)
+    pulse.fillCircle(0, 0, 32)
+    pulse.setPosition(x, y - 8)
+    this._torchObjs.push(pulse)
+    this.tweens.add({
+      targets: pulse, alpha: 0.4, yoyo: true, repeat: -1,
+      duration: 600, ease: 'Sine.easeInOut',
+    })
   }
 
   // ── Video iframe ───────────────────────────────────────────────────────────
@@ -415,7 +431,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     const ePrompt = this.add.text(x, y - 78, '[ E ]  ABSPIELEN', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '13px',
+      fontSize:   '20px',
       color:      '#cc88ff',
       stroke:     '#1a0030',
       strokeThickness: 3,
@@ -424,7 +440,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     const fHint = this.add.text(x, Math.round(H * FRAME_CY_FRAC) + Math.round(H * FRAME_IH_FRAC / 2) + 18,
       '[ F ]  Vollbild', {
         fontFamily: '"Cinzel", Georgia, serif',
-        fontSize:   '11px',
+        fontSize:   '18px',
         color:      '#9966cc',
         stroke:     '#100020',
         strokeThickness: 2,
@@ -470,7 +486,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
   // ── Red Dot Waifu sprite ───────────────────────────────────────────────────
   _buildWaifu(W, H) {
     const floorTopY = Math.round(H * PGS_FLOOR_TOP_FRAC)
-    const x  = Math.round(W * 0.38)
+    const x  = Math.round(W * 0.55)   // further right, near the frame
     const y  = floorTopY
     const ph = 280
     const pw = 280   // source is 1:1
@@ -484,7 +500,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     this._waifuLabel = this.add.text(x, y - ph - 4, 'RED DOT WAIFU', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '14px',
+      fontSize:   '22px',
       color:      '#ff8899',
       stroke:     '#3a0011',
       strokeThickness: 3,
@@ -504,20 +520,20 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '11px',
+      fontSize:   '18px',
       color:      '#ff8899',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
 
     this._dialogText = this.add.text(18, textY + 16, '', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '14px',
+      fontSize:   '22px',
       color:      '#f0b0b8',
       wordWrap:   { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
 
     this._dialogHint = this.add.text(W - 18, hintY, '', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '11px',
+      fontSize:   '18px',
       color:      '#aa5566',
     }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
   }
@@ -713,7 +729,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     const glow  = this.add.rectangle(x, H / 2, 80, H + 420, 0xff0033, 0.10).setDepth(3)
     const label = this.add.text(x, H - FLOOR_H - 150, '01:00', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '18px',
+      fontSize:   '26px',
       color:      '#ff4466',
       stroke:     '#300010',
       strokeThickness: 3,
@@ -741,7 +757,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     this.add.text(x, H - FLOOR_H - 200, '[ K ]  ABILITY', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '14px',
+      fontSize:   '22px',
       color:      '#ff6680',
       stroke:     '#200010',
       strokeThickness: 3,
@@ -777,7 +793,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     g.fillTriangle(x + 8, y - 38, x + 26, y - 38 + 10, x + 8, y - 38 + 20)
     this.add.text(x - 10, y - 46, 'WEITER', {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '13px',
+      fontSize:   '20px',
       color:      '#d1bf91',
       stroke:     '#1a100a',
       strokeThickness: 2,

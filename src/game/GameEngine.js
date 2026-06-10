@@ -46,8 +46,8 @@ export function createGame(container, _charConfig, gender = 'male') {
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     render: {
-      pixelArt:  false,   // photorealistic backgrounds — bilinear upscale
-      antialias: true,
+      pixelArt:  true,   // NEAREST filtering — keeps character sprites crisp
+      antialias: false,
     },
     dom: {
       createContainer: true,

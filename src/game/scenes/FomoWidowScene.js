@@ -74,6 +74,12 @@ export default class FomoWidowScene extends Phaser.Scene {
 
   init() { this._reset() }
 
+  preload() {
+    const load = (key, path) => { if (!this.textures.exists(key)) this.load.image(key, path) }
+    load('fw_bg',        '/assets/scenes/fw/bg.jpg')
+    load('wb_fomo_widow','/assets/scenes/wb/fomo_widow.png')
+  }
+
   create() {
     const W = this.scale.width
     const H = this.scale.height
@@ -178,7 +184,7 @@ export default class FomoWidowScene extends Phaser.Scene {
       this._widowSprite = g
     }
     this._widowLabel = this.add.text(x, floorTopY - ph - 6, 'FOMO WIDOW', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '13px', color: '#ff88aa',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#ff88aa',
       stroke: '#200010', strokeThickness: 3,
     }).setOrigin(0.5, 1).setDepth(7)
   }
@@ -205,13 +211,13 @@ export default class FomoWidowScene extends Phaser.Scene {
 
       // Label
       this.add.text(sx, floorTopY - 130, VIDEO_STATIONS[i].label, {
-        fontFamily: '"Cinzel", Georgia, serif', fontSize: '9px', color: '#9966cc',
+        fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#9966cc',
         stroke: '#0a0810', strokeThickness: 2, wordWrap: { width: 160 },
       }).setOrigin(0.5, 1).setDepth(4)
 
       // [E] prompt
       this.add.text(sx, floorTopY - 144, '[E] ABSPIELEN', {
-        fontFamily: '"Cinzel", Georgia, serif', fontSize: '10px', color: '#7755aa',
+        fontFamily: '"Cinzel", Georgia, serif', fontSize: '16px', color: '#7755aa',
         stroke: '#08060e', strokeThickness: 2,
       }).setOrigin(0.5, 1).setDepth(4)
 
@@ -254,7 +260,7 @@ export default class FomoWidowScene extends Phaser.Scene {
     const H = this._H
     if (!this._videoHint) {
       this._videoHint = this.add.text(W / 2, H - 14, '[F] Vollbild    [C] Schließen', {
-        fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#7744aa',
+        fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#7744aa',
         stroke: '#08060e', strokeThickness: 2,
       }).setScrollFactor(0).setOrigin(0.5, 1).setDepth(31)
     }
@@ -277,14 +283,14 @@ export default class FomoWidowScene extends Phaser.Scene {
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x08040f)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0xcc2244)
     this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#ff88aa',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#ff88aa',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#f0b0c0',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#f0b0c0',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogHint = this.add.text(W - 18, H - 10, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#aa5566',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#aa5566',
     }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
   }
 
@@ -369,7 +375,7 @@ export default class FomoWidowScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(65).setStrokeStyle(2, 0xcc2244)
 
     const btn = this.add.text(W / 2, H / 2, '"Weils Spaß macht."', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '15px', color: '#ff88aa',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#ff88aa',
       backgroundColor: '#200020', padding: { x: 20, y: 10 },
     }).setScrollFactor(0).setOrigin(0.5).setDepth(66).setInteractive({ useHandCursor: true })
 

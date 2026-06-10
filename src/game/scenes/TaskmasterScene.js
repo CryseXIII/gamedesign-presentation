@@ -52,6 +52,14 @@ export default class TaskmasterScene extends Phaser.Scene {
 
   init() { this._reset() }
 
+  preload() {
+    const load = (key, path) => { if (!this.textures.exists(key)) this.load.image(key, path) }
+    load('tm_bg',         '/assets/scenes/tm/bg.jpg')
+    load('tm_taskmaster', '/assets/scenes/tm/taskmaster.png')
+    load('tm_victory',    '/assets/scenes/tm/victory.jpg')
+    load('tm_victory_f',  '/assets/scenes/tm/victory_f.jpg')
+  }
+
   create() {
     const W = this.scale.width
     const H = this.scale.height
@@ -129,7 +137,7 @@ export default class TaskmasterScene extends Phaser.Scene {
       this._mastSprite = g
     }
     this.add.text(x, floorTopY - ph - 6, 'TASKMASTER', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '13px', color: '#ffbb88',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#ffbb88',
       stroke: '#200800', strokeThickness: 3,
     }).setOrigin(0.5, 1).setDepth(6)
   }
@@ -147,7 +155,7 @@ export default class TaskmasterScene extends Phaser.Scene {
     g.fillRoundedRect(clipX - 26, floorTopY - 114, 52, 34, 3)
 
     this.add.text(clipX, floorTopY - 130, '[E] AUFGABEN', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '10px', color: '#cc8844',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '16px', color: '#cc8844',
       stroke: '#0a0806', strokeThickness: 2,
     }).setOrigin(0.5, 1).setDepth(5)
 
@@ -166,14 +174,14 @@ export default class TaskmasterScene extends Phaser.Scene {
     this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x07050a)
       .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x8b4a22)
     this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#ffbb88',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#ffbb88',
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#ffe0c0',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#ffe0c0',
       wordWrap: { width: W - 36 },
     }).setScrollFactor(0).setAlpha(0).setDepth(61)
     this._dialogHint = this.add.text(W - 18, H - 10, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#886644',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px', color: '#886644',
     }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
   }
 
@@ -212,7 +220,7 @@ export default class TaskmasterScene extends Phaser.Scene {
 
   _buildTaskHUD(W) {
     this._taskHUD = this.add.text(W - 18, 12, '', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '26px',
       color: '#cc9966', stroke: '#0a0806', strokeThickness: 2,
       align: 'right',
     }).setScrollFactor(0).setOrigin(1, 0).setDepth(20)
