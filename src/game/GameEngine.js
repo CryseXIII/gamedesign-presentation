@@ -3,6 +3,10 @@ import PreloadScene         from './scenes/PreloadScene.js'
 import WorldBuildingScene   from './scenes/WorldBuildingScene.js'
 import GameScene            from './scenes/GameScene.js'
 import PlayerGuidanceScene  from './scenes/PlayerGuidanceScene.js'
+import BannerSirenScene     from './scenes/BannerSirenScene.js'
+import WhaleQueenScene      from './scenes/WhaleQueenScene.js'
+import TaskmasterScene      from './scenes/TaskmasterScene.js'
+import FomoWidowScene       from './scenes/FomoWidowScene.js'
 import GalleryScene         from './scenes/GalleryScene.js'
 import CreditsScene         from './scenes/CreditsScene.js'
 import GameState            from './GameState.js'
@@ -58,16 +62,18 @@ export function createGame(container, _charConfig, gender = 'male') {
 
   const game = new Phaser.Game(config)
 
-  game.events.once('ready', () => {
-    // Register all scenes so they can start each other freely
-    game.scene.add('WorldBuildingScene', WorldBuildingScene, false)
-    game.scene.add('GameScene',           GameScene,           false)
-    game.scene.add('PlayerGuidanceScene', PlayerGuidanceScene, false)
-    game.scene.add('GalleryScene',        GalleryScene,        false)
-    game.scene.add('CreditsScene',        CreditsScene,        false)
-    // PreloadScene auto-starts → WorldBuildingScene
-    game.scene.add('PreloadScene',        PreloadScene,        true)
-  })
+    game.events.once('ready', () => {
+      game.scene.add('WorldBuildingScene', WorldBuildingScene, false)
+      game.scene.add('GameScene',           GameScene,           false)
+      game.scene.add('PlayerGuidanceScene', PlayerGuidanceScene, false)
+      game.scene.add('BannerSirenScene',    BannerSirenScene,    false)
+      game.scene.add('WhaleQueenScene',     WhaleQueenScene,     false)
+      game.scene.add('TaskmasterScene',     TaskmasterScene,     false)
+      game.scene.add('FomoWidowScene',      FomoWidowScene,      false)
+      game.scene.add('GalleryScene',        GalleryScene,        false)
+      game.scene.add('CreditsScene',        CreditsScene,        false)
+      game.scene.add('PreloadScene',        PreloadScene,        true)
+    })
 
   return game
 }

@@ -61,6 +61,18 @@ export const PLAYER_STATE_DEFS = {
     repeat:     0,
     color:      0xf4f4f4,
   },
+  land: {
+    frameCount: 3,
+    frameRate: 14,
+    repeat:     0,
+    color:      0x44ccaa,
+  },
+  interact: {
+    frameCount: 3,
+    frameRate: 14,
+    repeat:     0,
+    color:      0xcc88ff,
+  },
 }
 
 export function getPlayerTextureKey(gender, state) {

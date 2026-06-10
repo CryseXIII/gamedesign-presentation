@@ -339,6 +339,20 @@ export default class PreloadScene extends Phaser.Scene {
       buildPlaceholderPlayerTexture(this, textureKey, state, def)
     }
 
-    this.scene.start('WorldBuildingScene')
+    const debugScene = getDebugScene()
+    this.scene.start(debugScene || 'WorldBuildingScene')
   }
+}
+
+/** Returns the debug start scene from URL param ?scene=X or localStorage. */
+export function getDebugScene() {
+  const VALID = [
+    'WorldBuildingScene', 'PlayerGuidanceScene', 'BannerSirenScene',
+    'WhaleQueenScene', 'TaskmasterScene', 'FomoWidowScene',
+    'GalleryScene', 'CreditsScene',
+  ]
+  const urlParam = new URLSearchParams(window.location.search).get('scene')
+  const stored   = localStorage.getItem('gameron:debugScene')
+  const candidate = urlParam || stored
+  return VALID.includes(candidate) ? candidate : null
 }

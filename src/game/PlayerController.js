@@ -40,6 +40,8 @@ const S = {
   JUMP:          'jump',
   DOUBLE_JUMP:   'double_jump',
   HURT:          'hurt',
+  LAND:          'land',
+  INTERACT:      'interact',
   ATTACK_UP:     'attack_up',
   ATTACK_DOWN:   'attack_down',
   ATTACK_LEFT:   'attack_left',
@@ -135,6 +137,10 @@ export default class PlayerController {
       this._state === S.ATTACK_LEFT  ||
       this._state === S.ATTACK_RIGHT
     )
+  }
+
+  _isInterruptible() {
+    return this._state !== S.HURT && this._state !== S.LAND && this._state !== S.INTERACT && !this._isAttacking()
   }
 
   _isAirborne() {
@@ -240,6 +246,17 @@ export default class PlayerController {
         )
         break
 
+      case this._animKey(S.LAND):
+      case this._animKey(S.INTERACT):
+        this._setState(this._isAirborne()
+          ? S.JUMP
+          : this._groundStateForInput(
+            this._cursors.left.isDown || this._wasd.left.isDown,
+            this._cursors.right.isDown || this._wasd.right.isDown,
+          )
+        )
+        break
+
       default:
         break
     }
@@ -300,7 +317,7 @@ export default class PlayerController {
     }
 
     // ── Horizontal velocity ──────────────────────────────────────────────────
-    if (!this._isAttacking()) {
+    if (!this._isAttacking() && this._state !== S.INTERACT) {
       if      (goLeft)  this.sprite.setVelocityX(-moveSpeed)
       else if (goRight) this.sprite.setVelocityX( moveSpeed)
       else              this.sprite.setVelocityX(0)
@@ -337,7 +354,12 @@ export default class PlayerController {
     if (onGround && !this._isAttacking()) {
       this._canDoubleJump = false
       if (this._state === S.DOUBLE_JUMP || this._state === S.JUMP) {
-        this._setState(this._groundStateForInput(goLeft, goRight))
+        // Play land animation if available, otherwise go straight to idle/run
+        if (this.scene.anims.exists(this._animKey(S.LAND))) {
+          this._setState(S.LAND)
+        } else {
+          this._setState(this._groundStateForInput(goLeft, goRight))
+        }
       }
     }
 
@@ -347,12 +369,23 @@ export default class PlayerController {
     }
 
     // ── Ground movement animations ────────────────────────────────────────────
-    if (onGround && !this._isAttacking() && this._state !== S.JUMP && this._state !== S.DOUBLE_JUMP) {
+    if (onGround && !this._isAttacking()
+        && this._state !== S.JUMP && this._state !== S.DOUBLE_JUMP
+        && this._state !== S.LAND && this._state !== S.INTERACT) {
       const next = this._groundStateForInput(goLeft, goRight)
       if (this._state !== next) this._setState(next)
     }
 
     this._wasOnGround = onGround
+  }
+
+  /**
+   * Trigger the interact/ability animation (K press).
+   * Plays once and returns to previous locomotion state automatically.
+   */
+  triggerInteract() {
+    if (this._frozen) return
+    this._setState(S.INTERACT)
   }
 
   /**

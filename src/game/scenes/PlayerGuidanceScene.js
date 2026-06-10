@@ -133,7 +133,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     const floor  = this.add.rectangle(W / 2, floorY, W, FLOOR_H * 2, 0x000000, 0)
     this.physics.add.existing(floor, true)
 
-    // ── Stone curtain platforms ─────────────────────────────────────────────
+    // ── Platforms: invisible physics, door arch visuals ────────────────────
     const platW  = Math.round(W * PLAT_W_FRAC)
     const floorTopY = H - FLOOR_H
 
@@ -142,12 +142,12 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       const topY = floorTopY - def.yOffBot
       const midY = topY + PLAT_H_PX / 2
 
-      // Draw stone curtain visual behind physics
-      this._drawCurtain(px, topY, platW, floorTopY, idx)
-
-      // Physics platform (static, invisible body used as surface)
+      // Invisible platform slab
       const slab = this.add.rectangle(px, midY, platW, PLAT_H_PX, 0x777788, 0)
       this.physics.add.existing(slab, true)
+
+      // Door arch visual on platform surface
+      this._drawDoorArch(px, topY, platW, idx)
 
       this._platforms.push({ x: px, topY, w: platW, slab, body: slab.body })
     })
@@ -206,6 +206,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
 
     this._kHandler = () => {
       if (this._timeBarrier?.state === 'active' && this._speedBoost) {
+        this._player?.triggerInteract()
         this._fireDiamond()
       }
     }
@@ -233,60 +234,50 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this.time.delayedCall(900, () => this._startWaifuDialog())
   }
 
-  // ── Stone curtain visual ───────────────────────────────────────────────────
-  _drawCurtain(px, topY, platW, floorTopY, idx) {
-    const g         = this.add.graphics().setDepth(2)
-    const curtainH  = floorTopY - topY
-    const colW      = Math.round(platW * 0.18)
-    const numCols   = 3
-    const doorW     = Math.round(platW * 0.44)
-    const doorH     = Math.min(Math.round(curtainH * 0.55), 130)
-    const archR     = Math.round(doorW * 0.5)
+  // ── Door arch visual (minimal 2D geometry on platform) ────────────────────
+  _drawDoorArch(px, topY, platW, idx) {
+    const g     = this.add.graphics().setDepth(3)
+    const doorW = Math.round(platW * 0.46)
+    const doorH = 76
+    const archR = Math.round(doorW * 0.5)
 
-    // Stone columns
-    g.fillStyle(0x2e2e3c, 1)
-    for (let i = 0; i < numCols; i++) {
-      const cx = px - platW / 2 + (i + 0.5) * (platW / numCols)
-      g.fillRect(cx - colW / 2, topY, colW, curtainH)
-    }
+    // Dark door void
+    g.fillStyle(0x06040c, 0.88)
+    g.fillRect(px - doorW / 2, topY - doorH + archR, doorW, doorH - archR)
+    g.fillCircle(px, topY - doorH + archR, archR)
 
-    // Gothic arch door opening (dark)
-    const doorX = px - doorW / 2
-    const doorBaseY = floorTopY - doorH
-    g.fillStyle(0x06040c, 0.94)
-    g.fillRect(doorX, doorBaseY + archR, doorW, doorH - archR)
-    g.fillCircle(px, doorBaseY + archR, archR)
+    // Thin door-frame edge
+    g.lineStyle(2, 0x5a3880, 0.75)
+    g.strokeRect(px - doorW / 2, topY - doorH + archR, doorW, doorH - archR)
 
-    // Slight door-frame edge
-    g.lineStyle(2, 0x5a4060, 0.75)
-    g.strokeRect(doorX, doorBaseY + archR, doorW, doorH - archR)
-
-    // Platform slab
-    g.fillStyle(0x5c5c70, 1)
-    g.fillRect(px - platW / 2 - 6, topY - PLAT_H_PX, platW + 12, PLAT_H_PX + 2)
-
-    // Slab edge highlight
-    g.lineStyle(1, 0x8888a0, 0.5)
-    g.lineBetween(px - platW / 2 - 6, topY - PLAT_H_PX, px + platW / 2 + 6, topY - PLAT_H_PX)
-
-    // Platform label
-    this.add.text(px, topY - PLAT_H_PX - 10, PLAT_DEFS[idx].label, {
+    // Roman numeral label above
+    this.add.text(px, topY - doorH - 8, PLAT_DEFS[idx].label, {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '13px',
-      color:      '#665588',
-      stroke:     '#0a0810',
+      fontSize:   '12px',
+      color:      '#554466',
+      stroke:     '#080610',
       strokeThickness: 3,
-    }).setOrigin(0.5, 1).setDepth(3)
+    }).setOrigin(0.5, 1).setDepth(4)
+
+    // [E] interact prompt (always visible, subtle)
+    this.add.text(px, topY - doorH - 24, '[E]', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize:   '11px',
+      color:      '#7755aa',
+      stroke:     '#08060e',
+      strokeThickness: 2,
+    }).setOrigin(0.5, 1).setDepth(4)
   }
 
-  // ── Door triggers (one per platform, at the arch opening) ──────────────────
+  // ── Door triggers (one per platform, at the arch opening on platform) ──────
   _buildDoors(platW, floorTopY) {
-    const doorW   = Math.round(platW * 0.44)
-    const doorTrigH = 90
+    const doorW     = Math.round(platW * 0.46)
+    const doorTrigH = 100    // trigger height on platform surface
 
     PLAT_DEFS.forEach((def, idx) => {
-      const px   = Math.round(this._W * def.xFrac)
-      const trigY = floorTopY - doorTrigH / 2
+      const px    = Math.round(this._W * def.xFrac)
+      const topY  = floorTopY - def.yOffBot    // platform surface y
+      const trigY = topY - doorTrigH / 2       // trigger centered above platform surface
 
       const trig = this.add.rectangle(px, trigY, doorW + 16, doorTrigH, 0x000000).setAlpha(0)
       this.physics.add.existing(trig, true)
@@ -316,40 +307,54 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     const floorTopY = this._H - FLOOR_H
     const topY = floorTopY - def.yOffBot
 
-    // Torch to the side of the correct platform
-    const torchX = px + Math.round(this._W * PLAT_W_FRAC / 2) + 22
-    this._drawTorch(torchX, topY - PLAT_H_PX - 4)
+    // Torch beside the correct door (on the platform)
+    const torchX = px + Math.round(this._W * PLAT_W_FRAC / 2) + 18
+    this._drawTorch(torchX, topY - 4)
 
-    // Decoy: yellow paint (round ≥ 1)
+    // Round ≥ 1: yellow paint splash on ONE wrong platform
     if (this._round >= 1) {
       const wrongs = PLAT_DEFS.filter((_, i) => i !== this._correctDoor)
-      const wd     = Phaser.Utils.Array.GetRandom(wrongs)
-      const wdx    = Math.round(this._W * wd.xFrac)
-      const wdY    = floorTopY - wd.yOffBot - PLAT_H_PX + 6
-      const paint  = this.add.rectangle(wdx, wdY, 80, 16, 0xddc800).setAlpha(0.7).setDepth(5)
-      this._decoyObjs.push(paint)
+      const wd  = Phaser.Utils.Array.GetRandom(wrongs)
+      const wdx = Math.round(this._W * wd.xFrac)
+      const wdY = floorTopY - wd.yOffBot  // on the platform surface
+
+      const g = this.add.graphics().setDepth(5)
+      // Paint spill shape — ellipse + drips
+      g.fillStyle(0xddc800, 0.75)
+      g.fillEllipse(wdx, wdY - 3, 80, 18)
+      // A couple of paint drips below
+      g.fillRect(wdx - 24, wdY - 3, 8, 22)
+      g.fillRect(wdx + 12, wdY - 3, 6, 16)
+      this._decoyObjs.push(g)
     }
 
-    // Decoy: arrow + text (round ≥ 2)
+    // Round ≥ 2: arrows + "Hier entlang" pointing to wrong exits
     if (this._round >= 2) {
       const wrongs2 = PLAT_DEFS.filter((_, i) => i !== this._correctDoor)
-      const ad      = Phaser.Utils.Array.GetRandom(wrongs2)
-      const adx     = Math.round(this._W * ad.xFrac)
-      const ady     = floorTopY - ad.yOffBot - PLAT_H_PX - 36
+      wrongs2.forEach(ad => {
+        const adx  = Math.round(this._W * ad.xFrac)
+        const adY  = floorTopY - ad.yOffBot - 50   // above the door on the platform
 
-      const ag = this.add.graphics().setDepth(6)
-      ag.fillStyle(0xffffff, 0.85)
-      ag.fillTriangle(adx - 22, ady + 10, adx + 22, ady, adx - 22, ady - 10)
-      this._decoyObjs.push(ag)
+        const ag = this.add.graphics().setDepth(6)
+        ag.fillStyle(0xffffff, 0.90)
+        // Arrow pointing right (toward the door)
+        const pointDir = adx < this._W / 2 ? 1 : -1
+        if (pointDir > 0) {
+          ag.fillTriangle(adx + 28, adY, adx + 8, adY - 12, adx + 8, adY + 12)
+        } else {
+          ag.fillTriangle(adx - 28, adY, adx - 8, adY - 12, adx - 8, adY + 12)
+        }
+        this._decoyObjs.push(ag)
 
-      const at = this.add.text(adx - 30, ady - 24, 'Hier entlang', {
-        fontFamily: '"Cinzel", Georgia, serif',
-        fontSize:   '13px',
-        color:      '#ffffff',
-        stroke:     '#000000',
-        strokeThickness: 3,
-      }).setOrigin(0.5).setDepth(6)
-      this._decoyObjs.push(at)
+        const at = this.add.text(adx, adY - 22, 'Hier entlang', {
+          fontFamily: '"Cinzel", Georgia, serif',
+          fontSize:   '12px',
+          color:      '#ffffff',
+          stroke:     '#000000',
+          strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(6)
+        this._decoyObjs.push(at)
+      })
     }
   }
 
@@ -475,14 +480,17 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
   _buildWaifu(W, H) {
     const x  = Math.round(W * 0.38)
     const y  = H - FLOOR_H
-    const sz = Math.round(H * 0.58)
+
+    // Player-scale render: ≈160px tall, preserve aspect ratio of 640×640 source
+    const ph = 160
+    const pw = 160   // 1:1 source
 
     this._waifuSprite = this.add.image(x, y, 'pgs_red_dot_waifu')
       .setOrigin(0.5, 1)
-      .setDisplaySize(sz, sz)
+      .setDisplaySize(pw, ph)
       .setDepth(6)
 
-    this._waifuLabel = this.add.text(x, y - sz - 4, 'RED DOT WAIFU', {
+    this._waifuLabel = this.add.text(x, y - ph - 4, 'RED DOT WAIFU', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize:   '14px',
       color:      '#ff8899',
@@ -596,23 +604,6 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     })
   }
 
-  _startDeathRattle() {
-    this._showDialog([
-      '[röchelt]  Das... ist nicht möglich...',
-      'Ich bin in meinem eigenen Zauber gefangen...',
-      'Ich finde... den Ausgang nicht mehr...',
-      '[verschwindet im Dunkel]',
-    ], () => {
-      this._transitioning = true
-      if (this._videoFrame) {
-        this._videoFrame.node.src = ''
-        this._videoFrame.setVisible(false)
-      }
-      this.cameras.main.fadeOut(700, 0, 0, 0)
-      this.time.delayedCall(760, () => this.scene.start('GalleryScene'))
-    }, 'Red Dot Waifu')
-  }
-
   // ── Door logic ─────────────────────────────────────────────────────────────
   _onDoorEntered(idx) {
     if (this._doorCooldown || !this._waifuDone || this._dialogVisible || this._finalGateBuilt) return
@@ -628,7 +619,7 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
         this.time.delayedCall(400, () => {
           this._respawnPlayer()
           this._clearDecorations()
-          this._buildFinalGate()
+          this._showVictoryScreen()
           this._doorCooldown = false
         })
       } else {
@@ -662,6 +653,42 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this._decoyObjs.forEach(o => { try { o.destroy() } catch {} })
     this._torchObjs = []
     this._decoyObjs = []
+  }
+
+  // ── Victory screen after 3rd correct door ─────────────────────────────────
+  _showVictoryScreen() {
+    const W = this._W
+    const H = this._H
+    this._player?.freeze()
+
+    // Full-screen victory image
+    let vsImg = null
+    if (this.textures.exists('pgs_rdw_victory')) {
+      vsImg = this.add.image(W / 2, H / 2, 'pgs_rdw_victory')
+        .setDisplaySize(W, H)
+        .setDepth(50)
+        .setAlpha(0)
+      this.tweens.add({ targets: vsImg, alpha: 1, duration: 600 })
+    }
+
+    // Waifu death rattle dialog on top
+    this.time.delayedCall(700, () => {
+      this._showDialog([
+        '[röchelt]  Das... ist nicht möglich...',
+        'Ich bin in meinem eigenen Zauber gefangen...',
+        'Ich finde... den Ausgang nicht mehr...',
+        '[verschwindet im Dunkel]',
+      ], () => {
+        this._transitioning = true
+        if (vsImg) this.tweens.add({ targets: vsImg, alpha: 0, duration: 400 })
+        if (this._videoFrame) {
+          this._videoFrame.node.src = ''
+          this._videoFrame.setVisible(false)
+        }
+        this.cameras.main.fadeOut(700, 0, 0, 0)
+        this.time.delayedCall(760, () => this.scene.start('BannerSirenScene'))
+      }, 'Red Dot Waifu')
+    })
   }
 
   // ── Final timegate ─────────────────────────────────────────────────────────
@@ -709,12 +736,9 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5)
 
-    // Exit zone past gate
+    // Exit zone past gate (unused now — victory screen handles transition)
     const exitZone = this.add.rectangle(W - 30, H / 2, 60, H + 400, 0x000000).setAlpha(0)
     this.physics.add.existing(exitZone, true)
-    this.physics.add.overlap(this._player.sprite, exitZone, () => {
-      if (!this._transitioning) this._startDeathRattle()
-    }, undefined, this)
 
     // Wooden exit sign
     this._buildWoodenSign(x + 90, H)

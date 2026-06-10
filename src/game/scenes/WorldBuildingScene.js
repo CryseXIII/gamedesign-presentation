@@ -157,6 +157,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._powerKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K)
     this._kHandler = () => {
       if (!this._speedBoostUnlocked || !this._timeBarrier || this._timeBarrier.state !== 'active') return
+      this._player?.triggerInteract()
       this._triggerTimeBarrierBurst()
     }
     this.input.keyboard.on('keydown-K', this._kHandler)

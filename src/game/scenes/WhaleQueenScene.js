@@ -1,0 +1,296 @@
+/**
+ * WhaleQueenScene — Scene 4: Der Thronsaal
+ *
+ * Beat:
+ *   1. Player enters throne room. Whale Queen speaks.
+ *   2. She offers to spare the player for 5000 diamonds.
+ *   3. Pay → DEFEAT screen 5 s → she leaves → exit opens.
+ *   4. Refuse → VICTORY screen 5 s → she leaves → exit opens.
+ *   5. Player walks right to exit → TaskmasterScene.
+ */
+
+import Phaser from 'phaser'
+import PlayerController, { FLOOR_H, SPAWN_Y_OFFSET } from '../PlayerController.js'
+import GameState from '../GameState.js'
+
+export default class WhaleQueenScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'WhaleQueenScene' })
+  }
+
+  _reset() {
+    this._player        = null
+    this._transitioning = false
+    this._queenDone     = false
+    this._dialogVisible = false
+    this._dialogLines   = []
+    this._dialogStep    = 0
+    this._dialogCb      = null
+    this._dialogKeyFn   = null
+    this._dialogBg      = null
+    this._dialogText    = null
+    this._dialogHint    = null
+    this._dialogSpeaker = null
+    this._choiceShown   = false
+    this._W = this._H = 0
+    this._exitZone      = null
+    this._queenSprite   = null
+    this._queenLabel    = null
+  }
+
+  init() { this._reset() }
+
+  create() {
+    const W = this.scale.width
+    const H = this.scale.height
+    this._W = W
+    this._H = H
+
+    this.cameras.main.setBounds(0, 0, W, H)
+    this.physics.world.setBounds(0, 0, W, H + 200)
+
+    // ── Background ────────────────────────────────────────────────────────────
+    if (this.textures.exists('wq_bg')) {
+      this.add.image(W / 2, H / 2, 'wq_bg').setDisplaySize(W, H).setDepth(-10)
+    } else {
+      const g = this.add.graphics().setDepth(-10)
+      g.fillStyle(0x03020a, 1)
+      g.fillRect(0, 0, W, H)
+    }
+
+    // ── Floor ────────────────────────────────────────────────────────────────
+    const floorTopY = H - FLOOR_H
+    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H * 2, 0x000000, 0)
+    this.physics.add.existing(floorRect, true)
+
+    // ── Player ────────────────────────────────────────────────────────────────
+    const player = new PlayerController(this, Math.round(W * 0.08), floorTopY - SPAWN_Y_OFFSET)
+    this._player = player
+    this.physics.add.collider(player.sprite, floorRect)
+
+    // ── Whale Queen ───────────────────────────────────────────────────────────
+    this._buildQueen(W, H, floorTopY)
+
+    // ── Exit zone (initially blocked) ─────────────────────────────────────────
+    const exitGate = this.add.rectangle(W - 40, H / 2, 80, H + 200, 0x000000, 0)
+    this.physics.add.existing(exitGate, true)
+    this._exitGateBody = exitGate
+    this.physics.add.collider(player.sprite, exitGate)
+
+    const exitOverlay = this.add.rectangle(W - 30, H / 2, 5, H, 0x224466, 0.4).setDepth(3)
+    this._exitOverlay = exitOverlay
+
+    const exitZone = this.add.rectangle(W - 30, H / 2, 80, H + 200, 0, 0)
+    this.physics.add.existing(exitZone, true)
+    this.physics.add.overlap(player.sprite, exitZone, () => {
+      if (!this._transitioning && this._queenDone) this._exitScene()
+    }, undefined, this)
+    this._exitZone = exitZone
+
+    // ── Dialog HUD ────────────────────────────────────────────────────────────
+    this._buildDialogHUD(W, H)
+
+    this.cameras.main.fadeIn(700, 0, 0, 0)
+    this.input.keyboard.enableGlobalCapture()
+
+    this.time.delayedCall(900, () => this._startIntroDialog())
+  }
+
+  _buildQueen(W, H, floorTopY) {
+    const x  = Math.round(W * 0.65)
+    const ph = 160
+    if (this.textures.exists('wq_whale_queen')) {
+      const tex  = this.textures.get('wq_whale_queen')
+      const srcH = tex.getSourceImage().height
+      const srcW = tex.getSourceImage().width
+      const rw   = Math.round(srcW * (ph / srcH))
+      this._queenSprite = this.add.image(x, floorTopY, 'wq_whale_queen')
+        .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(5)
+    } else {
+      const g = this.add.graphics().setDepth(5)
+      g.fillStyle(0x2244aa, 0.85)
+      g.fillRect(x - 36, floorTopY - ph, 72, ph)
+      this._queenSprite = g
+    }
+    this._queenLabel = this.add.text(x, floorTopY - ph - 6, 'WHALE QUEEN', {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize:   '13px',
+      color:      '#aaddff',
+      stroke:     '#001030',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 1).setDepth(6)
+  }
+
+  _buildDialogHUD(W, H) {
+    const boxH = 90
+    const boxY = H - boxH / 2 - 4
+    this._dialogBg = this.add.rectangle(W / 2, boxY, W - 12, boxH, 0x030616)
+      .setScrollFactor(0).setAlpha(0).setDepth(60).setStrokeStyle(2, 0x2244aa)
+    this._dialogSpeaker = this.add.text(18, boxY - boxH / 2 + 8, '', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#aaddff',
+    }).setScrollFactor(0).setAlpha(0).setDepth(61)
+    this._dialogText = this.add.text(18, boxY - boxH / 2 + 22, '', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#c8e8ff',
+      wordWrap: { width: W - 36 },
+    }).setScrollFactor(0).setAlpha(0).setDepth(61)
+    this._dialogHint = this.add.text(W - 18, H - 10, '', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '11px', color: '#446688',
+    }).setScrollFactor(0).setOrigin(1, 1).setAlpha(0).setDepth(61)
+  }
+
+  _showDialog(lines, onComplete, speaker = 'Whale Queen') {
+    this._dialogLines   = lines
+    this._dialogStep    = 0
+    this._dialogCb      = onComplete
+    this._dialogVisible = true
+    this._dialogBg.setAlpha(0.95)
+    this._dialogSpeaker.setAlpha(1).setText(speaker)
+    this._dialogText.setAlpha(1)
+    this._dialogHint.setAlpha(0.85)
+    this._updateDialogLine()
+    this._player?.freeze()
+    this._dialogKeyFn = (e) => {
+      if (e.key !== 'e' && e.key !== 'E') return
+      e.preventDefault(); e.stopImmediatePropagation()
+      if (this._dialogStep < this._dialogLines.length - 1) {
+        this._dialogStep++; this._updateDialogLine()
+      } else { this._closeDialog() }
+    }
+    window.addEventListener('keydown', this._dialogKeyFn, true)
+  }
+
+  _updateDialogLine() {
+    this._dialogText.setText(this._dialogLines[this._dialogStep])
+    this._dialogHint.setText(`${this._dialogStep + 1}/${this._dialogLines.length}  [E]`)
+  }
+
+  _closeDialog() {
+    this._dialogVisible = false
+    this._dialogBg.setAlpha(0)
+    this._dialogSpeaker.setAlpha(0)
+    this._dialogText.setAlpha(0)
+    this._dialogHint.setAlpha(0)
+    if (this._dialogKeyFn) {
+      window.removeEventListener('keydown', this._dialogKeyFn, true)
+      this._dialogKeyFn = null
+    }
+    this._player?.unfreeze()
+    if (this._dialogCb) { const cb = this._dialogCb; this._dialogCb = null; cb() }
+  }
+
+  _startIntroDialog() {
+    this._showDialog([
+      'Mmm... ein Gast. In meinem Thronsaal.',
+      'Du siehst müde aus, Krieger. Das ist verständlich.',
+      'Weißt du was? Ich bin in guter Stimmung.',
+      'Ich verschone dich — für nur 5.000 Diamanten.',
+      'Einmalzahlung. Angebot endet sofort.',
+    ], () => this._showPaymentChoice())
+  }
+
+  _showPaymentChoice() {
+    if (this._choiceShown) return
+    this._choiceShown = true
+    const W = this._W
+    const H = this._H
+
+    // Choice overlay (Phaser DOM or pure graphics)
+    const panelBg = this.add.rectangle(W / 2, H / 2, 480, 160, 0x030616)
+      .setDepth(65).setStrokeStyle(2, 0x2244aa)
+
+    const titleTxt = this.add.text(W / 2, H / 2 - 56, '— 5.000 DIAMANTEN ZAHLEN? —', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '15px', color: '#aaddff',
+    }).setOrigin(0.5).setDepth(66)
+
+    // Pay button
+    const payBtn = this.add.text(W / 2 - 110, H / 2, '💎 ZAHLEN', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#ffdd44',
+      backgroundColor: '#1a3060', padding: { x: 18, y: 8 },
+    }).setOrigin(0.5).setDepth(66).setInteractive({ useHandCursor: true })
+
+    const refuseBtn = this.add.text(W / 2 + 110, H / 2, '✕ ABLEHNEN', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '14px', color: '#ccddff',
+      backgroundColor: '#1a1040', padding: { x: 18, y: 8 },
+    }).setOrigin(0.5).setDepth(66).setInteractive({ useHandCursor: true })
+
+    const hintTxt = this.add.text(W / 2, H / 2 + 48, '[E] ablehnen   /   Klick', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '10px', color: '#446688',
+    }).setOrigin(0.5).setDepth(66)
+
+    const dismiss = (choice) => {
+      try { payBtn.removeAllListeners(); refuseBtn.removeAllListeners() } catch {}
+      try { panelBg.destroy(); titleTxt.destroy(); payBtn.destroy(); refuseBtn.destroy(); hintTxt.destroy() } catch {}
+      if (choiceKeyFn) { window.removeEventListener('keydown', choiceKeyFn, true); choiceKeyFn = null }
+      this._onPaymentChoice(choice)
+    }
+
+    payBtn.on('pointerdown', () => dismiss('pay'))
+    refuseBtn.on('pointerdown', () => dismiss('refuse'))
+
+    let choiceKeyFn = null
+    choiceKeyFn = (e) => {
+      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); dismiss('refuse') }
+    }
+    window.addEventListener('keydown', choiceKeyFn, true)
+  }
+
+  _onPaymentChoice(choice) {
+    const W = this._W
+    const H = this._H
+    const texKey = choice === 'pay' ? 'wq_defeat' : 'wq_victory'
+
+    if (this.textures.exists(texKey)) {
+      const img = this.add.image(W / 2, H / 2, texKey)
+        .setDisplaySize(W, H).setDepth(70).setAlpha(0)
+      this.tweens.add({ targets: img, alpha: 1, duration: 500 })
+
+      if (choice === 'pay') {
+        GameState.recordChoice?.('gacha')
+      }
+
+      this.time.delayedCall(5000, () => {
+        this.tweens.add({ targets: img, alpha: 0, duration: 500, onComplete: () => {
+          try { img.destroy() } catch {}
+          this._dismissQueen()
+        }})
+      })
+    } else {
+      this._dismissQueen()
+    }
+  }
+
+  _dismissQueen() {
+    const targets = [this._queenSprite, this._queenLabel].filter(Boolean)
+    if (targets.length) this.tweens.add({ targets, alpha: 0, duration: 600 })
+
+    // Unlock exit
+    if (this._exitGateBody?.body) this._exitGateBody.body.enable = false
+    if (this._exitOverlay) this.tweens.add({ targets: this._exitOverlay, alpha: 0, duration: 400 })
+    this._queenDone = true
+
+    // Hint
+    this.add.text(this._W - 80, this._H - FLOOR_H - 30, '→ WEITER', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '13px', color: '#aaddff',
+      stroke: '#001030', strokeThickness: 2,
+    }).setOrigin(0.5, 1).setDepth(10)
+  }
+
+  _exitScene() {
+    if (this._transitioning) return
+    this._transitioning = true
+    this.cameras.main.fadeOut(700, 0, 0, 0)
+    this.time.delayedCall(760, () => this.scene.start('TaskmasterScene'))
+  }
+
+  update() {
+    if (!this._player || this._transitioning) return
+    if (this._dialogVisible) { this._player.freeze(); return }
+    try { this._player.update() } catch {}
+  }
+
+  shutdown() {
+    if (this._player) this._player.destroy()
+    this._player = null
+    if (this._dialogKeyFn) window.removeEventListener('keydown', this._dialogKeyFn, true)
+  }
+}

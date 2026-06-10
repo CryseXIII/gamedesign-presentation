@@ -22,18 +22,34 @@ const CREDITS_BASE = [
   { text: 'Environmental Storytelling\n& Player Trust in Game Design',
                                               size: 18, color: '#c8b89a', gap: 60 },
 
-  { text: 'REFERENCE MATERIAL',              size: 13, color: '#3a2a10', gap:  8 },
+  { text: 'QUELLEN — REFERENZEN',            size: 13, color: '#3a2a10', gap:  8 },
   { text: 'Dark Souls III',                  size: 22, color: '#c0a040', gap:  4 },
   { text: 'FromSoftware  ·  2016',           size: 14, color: '#5a4520', gap: 14 },
   { text: "Assassin's Creed Odyssey",        size: 22, color: '#608050', gap:  4 },
-  { text: 'Ubisoft  ·  2018',               size: 14, color: '#5a4520', gap: 60 },
+  { text: 'Ubisoft  ·  2018',               size: 14, color: '#5a4520', gap: 14 },
+  { text: 'Genshin Impact',                  size: 22, color: '#5080b0', gap:  4 },
+  { text: 'HoYoverse  ·  2020',             size: 14, color: '#5a4520', gap: 60 },
 
-  { text: 'BUILT WITH',                      size: 13, color: '#3a2a10', gap:  8 },
-  { text: 'React 19  +  Phaser 4',           size: 18, color: '#c8b89a', gap:  4 },
-  { text: 'Vite 8  ·  Node.js 22',           size: 18, color: '#c8b89a', gap: 60 },
+  { text: 'QUELLEN — VIDEOS',               size: 13, color: '#3a2a10', gap:  8 },
+  { text: 'Dark Souls — Level Design (YouTube)',     size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'Gacha Psychology (YouTube)',              size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'Game Feel — Juiciness (YouTube)',         size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'Risk vs Reward in Game Design (YouTube)', size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'Manipulation in Games (YouTube)',         size: 16, color: '#c8b89a', gap: 60 },
 
-  { text: 'PRESENTED BY',                    size: 13, color: '#3a2a10', gap:  8 },
-  { text: 'Viktor',                          size: 30, color: '#d4af37', gap: 100 },
+  { text: 'ASSETS & TOOLS',                 size: 13, color: '#3a2a10', gap:  8 },
+  { text: 'ChatGPT Image Generation (OpenAI)',        size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'React 19  +  Phaser 4',          size: 16, color: '#c8b89a', gap:  4 },
+  { text: 'Vite 8  ·  Node.js 22',          size: 16, color: '#c8b89a', gap: 60 },
+
+  { text: 'PRÄSENTIERT VON',               size: 13, color: '#3a2a10', gap:  8 },
+  { text: 'Viktor',                         size: 30, color: '#d4af37', gap: 80 },
+]
+
+const THANK_YOU = [
+  { text: '',                                  size: 10, color: '', gap: 20 },
+  { text: 'Thank you for playing.',            size: 38, color: '#d4af37', gap: 16 },
+  { text: '',                                  size: 10, color: '', gap: 40 },
 ]
 
 const ENDING_BAD = [
@@ -74,7 +90,7 @@ export default class CreditsScene extends Phaser.Scene {
             : l
         )
       : ENDING_GOOD
-    const CREDITS = [...CREDITS_BASE, ...ending]
+    const CREDITS = [...CREDITS_BASE, ...ending, ...THANK_YOU]
 
     this.cameras.main.setBackgroundColor(0x000000)
     this.cameras.main.fadeIn(1200, 0, 0, 0)
@@ -113,21 +129,53 @@ export default class CreditsScene extends Phaser.Scene {
       y:        -totalH - 80,
       duration,
       ease:     'Linear',
-      onComplete: () => { this._finish() },
+      onComplete: () => { this._showEndScreen() },
     })
 
     // ── Skip on any key / button (1 s delay so last key-press doesn't skip)
     this.time.delayedCall(1000, () => {
-      this.input.keyboard.once('keydown', () => { this._finish() })
+      this.input.keyboard.once('keydown', () => { this._showEndScreen() })
       if (this.input.gamepad) {
-        this.input.gamepad.once('down', () => { this._finish() })
+        this.input.gamepad.once('down', () => { this._showEndScreen() })
       }
     })
   }
 
-  _finish() {
+  _showEndScreen() {
     if (this._exited) return
     this._exited = true
+    this.tweens.killAll()
+
+    const W = this.scale.width
+    const H = this.scale.height
+
+    if (this.textures.exists('credits_endscreen')) {
+      this.cameras.main.fadeIn(0, 0, 0, 0)   // ensure black frame
+      const img = this.add.image(W / 2, H / 2, 'credits_endscreen')
+        .setDisplaySize(W, H).setDepth(100).setAlpha(0)
+      this.tweens.add({ targets: img, alpha: 1, duration: 1200, ease: 'Quad.easeIn' })
+
+      // Press any key after 1.5 s to exit
+      this.time.delayedCall(1500, () => {
+        this.input.keyboard.once('keydown', () => { this._finish() })
+        if (this.input.gamepad) {
+          this.input.gamepad.once('down', () => { this._finish() })
+        }
+        // hint
+        this.add.text(W / 2, H - 24, '[beliebige Taste]  Beenden', {
+          fontFamily: '"Cinzel", Georgia, serif',
+          fontSize:   '12px',
+          color:      '#5a4520',
+          stroke:     '#000000',
+          strokeThickness: 2,
+        }).setOrigin(0.5, 1).setDepth(101)
+      })
+    } else {
+      this._finish()
+    }
+  }
+
+  _finish() {
     this.tweens.killAll()
     this.sound.stopAll()
     window.dispatchEvent(new CustomEvent('game:exit'))

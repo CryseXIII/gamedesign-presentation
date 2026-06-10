@@ -2,13 +2,65 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createGame } from '../game/GameEngine.js'
 import GameState      from '../game/GameState.js'
 import EncounterOverlay from './EncounterOverlay.jsx'
+import ClipboardOverlay from './ClipboardOverlay.jsx'
 import '../styles/gallery.css'
+
+const SCENE_LIST = [
+  { key: 'WorldBuildingScene',  label: 'S1 World' },
+  { key: 'PlayerGuidanceScene', label: 'S2 Castle' },
+  { key: 'BannerSirenScene',    label: 'S3 Banner' },
+  { key: 'WhaleQueenScene',     label: 'S4 Whale' },
+  { key: 'TaskmasterScene',     label: 'S5 Task' },
+  { key: 'FomoWidowScene',      label: 'S6 Fomo' },
+  { key: 'GalleryScene',        label: 'Gallery' },
+  { key: 'CreditsScene',        label: 'Credits' },
+]
+
+function ScenePicker() {
+  const [open, setOpen] = useState(false)
+  const current = new URLSearchParams(window.location.search).get('scene') || 'WorldBuildingScene'
+  const pick = (key) => {
+    localStorage.setItem('gameron:debugScene', key)
+    const u = new URL(window.location.href)
+    u.searchParams.set('scene', key)
+    window.location.href = u.toString()
+  }
+  return (
+    <div style={{ position: 'fixed', bottom: 8, right: 8, zIndex: 9999, fontFamily: 'monospace', fontSize: 11 }}>
+      {open && (
+        <div style={{ background: '#12091e', border: '1px solid #4a2880', padding: '6px 8px', marginBottom: 4, borderRadius: 4 }}>
+          {SCENE_LIST.map(s => (
+            <div key={s.key}
+              onClick={() => pick(s.key)}
+              style={{
+                cursor: 'pointer',
+                padding: '2px 6px',
+                color: s.key === current ? '#cc88ff' : '#7755aa',
+                background: s.key === current ? '#1e0e30' : 'transparent',
+                borderRadius: 3,
+                marginBottom: 1,
+              }}
+            >{s.label}</div>
+          ))}
+        </div>
+      )}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: '#12091e', border: '1px solid #4a2880', color: '#7755aa',
+          padding: '2px 8px', cursor: 'pointer', borderRadius: 3, display: 'block', width: '100%',
+        }}
+      >{open ? '▾ scene' : '▸ scene'}</button>
+    </div>
+  )
+}
 
 export default function GameScreen({ gender = 'male', onExit }) {
   const containerRef = useRef(null)
   const [galleryItem,  setGalleryItem]  = useState(null)
   const [encounter,    setEncounter]    = useState(null)
   const [videoUrl,     setVideoUrl]     = useState(null)
+  const [clipboard,    setClipboard]    = useState(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -35,22 +87,29 @@ export default function GameScreen({ gender = 'male', onExit }) {
     const onEncounter = (e) => setEncounter(e.detail)
     const onGameExit  = () => { if (onExit) onExit() }
     const onVideo     = (e) => setVideoUrl(e.detail?.url)
+    const onClipboard = (e) => setClipboard(e.detail)
 
     window.addEventListener('game:showGalleryItem', onShow)
     window.addEventListener('game:encounterChoice', onEncounter)
     window.addEventListener('game:exit',            onGameExit)
     window.addEventListener('game:showVideo',       onVideo)
+    window.addEventListener('game:showClipboard',   onClipboard)
     return () => {
       window.removeEventListener('game:showGalleryItem', onShow)
       window.removeEventListener('game:encounterChoice', onEncounter)
       window.removeEventListener('game:exit',            onGameExit)
       window.removeEventListener('game:showVideo',       onVideo)
+      window.removeEventListener('game:showClipboard',   onClipboard)
     }
   }, [onExit])
 
   const closeGallery   = useCallback(() => { setGalleryItem(null); window.dispatchEvent(new CustomEvent('game:galleryItemClosed')) }, [])
   const closeEncounter = useCallback(() => { setEncounter(null) }, [])
   const closeVideo     = useCallback(() => { setVideoUrl(null); window.dispatchEvent(new CustomEvent('game:videoClosed')) }, [])
+  const closeClipboard = useCallback((result) => {
+    setClipboard(null)
+    window.dispatchEvent(new CustomEvent('game:clipboardResult', { detail: result }))
+  }, [])
 
   useEffect(() => {
     if (!galleryItem) return
@@ -82,6 +141,8 @@ export default function GameScreen({ gender = 'male', onExit }) {
 
       <EncounterOverlay encounter={encounter} onClose={closeEncounter} />
 
+      <ClipboardOverlay data={clipboard} onClose={closeClipboard} />
+
       {videoUrl && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 500,
@@ -94,7 +155,7 @@ export default function GameScreen({ gender = 'male', onExit }) {
             style={{ maxWidth: '96vw', maxHeight: '54vw', border: '2px solid #5a3c12' }}
             allow="autoplay; fullscreen"
             allowFullScreen
-            title="Half-Life"
+            title="Game Design Video"
           />
           <button
             onClick={closeVideo}
@@ -110,10 +171,12 @@ export default function GameScreen({ gender = 'male', onExit }) {
               letterSpacing: '0.2em',
             }}
           >
-            [ESC] SCHLIEßEN
+            [C] SCHLIEßEN
           </button>
         </div>
       )}
+
+      <ScenePicker />
     </>
   )
 }
