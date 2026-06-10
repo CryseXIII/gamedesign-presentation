@@ -50,7 +50,7 @@ export default function StartScreen({ onStart, onPortal }) {
         <div className="start-logo-wrap">
           <img
             className="start-logo"
-            src="/assets/logo.png"
+            src="/assets/logo.jpg"
             alt="Gameron"
             draggable={false}
           />

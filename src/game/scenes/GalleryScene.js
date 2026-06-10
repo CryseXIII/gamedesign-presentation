@@ -138,14 +138,14 @@ export default class GalleryScene extends Phaser.Scene {
       { fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#c9a84c' }
     ).setOrigin(0.5, 1).setAlpha(0.5)
 
-    // ── Lady Autoplay — looms near the exit ──────────────────────────────────
+    // ── Lady Autoplay placeholder (asset removed) ────────────────────────────
     const autoH  = Math.round(H * 0.72)
     const autoW  = Math.round(autoH * (512 / 683))
-    this._autoplay = this.add.image(roomW - 340, H - FLOOR_H, 'gm_enemy_autoplay_lady')
-      .setOrigin(0.5, 1)
-      .setDisplaySize(autoW, autoH)
-      .setDepth(3)
-      .setAlpha(0)
+    const autoG  = this.add.graphics().setDepth(3)
+    autoG.fillStyle(0x3a0060, 0.7)
+    autoG.fillRect(roomW - 340 - autoW / 2, H - FLOOR_H - autoH, autoW, autoH)
+    this._autoplay = autoG
+    this._autoplay.setAlpha(0)
 
     this._autoplayLabel = this.add.text(roomW - 340, H - FLOOR_H - autoH - 8, 'LADY AUTOPLAY', {
       fontFamily: '"Cinzel", Georgia, serif',

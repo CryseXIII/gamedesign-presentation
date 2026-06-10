@@ -49,7 +49,7 @@ export const MANIFEST = {
     id:     'logo',
     type:   'image',
     key:    'logo',
-    path:   '/assets/logo.png',
+    path:   '/assets/logo.jpg',
     status: 'loaded',
   },
   menu_sfx: {
@@ -79,17 +79,17 @@ export const MANIFEST = {
     id:     'charsel_portrait_male',
     type:   'image',
     key:    null,
-    path:   '/assets/charsel_portrait_male.png',
+    path:   '/assets/charsel_portrait_male.jpg',
     status: 'loaded',
-    note:   'CharacterSelect card — male warrior portrait, 1042×1510, dark fantasy pixel art',
+    note:   'CharacterSelect card — male warrior portrait, 621×900 JPEG',
   },
   charsel_portrait_female: {
     id:     'charsel_portrait_female',
     type:   'image',
     key:    null,
-    path:   '/assets/charsel_portrait_female.png',
+    path:   '/assets/charsel_portrait_female.jpg',
     status: 'loaded',
-    note:   'CharacterSelect card — female warrior portrait, 768×1024 (center-cropped from landscape), dark fantasy pixel art',
+    note:   'CharacterSelect card — female warrior portrait, 675×900 JPEG',
   },
 
   // ── WorldBuildingScene (Scene 1) ────────────────────────────────────────────
@@ -541,22 +541,6 @@ export const MANIFEST = {
     note:   'Credits end screen shown after scroll completes, 1023×576',
   },
 
-  gm_bg_training_arena: {
-    id:     'gm_bg_training_arena',
-    type:   'image',
-    key:    'gm_bg_training_arena',
-    path:   '/assets/gm_bg_training_arena.png',
-    status: 'loaded',
-    note:   'GameScene — training arena background, 1832×859',
-  },
-  gm_enemy_autoplay_lady: {
-    id:     'gm_enemy_autoplay_lady',
-    type:   'image',
-    key:    'gm_enemy_autoplay_lady',
-    path:   '/assets/gm_enemy_autoplay_lady.png',
-    status: 'loaded',
-    note:   'Scene 3 (GalleryScene) — Lady Autoplay enemy sprite, 512×683 transparent (green-keyed), marionette demon with AUTO orb',
-  },
 }
 
 /**

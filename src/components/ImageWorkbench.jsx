@@ -4,7 +4,7 @@ import '../styles/workbench.css'
 
 const DEFAULT_ORCHESTRATOR_URL = 'https://sd-orchestrator.gamedesign.152.53.117.246.sslip.io'
 const DEFAULT_NOTIFICATION_URL = ''
-const SAMPLE_BASE_IMAGE = '/assets/gm_bg_training_arena.png'
+const SAMPLE_BASE_IMAGE = '/assets/scenes/pgs/bg_castle.png'
 const SAMPLE_EXCERPT = `The warrior studies the image, then marks one specific region for repair while keeping the rest of the scene's mood, color, and composition intact.`
 const SAMPLE_ANALYSIS = `Base image: preserve the full composition and atmosphere. Target 1 should be the visible error area. Use the attachments as strict visual reference, not as loose inspiration.`
 const SAMPLE_SD_PROMPT = `sharp high-resolution image, cinematic lighting, coherent anatomy, strong composition, preserve atmosphere, fix only the marked area, no extra limbs, no blur, no text, no watermark`

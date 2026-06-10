@@ -33,20 +33,21 @@ const MAX_DIAMOND_RANGE = 1400
 // Video embed URL  (20:40 = 1240 s)
 const VIDEO_URL = 'https://www.youtube.com/embed/OK4koZJcook?autoplay=1&start=1240'
 
-// Picture-frame position/size as fractions of the canvas (measured from 2048×768 source)
+// Picture-frame position/size as fractions of canvas — matches ornate frame in bg_castle
 const FRAME_CX_FRAC = 0.500
-const FRAME_CY_FRAC = 0.431
-const FRAME_IW_FRAC = 0.150
-const FRAME_IH_FRAC = 0.225
+const FRAME_CY_FRAC = 0.540
+const FRAME_IW_FRAC = 0.230
+const FRAME_IH_FRAC = 0.350
 
 // Platform definitions: xFrac = centre X / W,  yOffBot = px above floor top
+// Positions tuned to match doorway openings in bg_castle.png
 const PLAT_DEFS = [
-  { id: 'oben-links',   xFrac: 0.17, yOffBot: 330, label: 'I'   },
-  { id: 'oben-rechts',  xFrac: 0.83, yOffBot: 330, label: 'II'  },
-  { id: 'unten-links',  xFrac: 0.20, yOffBot: 220, label: 'III' },
-  { id: 'unten-rechts', xFrac: 0.80, yOffBot: 220, label: 'IV'  },
+  { id: 'oben-links',   xFrac: 0.22, yOffBot: 298, label: 'I'   },
+  { id: 'oben-rechts',  xFrac: 0.79, yOffBot: 298, label: 'II'  },
+  { id: 'unten-links',  xFrac: 0.22, yOffBot: 118, label: 'III' },
+  { id: 'unten-rechts', xFrac: 0.79, yOffBot: 118, label: 'IV'  },
 ]
-const PLAT_W_FRAC = 0.14   // platform width as fraction of W
+const PLAT_W_FRAC = 0.10   // platform width as fraction of W
 const PLAT_H_PX   = 20     // physics body height
 
 // ── Scene ──────────────────────────────────────────────────────────────────────
@@ -129,9 +130,17 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
       .setDepth(-10)
 
     // ── Floor (static, invisible) ───────────────────────────────────────────
+    // Height = FLOOR_H so physics top lands exactly at floorTopY = H − FLOOR_H
     const floorY = H - FLOOR_H / 2
-    const floor  = this.add.rectangle(W / 2, floorY, W, FLOOR_H * 2, 0x000000, 0)
+    const floor  = this.add.rectangle(W / 2, floorY, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(floor, true)
+
+    // ── Boundary walls (invisible) — stop player leaving play area ──────────
+    const wallH = H + 400
+    const wallL = this.add.rectangle(Math.round(W * 0.11), H / 2, 12, wallH, 0x000000, 0)
+    const wallR = this.add.rectangle(Math.round(W * 0.89), H / 2, 12, wallH, 0x000000, 0)
+    this.physics.add.existing(wallL, true)
+    this.physics.add.existing(wallR, true)
 
     // ── Platforms: invisible physics, door arch visuals ────────────────────
     const platW  = Math.round(W * PLAT_W_FRAC)
@@ -157,12 +166,14 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this._videoFrameY = Math.round(H * FRAME_CY_FRAC)
 
     // ── Player ─────────────────────────────────────────────────────────────
-    const spawnX = Math.round(W * 0.12)
+    const spawnX = Math.round(W * 0.14)
     const spawnY = floorTopY - SPAWN_Y_OFFSET
     this._player = new PlayerController(this, spawnX, spawnY)
 
-    // Collider with floor
+    // Colliders
     this.physics.add.collider(this._player.sprite, floor)
+    this.physics.add.collider(this._player.sprite, wallL)
+    this.physics.add.collider(this._player.sprite, wallR)
 
     // One-way colliders with platforms
     this._platforms.forEach((plat) => {
@@ -219,11 +230,12 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     }
     window.addEventListener('keydown', this._fKeyFn)
 
-    // Door E-press handler
+    // Door E-press handler — live proximity check, no overlap flag needed
     this._eDoorFn = (e) => {
       if (e.key !== 'e' && e.key !== 'E') return
-      if (this._dialogVisible || !this._waifuDone || this._finalGateBuilt) return
-      if (this._nearDoor >= 0) this._onDoorEntered(this._nearDoor)
+      if (this._dialogVisible || !this._waifuDone || this._finalGateBuilt || this._doorCooldown) return
+      const near = this._nearestDoor()
+      if (near >= 0) this._onDoorEntered(near)
     }
     window.addEventListener('keydown', this._eDoorFn)
 
@@ -234,39 +246,21 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this.time.delayedCall(900, () => this._startWaifuDialog())
   }
 
-  // ── Door arch visual (minimal 2D geometry on platform) ────────────────────
-  _drawDoorArch(px, topY, platW, idx) {
+  // ── Door arch visual — dark opening only, no labels ──────────────────────
+  _drawDoorArch(px, topY, platW, _idx) {
     const g     = this.add.graphics().setDepth(3)
-    const doorW = Math.round(platW * 0.46)
-    const doorH = 76
+    const doorW = Math.round(platW * 0.70)
+    const doorH = 80
     const archR = Math.round(doorW * 0.5)
 
     // Dark door void
-    g.fillStyle(0x06040c, 0.88)
+    g.fillStyle(0x06040c, 0.92)
     g.fillRect(px - doorW / 2, topY - doorH + archR, doorW, doorH - archR)
     g.fillCircle(px, topY - doorH + archR, archR)
 
-    // Thin door-frame edge
-    g.lineStyle(2, 0x5a3880, 0.75)
+    // Subtle frame edge
+    g.lineStyle(2, 0x3a2860, 0.6)
     g.strokeRect(px - doorW / 2, topY - doorH + archR, doorW, doorH - archR)
-
-    // Roman numeral label above
-    this.add.text(px, topY - doorH - 8, PLAT_DEFS[idx].label, {
-      fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '12px',
-      color:      '#554466',
-      stroke:     '#080610',
-      strokeThickness: 3,
-    }).setOrigin(0.5, 1).setDepth(4)
-
-    // [E] interact prompt (always visible, subtle)
-    this.add.text(px, topY - doorH - 24, '[E]', {
-      fontFamily: '"Cinzel", Georgia, serif',
-      fontSize:   '11px',
-      color:      '#7755aa',
-      stroke:     '#08060e',
-      strokeThickness: 2,
-    }).setOrigin(0.5, 1).setDepth(4)
   }
 
   // ── Door triggers (one per platform, at the arch opening on platform) ──────
@@ -655,6 +649,25 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
     this._decoyObjs = []
   }
 
+  // ── Live door proximity — used by E-key handler ────────────────────────────
+  _nearestDoor() {
+    if (!this._player) return -1
+    const px = this._player.sprite.x
+    const py = this._player.sprite.y
+    const platW = Math.round(this._W * PLAT_W_FRAC)
+    for (let i = 0; i < this._platforms.length; i++) {
+      const plat = this._platforms[i]
+      const door = this._doors[i]
+      if (!door) continue
+      const dx = Math.abs(px - door.x)
+      // Player center Y when standing on platform: topY - SPAWN_Y_OFFSET
+      const standY = plat.topY - 50
+      const dy = Math.abs(py - standY)
+      if (dx < platW * 0.8 && dy < 90) return i
+    }
+    return -1
+  }
+
   // ── Victory screen after 3rd correct door ─────────────────────────────────
   _showVictoryScreen() {
     const W = this._W
@@ -804,9 +817,6 @@ export default class PlayerGuidanceScene extends Phaser.Scene {
   // ── update ─────────────────────────────────────────────────────────────────
   update() {
     if (!this._player || this._transitioning) return
-
-    // Reset per-frame door proximity (overlap callbacks fill it in)
-    this._nearDoor = -1
 
     if (this._dialogVisible) {
       this._player.freeze()
