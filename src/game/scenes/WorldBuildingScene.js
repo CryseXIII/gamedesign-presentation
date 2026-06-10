@@ -178,19 +178,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this.physics.add.existing(fireWall, true)
     this._fireWall = fireWall
 
-    // Ruined building silhouettes
-    const ruins = [
-      { x: 200, w: 80,  h: 200 },
-      { x: 380, w: 55,  h: 160 },
-      { x: 520, w: 100, h: 240 },
-      { x: 680, w: 60,  h: 180 },
-    ]
-    for (const r of ruins) {
-      this.add.rectangle(r.x, H - FLOOR_H - r.h / 2, r.w, r.h, 0x0d0804).setDepth(-5)
-      this._spawnFireColumn(r.x, H - FLOOR_H - r.h, 18)
-      this._spawnSmokeColumn(r.x, H - FLOOR_H - r.h)
-    }
-
     // Ambient orange glow over Zone 1
     this.add.rectangle(W * ZONE.Z2 / 2, H / 2, W * ZONE.Z2, H, 0xff2200)
       .setAlpha(0.04)
@@ -259,7 +246,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5).setAlpha(0)
 
-    this._succubusBlocker = this.add.rectangle(x + 8, y - Math.round(spriteH * 0.5), spriteW + 140, spriteH + 50, 0x000000)
+    this._succubusBlocker = this.add.rectangle(x + 12, y - Math.round(spriteH * 0.46), spriteW + 220, spriteH + 90, 0x000000)
       .setAlpha(0)
     this.physics.add.existing(this._succubusBlocker, true)
 
@@ -478,15 +465,15 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
       if (this.textures.exists(keyBase)) {
         const img = this.textures.get(keyBase).getSourceImage()
-        const targetH = Math.round(H * 0.74)
+        const targetH = Math.round(H * 0.62)
         const aspect = img ? (img.width / img.height) : 0.7
-        const targetW = Math.max(160, Math.min(Math.round(targetH * aspect), Math.round(W * 0.24)))
+        const targetW = Math.max(140, Math.min(Math.round(targetH * aspect), Math.round(W * 0.2)))
         portraitObj = this.add.image(centerX, H / 2 - FLOOR_H, keyBase)
           .setDisplaySize(targetW, targetH)
           .setDepth(1)
           .setAlpha(0)
       } else {
-        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, Math.round(W * 0.22), Math.round(H * 0.74), 0x1a1208)
+        portraitObj = this.add.rectangle(centerX, H / 2 - FLOOR_H, Math.round(W * 0.18), Math.round(H * 0.62), 0x1a1208)
           .setDepth(1)
           .setAlpha(0)
         this.add.text(centerX, H / 2 - FLOOR_H, `missing_id:${keyBase}`, {

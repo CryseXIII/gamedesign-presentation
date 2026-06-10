@@ -46,18 +46,20 @@ function makeTrimmedFrameCanvas(image, sx, sy, sw, sh, targetSize) {
   const keyR = data[0]
   const keyG = data[1]
   const keyB = data[2]
-  const tolerance = 36
+  const tolerance = 48
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]
     const g = data[i + 1]
     const b = data[i + 2]
 
-    if (
+    const isKeyGreen = g > 140 && g > r + 40 && g > b + 40
+    const isKeyMatch =
       Math.abs(r - keyR) <= tolerance &&
       Math.abs(g - keyG) <= tolerance &&
       Math.abs(b - keyB) <= tolerance
-    ) {
+
+    if (isKeyMatch || isKeyGreen) {
       data[i + 3] = 0
     }
   }
