@@ -362,7 +362,7 @@ export default class PlayerController {
 
     const attackJust = Phaser.Input.Keyboard.JustDown(this._jKey)
     const jumpInputJust = !attackJust && jumpJust
-    const moveSpeed = GameState.speedBoostUnlocked ? MOVE_SPEED * 1.25 : MOVE_SPEED
+    const moveSpeed = GameState.speedBoostUnlocked ? MOVE_SPEED * 1.5 : MOVE_SPEED
 
     // ── Flip sprite ──────────────────────────────────────────────────────────
     if (!this._isAttacking()) {
@@ -442,6 +442,7 @@ export default class PlayerController {
   halt() {
     if (this.sprite && this.sprite.body) {
       this.sprite.setVelocityX(0)
+      this.sprite.setVelocityY(0)
     }
   }
 

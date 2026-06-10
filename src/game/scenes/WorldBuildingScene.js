@@ -764,6 +764,12 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this._updateStormAndRain(px)
     this._updateWidowCombat(px, ps)
 
+    const groundY = this._H - FLOOR_H - SPAWN_Y_OFFSET
+    if (this._player.sprite.y > groundY) {
+      this._player.sprite.setY(groundY)
+      this._player.sprite.setVelocityY(0)
+    }
+
     // Must update AFTER combat check so we detect state transitions
     this._lastPlayerState = ps
 

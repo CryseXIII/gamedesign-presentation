@@ -35,7 +35,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
-- The intro now has an invisible safety floor and a slightly higher spawn so the player can stay grounded, reach the speedup waifu, and continue to the next screen with WASD; the unlocked speed boost now also increases movement speed
+- The intro now has an invisible safety floor, a hard vertical ground clamp, and a slightly higher spawn so the player can stay grounded, reach the speedup waifu, and continue to the next screen with WASD; the unlocked speed boost now also increases movement speed
 - The speedup waifu asset was further cut down to `512x512` so the first intro load is a bit lighter
 - The speedup waifu is now a real scene asset: `wb_speedup_succubus.png` was imported from Downloads, keyed out to transparent green-screen cutout, resized to `512x512`, added to the manifest, and placed in `WorldBuildingScene` as a floor-anchored image so it no longer falls through the ground
 - Scene 1 camera framing is tightened with a 1.08 zoom, round-pixel rendering, and a deadzone so the intro reads more grounded in-browser; the rain emitter now follows camera Y as well as X
