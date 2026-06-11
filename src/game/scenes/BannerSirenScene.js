@@ -136,13 +136,13 @@ export default class BannerSirenScene extends Phaser.Scene {
     this._holeCover.fillStyle(0x000000, 1)
     this._holeCover.fillRect(0, H - FLOOR_H, W, SHAFT_DEPTH + H * 2)
 
-    // ── Top floor (standard position) ────────────────────────────────────────
-    const floorTopY = H - FLOOR_H
+    // ── Top floor — measured floor at 74.8% of H in bs_bg_top ───────────────
+    const floorTopY = Math.round(H * 0.748)
     this._buildBreakableFloor(W, floorTopY)
 
-    // ── Bottom landing floor (standard: botY + H - FLOOR_H) ────────────────
-    const botFloorTopY = botY + H - FLOOR_H
-    const bFloor = this.add.rectangle(W / 2, botY + H - FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
+    // ── Bottom landing floor — measured floor at 80.8% of H in bs_bg_bot ────
+    const botFloorTopY = botY + Math.round(H * 0.808)
+    const bFloor = this.add.rectangle(W / 2, botFloorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(bFloor, true)
     this._botFloorTopY = botFloorTopY
 

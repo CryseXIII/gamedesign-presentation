@@ -243,7 +243,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
     const x = W * WIDOW_X_FACTOR - 180
     const y = H - FLOOR_H
     const spriteH = Math.round(H * 0.56)
-    const spriteW = Math.round(spriteH * 0.72)
+    const spriteW = spriteH   // source is 512×512 — preserve 1:1 aspect ratio
     this._succubusX = x
     this._succubusY = y
 

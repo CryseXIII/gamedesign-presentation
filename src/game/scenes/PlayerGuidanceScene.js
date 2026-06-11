@@ -41,7 +41,7 @@ const FRAME_IH_FRAC = 0.290
 
 // Platform positions tuned for bg_castle.png displayed at 1280×720
 // Castle visual floor ≈ H*0.86.  Portals at ~50% and ~68% of H from top.
-const PGS_FLOOR_TOP_FRAC = 0.86   // castle's walkable surface as fraction of H
+const PGS_FLOOR_TOP_FRAC = 0.89   // castle visual floor at 89.5% of H (measured from bg_castle.png)
 
 const PLAT_DEFS = [
   { id: 'oben-links',   xFrac: 0.165, yFrac: 0.46, label: 'I'   },

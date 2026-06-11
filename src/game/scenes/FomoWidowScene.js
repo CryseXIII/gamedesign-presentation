@@ -169,7 +169,7 @@ export default class FomoWidowScene extends Phaser.Scene {
     }
 
     // ── Floor (bg visual floor at ~88% of H) ─────────────────────────────────
-    const floorTopY = Math.round(H * 0.88)
+    const floorTopY = Math.round(H * 0.778)   // measured at 77.8% of H in fw_bg.jpg
     const floorRect = this.add.rectangle(worldW / 2, floorTopY + FLOOR_H / 2, worldW, FLOOR_H, 0, 0)
     this.physics.add.existing(floorRect, true)
 

@@ -77,9 +77,9 @@ export default class TaskmasterScene extends Phaser.Scene {
       g.fillStyle(0x08060e, 1); g.fillRect(0, 0, W, H)
     }
 
-    // ── Floor (bg visual floor at ~88% of H) ─────────────────────────────────
-    const floorTopY = H - FLOOR_H
-    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H, 0, 0)
+    // ── Floor — measured at 87.6% of H in tm_bg.jpg ──────────────────────────
+    const floorTopY = Math.round(H * 0.876)
+    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────

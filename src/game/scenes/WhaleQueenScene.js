@@ -68,9 +68,9 @@ export default class WhaleQueenScene extends Phaser.Scene {
       g.fillRect(0, 0, W, H)
     }
 
-    // ── Floor (bg image visual floor at ~88% of H) ────────────────────────────
-    const floorTopY = H - FLOOR_H
-    const floorRect = this.add.rectangle(W / 2, H - FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
+    // ── Floor — measured at 82.5% of H in wq_bg.jpg ──────────────────────────
+    const floorTopY = Math.round(H * 0.825)
+    const floorRect = this.add.rectangle(W / 2, floorTopY + FLOOR_H / 2, W, FLOOR_H, 0x000000, 0)
     this.physics.add.existing(floorRect, true)
 
     // ── Player ────────────────────────────────────────────────────────────────
@@ -81,8 +81,9 @@ export default class WhaleQueenScene extends Phaser.Scene {
     // ── Whale Queen ───────────────────────────────────────────────────────────
     this._buildQueen(W, H, floorTopY)
 
-    // ── Exit zone (initially blocked) ─────────────────────────────────────────
-    const exitGate = this.add.rectangle(W - 40, H / 2, 80, H + 200, 0x000000, 0)
+    // ── Exit gate ─────────────────────────────────────────────────────────────
+    const gateH = H - floorTopY + 200   // only reach below the floor line
+    const exitGate = this.add.rectangle(W - 40, floorTopY - gateH/2 + 100, 80, gateH, 0x000000, 0)
     this.physics.add.existing(exitGate, true)
     this._exitGateBody = exitGate
     this.physics.add.collider(player.sprite, exitGate)
@@ -107,10 +108,10 @@ export default class WhaleQueenScene extends Phaser.Scene {
   }
 
   _buildQueen(W, H, floorTopY) {
-    // Position on the throne — throne appears at ~60% x and ~75% y in background
-    const x  = Math.round(W * 0.60)
-    const throneY = Math.round(H * 0.78)   // throne seat level
-    const ph = 280
+    // Centre the queen on the throne visible in wq_bg — throne at ~57% x, seats at floorTopY
+    const x  = Math.round(W * 0.57)
+    const throneY = floorTopY   // sit right at the floor level
+    const ph = 320   // taller so she looks imposing on the throne
     if (this.textures.exists('wq_whale_queen')) {
       const tex  = this.textures.get('wq_whale_queen')
       const srcH = tex.getSourceImage().height
@@ -194,10 +195,11 @@ export default class WhaleQueenScene extends Phaser.Scene {
   _startIntroDialog() {
     this._showDialog([
       'Mmm... ein Gast. In meinem Thronsaal.',
-      'Du siehst müde aus, Krieger. Das ist verständlich.',
-      'Weißt du was? Ich bin in guter Stimmung.',
+      'Du siehst erschöpft aus, Krieger. Verständlich.',
+      'Weißt du was? Ich bin gnädig heute.',
       'Ich verschone dich — für nur 5.000 Diamanten.',
-      'Einmalzahlung. Angebot endet sofort.',
+      '...oder du versuchst dein Glück gegen mich.',
+      '[lächelt kalt]  Q = zahlen.   E = kämpfen.',
     ], () => this._showPaymentChoice())
   }
 
@@ -266,11 +268,13 @@ export default class WhaleQueenScene extends Phaser.Scene {
 
     // Dialog lines for each outcome
     const victoryLines = [
-      '[lacht laut auf]',
-      'Ablehnen? ABLEHNEN?! Weißt du, wer ich bin?!',
-      'Ich bin die WHALE QUEEN. Niemand lehnt mich ab.',
-      '...außer dir. Heute.',
-      '[erpresst sichtlich]  Geh. Aus meinen Augen.',
+      '[Klinge trifft — die Whale Queen taumelt]',
+      'Du... du wagst es, mich anzugreifen?!',
+      'Ich bin eine GÖTTIN. Niemand schlägt mich!',
+      '[fällt zu Boden]',
+      '...niemand hat mir je so Widerstand geleistet.',
+      'Vielleicht... hast du etwas, das ich nicht kaufen kann.',
+      '[flüstert]  Lass es dir nicht wegnehmen.',
     ]
     const defeatLines = [
       '[streckt die Hand aus]  5.000 Diamanten. Klug von dir.',

@@ -374,10 +374,13 @@ export default class PlayerController {
     }
 
     // ── Ground movement animations ────────────────────────────────────────────
+    // Use velocity threshold to prevent flickering when briefly releasing keys
     if (onGround && !this._isAttacking()
         && this._state !== S.JUMP && this._state !== S.DOUBLE_JUMP
         && this._state !== S.LAND && this._state !== S.INTERACT) {
-      const next = this._groundStateForInput(goLeft, goRight)
+      const isMovingX = Math.abs(body.velocity.x) > 18
+      const wantRun   = goLeft || goRight || isMovingX
+      const next      = wantRun ? S.RUN : S.IDLE
       if (this._state !== next) this._setState(next)
     }
 
