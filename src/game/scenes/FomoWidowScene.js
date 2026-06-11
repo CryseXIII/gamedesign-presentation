@@ -22,31 +22,31 @@ const SECTIONS = [
         subtitle: 'Full Prologue',
         url: 'https://www.youtube.com/embed/4lmEqpgg3B4?autoplay=1',
       },
-      {
-        title: 'Cuphead',
-        subtitle: 'Journalist vs. Pigeon Intelligence Test',
-        url: 'https://www.youtube.com/embed/OOjXaAZHEQE?autoplay=1',
-      },
     ],
   },
   {
     heading: 'Signposting & Player Guidance',
     videos: [
       {
+        title: 'Cuphead',
+        subtitle: 'Journalist vs. Pigeon Intelligence Test',
+        url: 'https://www.youtube.com/embed/OOjXaAZHEQE?autoplay=1',
+      },
+      {
         title: 'Elden Ring',
         subtitle: "Grace's Guidance — Lore & Theories",
         url: 'https://www.youtube.com/embed/glqcvTJYC_0?autoplay=1&start=10',
-      },
-      {
-        title: 'Jump King',
-        subtitle: 'Gameplay — No Commentary',
-        url: 'https://www.youtube.com/embed/qL2cQ0JAb4M?autoplay=1&start=50',
       },
     ],
   },
   {
     heading: 'Spielmechaniken',
     videos: [
+      {
+        title: 'Jump King',
+        subtitle: 'Gameplay — No Commentary',
+        url: 'https://www.youtube.com/embed/qL2cQ0JAb4M?autoplay=1&start=50',
+      },
       {
         title: 'La-Mulana Remake',
         subtitle: 'Zu simple itemless loop',
@@ -96,11 +96,11 @@ const ALL_VIDEOS = []
 SECTIONS.forEach(sec => sec.videos.forEach(v => ALL_VIDEOS.push({ ...v, section: sec.heading })))
 
 // Layout constants
-const FRAME_W         = 220
-const FRAME_H         = 140
-const SECTION_MARGIN  = 80    // space before each section heading
-const VIDEO_SPACING   = 260   // horizontal space per video frame
-const LEFT_MARGIN     = 200   // before first video
+const FRAME_W         = 240
+const FRAME_H         = 150
+const SECTION_MARGIN  = 160   // space before each new section
+const VIDEO_SPACING   = 380   // horizontal space per video frame (wider breathing room)
+const LEFT_MARGIN     = 260   // before first video
 const BG_REPEAT_W     = 1280  // width of one bg tile repeat
 
 export default class FomoWidowScene extends Phaser.Scene {
@@ -123,9 +123,12 @@ export default class FomoWidowScene extends Phaser.Scene {
     this._dialogSpeaker   = null
     this._activeFrame     = null
     this._videoFrames     = []
+    this._galleryObjs     = []
     this._W = this._H = this._worldW = 0
     this._widowSprite     = null
     this._widowLabel      = null
+    this._introWidowSprite = null
+    this._introWidowLabel  = null
     this._fKeyFn          = null
     this._cKeyFn          = null
     this._eKeyFn          = null
@@ -165,9 +168,9 @@ export default class FomoWidowScene extends Phaser.Scene {
       g.fillStyle(0x060410, 1); g.fillRect(0, 0, worldW, H)
     }
 
-    // ── Floor ─────────────────────────────────────────────────────────────────
-    const floorTopY = H - FLOOR_H
-    const floorRect = this.add.rectangle(worldW / 2, H - FLOOR_H / 2, worldW, FLOOR_H, 0, 0)
+    // ── Floor (bg visual floor at ~88% of H) ─────────────────────────────────
+    const floorTopY = Math.round(H * 0.88)
+    const floorRect = this.add.rectangle(worldW / 2, floorTopY + FLOOR_H / 2, worldW, FLOOR_H, 0, 0)
     this.physics.add.existing(floorRect, true)
 
     // Right wall
@@ -179,10 +182,15 @@ export default class FomoWidowScene extends Phaser.Scene {
     this.physics.add.collider(this._player.sprite, floorRect)
     this.physics.add.collider(this._player.sprite, wallR)
 
-    // ── Section headings + video stations ─────────────────────────────────────
+    // ── Section headings + video stations (start HIDDEN, reveal after intro) ──
+    this._galleryObjs = []   // all gallery Phaser objects to fade in later
     this._buildGallery(stationXs, H, floorTopY)
+    this._galleryObjs.forEach(o => { try { o.setAlpha(0) } catch {} })
 
-    // ── Fomo Widow at the very end ─────────────────────────────────────────────
+    // ── Intro Fomo Widow (at corridor start, fades after intro dialog) ────────
+    this._buildIntroWidow(Math.round(W * 0.32), floorTopY)
+
+    // ── End Fomo Widow (hidden, revealed when player reaches far end) ─────────
     const widowX = worldW - Math.round(W * 0.18)
     this._buildWidow(widowX, floorTopY)
 
@@ -247,7 +255,7 @@ export default class FomoWidowScene extends Phaser.Scene {
 
   // ── Build gallery paintings ────────────────────────────────────────────────
   _buildGallery(stationXs, H, floorTopY) {
-    const frameY = floorTopY - FRAME_H / 2 - 60   // paintings hang above floor
+    const frameY = floorTopY - FRAME_H / 2 - 80   // paintings hang above floor
     let vidIdx = 0
     let sectionX = LEFT_MARGIN
 
@@ -256,23 +264,26 @@ export default class FomoWidowScene extends Phaser.Scene {
 
       // Section heading
       const secCenterX = sectionX + ((sec.videos.length - 1) * VIDEO_SPACING) / 2
-      this.add.text(secCenterX, frameY - FRAME_H / 2 - 48, sec.heading, {
+      const headTxt = this.add.text(secCenterX, frameY - FRAME_H / 2 - 54, sec.heading, {
         fontFamily: '"Cinzel", Georgia, serif',
-        fontSize: '20px', color: '#9966cc', stroke: '#0a0810', strokeThickness: 3,
+        fontSize: '22px', color: '#9966cc', stroke: '#0a0810', strokeThickness: 3,
         align: 'center',
       }).setOrigin(0.5, 1).setDepth(4)
+      this._galleryObjs.push(headTxt)
 
-      // Divider line under section heading
+      // Divider line under heading
       const lineG = this.add.graphics().setDepth(3)
       lineG.lineStyle(1, 0x4a2880, 0.5)
-      lineG.lineBetween(sectionX - 40, frameY - FRAME_H / 2 - 50, secCenterX * 2 - sectionX + sec.videos.length * VIDEO_SPACING - 200, frameY - FRAME_H / 2 - 50)
+      const lineEnd = sectionX + sec.videos.length * VIDEO_SPACING - 60
+      lineG.lineBetween(sectionX - 60, frameY - FRAME_H / 2 - 56, lineEnd, frameY - FRAME_H / 2 - 56)
+      this._galleryObjs.push(lineG)
 
       sec.videos.forEach((vid, vi) => {
         const sx = stationXs[vidIdx]
-        this._buildPainting(sx, frameY, vid, vidIdx)
+        this._buildPainting(sx, frameY, vid, vidIdx)   // painting pushes to _galleryObjs internally
 
-        // Proximity zone for E interaction
-        const zone = this.add.rectangle(sx, floorTopY - 60, FRAME_W + 40, 180, 0, 0)
+        // Proximity zone (invisible — no need to hide/show)
+        const zone = this.add.rectangle(sx, floorTopY - 60, FRAME_W + 60, 200, 0, 0)
         this.physics.add.existing(zone, true)
         this._stationZones.push({ x: sx, idx: vidIdx, zone })
 
@@ -293,34 +304,44 @@ export default class FomoWidowScene extends Phaser.Scene {
     g.fillRect(sx - FRAME_W / 2 - 8, frameY - FRAME_H / 2 - 8, FRAME_W + 16, FRAME_H + 16)
     g.fillStyle(0x6a4020, 1)
     g.fillRoundedRect(sx - FRAME_W / 2 - 6, frameY - FRAME_H / 2 - 6, FRAME_W + 12, FRAME_H + 12, 3)
-    // Inner dark area (canvas / play button)
+    // Inner dark area
     g.fillStyle(0x0a0810, 1)
     g.fillRect(sx - FRAME_W / 2, frameY - FRAME_H / 2, FRAME_W, FRAME_H)
     // Play icon
     g.fillStyle(0x5533aa, 0.7)
-    g.fillTriangle(sx - 20, frameY - 20, sx - 20, frameY + 20, sx + 24, frameY)
+    g.fillTriangle(sx - 22, frameY - 22, sx - 22, frameY + 22, sx + 26, frameY)
     g.lineStyle(2, 0x8855cc, 0.8)
-    g.strokeTriangle(sx - 20, frameY - 20, sx - 20, frameY + 20, sx + 24, frameY)
+    g.strokeTriangle(sx - 22, frameY - 22, sx - 22, frameY + 22, sx + 26, frameY)
     // Hanging wire
     g.lineStyle(1, 0x5a3a10, 0.6)
-    g.lineBetween(sx - 30, frameY - FRAME_H / 2 - 6, sx - 30, frameY - FRAME_H / 2 - 32)
-    g.lineBetween(sx + 30, frameY - FRAME_H / 2 - 6, sx + 30, frameY - FRAME_H / 2 - 32)
+    g.lineBetween(sx - 34, frameY - FRAME_H / 2 - 6, sx - 34, frameY - FRAME_H / 2 - 36)
+    g.lineBetween(sx + 34, frameY - FRAME_H / 2 - 6, sx + 34, frameY - FRAME_H / 2 - 36)
+    this._galleryObjs.push(g)
 
-    // Title (game name)
-    const lineCount = vid.title.split('\n').length
-    this.add.text(sx, frameY + FRAME_H / 2 + 12, vid.title, {
+    // Game title
+    const titleTxt = this.add.text(sx, frameY + FRAME_H / 2 + 12, vid.title, {
       fontFamily: '"Cinzel", Georgia, serif',
-      fontSize: '16px', color: '#c8b89a', stroke: '#0a0810', strokeThickness: 2,
+      fontSize: '18px', color: '#c8b89a', stroke: '#0a0810', strokeThickness: 2,
       align: 'center',
     }).setOrigin(0.5, 0).setDepth(4)
+    this._galleryObjs.push(titleTxt)
+
+    // Subtitle
+    const subTxt = this.add.text(sx, frameY + FRAME_H / 2 + 36, vid.subtitle, {
+      fontFamily: '"Cinzel", Georgia, serif',
+      fontSize: '13px', color: '#7755aa', stroke: '#0a0810', strokeThickness: 2,
+      align: 'center', wordWrap: { width: FRAME_W + 40 },
+    }).setOrigin(0.5, 0).setDepth(4)
+    this._galleryObjs.push(subTxt)
 
     // [E] prompt
-    this.add.text(sx, frameY - FRAME_H / 2 - 14, '[E]', {
+    const eTxt = this.add.text(sx, frameY - FRAME_H / 2 - 16, '[E] ABSPIELEN', {
       fontFamily: '"Cinzel", Georgia, serif',
       fontSize: '16px', color: '#7755aa', stroke: '#08060e', strokeThickness: 2,
     }).setOrigin(0.5, 1).setDepth(4)
+    this._galleryObjs.push(eTxt)
 
-    // Build hidden iframe for this station
+    // Hidden iframe
     try {
       const iw = Math.round(this._W * 0.68)
       const ih = Math.round(iw * 9 / 16)
@@ -391,26 +412,46 @@ export default class FomoWidowScene extends Phaser.Scene {
     if (this._player) this.cameras.main.startFollow(this._player.sprite, true, 0.1, 0.1)
   }
 
-  // ── Fomo Widow ─────────────────────────────────────────────────────────────
-  _buildWidow(x, floorTopY) {
-    const ph = 280
+  // ── Intro Fomo Widow (start of corridor, visible during intro dialog) ────────
+  _buildIntroWidow(x, floorTopY) {
+    const ph = 400
     if (this.textures.exists('wb_fomo_widow')) {
       const tex = this.textures.get('wb_fomo_widow')
       const rw  = Math.round(tex.getSourceImage().width * (ph / tex.getSourceImage().height))
-      this._widowSprite = this.add.image(x, floorTopY, 'wb_fomo_widow')
+      this._introWidowSprite = this.add.image(x, floorTopY, 'wb_fomo_widow')
         .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(6)
       try { this.textures.get('wb_fomo_widow').setFilter(Phaser.Textures.FilterMode.LINEAR) } catch {}
     } else {
       const g = this.add.graphics().setDepth(6)
       g.fillStyle(0x660033, 0.85)
-      g.fillRect(x - 40, floorTopY - ph, 80, ph)
+      g.fillRect(x - 50, floorTopY - ph, 100, ph)
+      this._introWidowSprite = g
+    }
+    this._introWidowLabel = this.add.text(x, floorTopY - ph - 6, 'FOMO WIDOW', {
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#ff88aa',
+      stroke: '#200010', strokeThickness: 3,
+    }).setOrigin(0.5, 1).setDepth(7)
+  }
+
+  // ── Fomo Widow (end of corridor, starts hidden) ───────────────────────────
+  _buildWidow(x, floorTopY) {
+    const ph = 400
+    if (this.textures.exists('wb_fomo_widow')) {
+      const tex = this.textures.get('wb_fomo_widow')
+      const rw  = Math.round(tex.getSourceImage().width * (ph / tex.getSourceImage().height))
+      this._widowSprite = this.add.image(x, floorTopY, 'wb_fomo_widow')
+        .setOrigin(0.5, 1).setDisplaySize(rw, ph).setDepth(6)
+    } else {
+      const g = this.add.graphics().setDepth(6)
+      g.fillStyle(0x660033, 0.85)
+      g.fillRect(x - 50, floorTopY - ph, 100, ph)
       this._widowSprite = g
     }
     this._widowLabel = this.add.text(x, floorTopY - ph - 6, 'FOMO WIDOW', {
-      fontFamily: '"Cinzel", Georgia, serif', fontSize: '20px', color: '#ff88aa',
+      fontFamily: '"Cinzel", Georgia, serif', fontSize: '22px', color: '#ff88aa',
       stroke: '#200010', strokeThickness: 3,
     }).setOrigin(0.5, 1).setDepth(7)
-    // Start hidden — will appear when player reaches end
+    // Start hidden — revealed when player reaches end
     this._widowSprite.setAlpha(0)
     this._widowLabel.setAlpha(0)
   }
@@ -473,8 +514,18 @@ export default class FomoWidowScene extends Phaser.Scene {
       'Und ich habe eine Frage für dich — aber nicht jetzt.',
       'Schau dich um. Wenn du am Ende ankommst... dann.',
     ], () => {
-      const targets = [this._widowSprite, this._widowLabel].filter(Boolean)
-      if (targets.length) this.tweens.add({ targets, alpha: 0, duration: 600 })
+      // Fade out intro widow
+      const introTargets = [this._introWidowSprite, this._introWidowLabel].filter(Boolean)
+      if (introTargets.length) this.tweens.add({ targets: introTargets, alpha: 0, duration: 600 })
+
+      // Reveal gallery paintings with a staggered fade-in
+      this._galleryObjs.forEach((obj, i) => {
+        this.tweens.add({
+          targets: obj, alpha: 1, duration: 500,
+          delay: Math.floor(i / 3) * 80,   // stagger per painting group
+          ease: 'Quad.easeOut',
+        })
+      })
     })
   }
 
