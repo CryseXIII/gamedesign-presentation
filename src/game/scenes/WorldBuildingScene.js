@@ -29,9 +29,10 @@ const ZONE = { Z1: 0, Z2: 1.5, WIDOW: 5, END: 7 }
 const PORTRAIT_STATIONS = [2, 3.2, 4.4]
 
 // ─── Widow encounter ──────────────────────────────────────────────────────────
-const WIDOW_X_FACTOR  = 6
+const WIDOW_X_FACTOR  = 2.6
 const WIDOW_HP        = 100
 const HIT_DAMAGE      = 25
+const WIDOW_TRIGGER_RADIUS = 380
 const ATTACK_STATES   = ['attack_up', 'attack_down', 'attack_left', 'attack_right']
 
 export default class WorldBuildingScene extends Phaser.Scene {
@@ -528,7 +529,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
 
   _updateSpeedupSection(playerX) {
     if (!this._succubusDone && this._succubusHint) {
-      const nearSuccubus = Math.abs(playerX - this._succubusX) < 320
+      const nearSuccubus = Math.abs(playerX - this._succubusX) < WIDOW_TRIGGER_RADIUS
       this._showSuccubusPrompt(nearSuccubus && !this._encounterActive)
       if (nearSuccubus && !this._encounterActive && this._player.interactJustDown) {
         this._encounterActive = true
@@ -741,7 +742,7 @@ export default class WorldBuildingScene extends Phaser.Scene {
   _updateWidowCombat(playerX, playerState) {
     if (!this._widowCancelled || this._encounterDone) return
     const attackRange = this._player?.attackRange ?? 88
-    if (Math.abs(playerX - this._widowTriggerX) > attackRange) return
+    if (Math.abs(playerX - this._widowTriggerX) > Math.max(attackRange, 120)) return
 
     // Register a hit only when the player transitions INTO a new attack state
     if (
