@@ -12,42 +12,81 @@ import Phaser from 'phaser'
 import PlayerController, { FLOOR_H, SPAWN_Y_OFFSET } from '../PlayerController.js'
 import GameState from '../GameState.js'
 
-// ── Themed sections + videos ───────────────────────────────────────────────────
+// ── Videos in order 1, 2, 4–11 (video 3 removed) ─────────────────────────────
 const SECTIONS = [
   {
     heading: 'Worldbuilding & Motivation',
     videos: [
-      { title: 'Dark Souls',       subtitle: 'Signposting & Player Guidance', url: null },
+      {
+        title: 'Dark Souls',
+        subtitle: 'Full Prologue',
+        url: 'https://www.youtube.com/embed/4lmEqpgg3B4?autoplay=1',
+      },
+      {
+        title: 'Cuphead',
+        subtitle: 'Journalist vs. Pigeon Intelligence Test',
+        url: 'https://www.youtube.com/embed/OOjXaAZHEQE?autoplay=1',
+      },
     ],
   },
   {
     heading: 'Signposting & Player Guidance',
     videos: [
-      { title: 'Cuphead',          subtitle: 'Journalist vs. Taube',           url: null },
-      { title: 'Uncharted 4',      subtitle: 'Highlighting & Kameraführung',   url: null },
-      { title: "Uncharted 4 —\nA Thief's End", subtitle: 'Kamerafokus',        url: null },
+      {
+        title: 'Elden Ring',
+        subtitle: "Grace's Guidance — Lore & Theories",
+        url: 'https://www.youtube.com/embed/glqcvTJYC_0?autoplay=1&start=10',
+      },
+      {
+        title: 'Jump King',
+        subtitle: 'Gameplay — No Commentary',
+        url: 'https://www.youtube.com/embed/qL2cQ0JAb4M?autoplay=1&start=50',
+      },
     ],
   },
   {
     heading: 'Spielmechaniken',
     videos: [
-      { title: 'Elden Ring',       subtitle: 'Sites of Grace',                 url: null },
-      { title: 'La-Mulana',        subtitle: 'Sprungverhalten',                url: null },
-      { title: 'Getting Over It',  subtitle: 'Player Choice',                  url: null },
+      {
+        title: 'La-Mulana Remake',
+        subtitle: 'Zu simple itemless loop',
+        url: 'https://www.youtube.com/embed/X1_oNvqm5TM?autoplay=1&start=6',
+      },
+      {
+        title: 'Getting Over It',
+        subtitle: "Yeet's TAS — 38.679 s",
+        url: 'https://www.youtube.com/embed/rSKOVohamx4?autoplay=1&start=6',
+      },
     ],
   },
   {
     heading: 'Player Choice',
     videos: [
-      { title: 'Spec Ops: The Line', subtitle: 'Moralische Entscheidungen',     url: null },
+      {
+        title: 'Spec Ops: The Line',
+        subtitle: 'A Line, Crossed — Trophy Guide',
+        url: 'https://www.youtube.com/embed/-GwVJJYbVtY?autoplay=1&start=18',
+      },
     ],
   },
   {
     heading: 'Diegetisches Game Design',
     videos: [
-      { title: 'Dead Space &\nDemon\'s Souls', subtitle: 'Sound Design',        url: null },
-      { title: 'Shadow of the\nColossus',      subtitle: 'Drachen-Kletterszene',url: null },
-      { title: 'Silent Hill',      subtitle: 'Nebel als technische Lösung',     url: null },
+      {
+        title: 'Dead Space',
+        subtitle: 'Ishimura Medical Ambience & Sounds',
+        url: 'https://www.youtube.com/embed/YdW16MBsuyU?autoplay=1',
+      },
+      {
+        title: 'Dead Space',
+        subtitle: 'Ambience — Playlist',
+        url: 'https://www.youtube.com/embed/YdW16MBsuyU?autoplay=1&list=PL3lATmed09e8W6fj4Z6KRjZ2KPNY6AZCh&index=0',
+      },
+      {
+        title: 'Shadow of the Colossus',
+        subtitle: 'Phalanx — 13th Boss',
+        url: 'https://www.youtube.com/embed/Qg9scSBi3t8?autoplay=1&start=110',
+      },
     ],
   },
 ]
