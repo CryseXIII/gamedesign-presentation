@@ -29,7 +29,7 @@ const ZONE = { Z1: 0, Z2: 1.5, WIDOW: 5, END: 7 }
 const PORTRAIT_STATIONS = [2, 3.2, 4.4]
 
 // ─── Widow encounter ──────────────────────────────────────────────────────────
-const WIDOW_X_FACTOR  = 2.6
+const WIDOW_X_FACTOR  = 6
 const WIDOW_HP        = 100
 const HIT_DAMAGE      = 25
 const WIDOW_TRIGGER_RADIUS = 380
@@ -144,9 +144,6 @@ export default class WorldBuildingScene extends Phaser.Scene {
     this.physics.add.collider(this._player.sprite, floorRect)
     this.physics.add.collider(this._player.sprite, safetyFloor)
     this.physics.add.collider(this._player.sprite, this._fireWall)
-    if (this._succubusBlocker) {
-      this.physics.add.collider(this._player.sprite, this._succubusBlocker)
-    }
     if (this._timeBarrier?.body) {
       this.physics.add.collider(this._player.sprite, this._timeBarrier.body)
     }
