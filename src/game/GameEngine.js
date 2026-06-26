@@ -62,23 +62,19 @@ export function createGame(container, _charConfig, gender = 'male') {
         debug: false,
       },
     },
-    scene: [],
+    scene: [
+      PreloadScene,
+      WorldBuildingScene,
+      GameScene,
+      PlayerGuidanceScene,
+      BannerSirenScene,
+      WhaleQueenScene,
+      TaskmasterScene,
+      FomoWidowScene,
+      GalleryScene,
+      CreditsScene,
+    ],
   }
 
-  const game = new Phaser.Game(config)
-
-    game.events.once('ready', () => {
-      game.scene.add('WorldBuildingScene', WorldBuildingScene, false)
-      game.scene.add('GameScene',           GameScene,           false)
-      game.scene.add('PlayerGuidanceScene', PlayerGuidanceScene, false)
-      game.scene.add('BannerSirenScene',    BannerSirenScene,    false)
-      game.scene.add('WhaleQueenScene',     WhaleQueenScene,     false)
-      game.scene.add('TaskmasterScene',     TaskmasterScene,     false)
-      game.scene.add('FomoWidowScene',      FomoWidowScene,      false)
-      game.scene.add('GalleryScene',        GalleryScene,        false)
-      game.scene.add('CreditsScene',        CreditsScene,        false)
-      game.scene.add('PreloadScene',        PreloadScene,        true)
-    })
-
-  return game
+  return new Phaser.Game(config)
 }

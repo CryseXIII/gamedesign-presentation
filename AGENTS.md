@@ -96,6 +96,28 @@ Every project gets its own GitHub repository under the `CryseXIII` account.
 - `main` branch is protected (no force push)
 - Each container that clones a repo must set the GitHub remote as the canonical source
 
+## Context Sync — Multi-Device OpenCode Sessions
+
+OpenCode instances run on multiple devices (laptop, VPS, tablet). Context is shared via git:
+
+**Session start (every device):**
+1. Run `git pull` to fetch updates from other sessions
+2. Read `docs/project-memory.md`
+3. Read the 3 most recent files from `docs/milestones/` (sorted by name descending)
+4. Read `docs/archive/` summaries if referenced by project-memory
+
+**After edits (VPS instances only):**
+1. `git add -A && git commit -m "docs: auto-sync $(date -u +%Y-%m-%d_%H%M%S)"`
+2. `git push`
+
+**Laptop instances:** Only pull (no auto-push). Commit manually when ready.
+
+**Milestone aging:**
+- Milestones older than 14 days are candidates for compression
+- A summarization script (`scripts/summarize-memory.sh`) consolidates old milestones into `docs/archive/YYYY-MM_summary.md`
+- Compressed milestones get a header in the archive file and are deleted from `docs/milestones/`
+- `docs/project-memory.md` is updated to reference the archive
+
 ## Future Integrations (planned, not yet implemented)
 
 - **Telegram bot** on Proxmox host: receives messages → forwards to main OpenCode → dispatches to containers

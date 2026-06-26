@@ -35,6 +35,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
+- `GameEngine` now registers all scenes directly in the Phaser config, removing the `ready`-callback scene-add race that could leave the first level unavailable after character select
 - `K` now fires the diamond-shot gate deactivation globally once the speedup is unlocked, and the time gate is stretched to full scene height so it actually blocks the route until removed
 - Zone 2 copper-stich portraits are now sized as tall portrait cards instead of square blocks, the brown intro underlay rectangles were removed, and the Scene 1 exit now uses a delayed fallback start so the transition is less fragile
 - Scene 1 now uses a single full-width intro backdrop instead of a clipped steppe/widow image chain; the speedup succubus and time barrier now occupy the old widow zone, the speedup dialog is player-initiated, and the Widow encounter is reserved for a later screen
