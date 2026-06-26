@@ -135,6 +135,9 @@ export const serviceGroups = [
   },
 ]
 
+
+export const hermesOrchestratorUrl = (import.meta.env.VITE_HERMES_URL || 'http://10.10.10.64:8765').trim()
+
 export const snapshotPolicy = {
   engine: 'Borg deduplication',
   tiering: 'NAS if the backup set grows beyond the local threshold; otherwise a dedicated LXC repo.',

@@ -4,7 +4,7 @@ import '../styles/workbench.css'
 
 const DEFAULT_ORCHESTRATOR_URL = 'https://sd-orchestrator.gamedesign.152.53.117.246.sslip.io'
 const DEFAULT_NOTIFICATION_URL = ''
-const SAMPLE_BASE_IMAGE = '/assets/scenes/pgs/bg_castle.png'
+const SAMPLE_BASE_IMAGE = '/assets/bg_castle.png'
 const SAMPLE_EXCERPT = `The warrior studies the image, then marks one specific region for repair while keeping the rest of the scene's mood, color, and composition intact.`
 const SAMPLE_ANALYSIS = `Base image: preserve the full composition and atmosphere. Target 1 should be the visible error area. Use the attachments as strict visual reference, not as loose inspiration.`
 const SAMPLE_SD_PROMPT = `sharp high-resolution image, cinematic lighting, coherent anatomy, strong composition, preserve atmosphere, fix only the marked area, no extra limbs, no blur, no text, no watermark`
@@ -233,7 +233,7 @@ async function fetchJson(url, options = {}, timeoutMs = 30000) {
         ...(options.headers || {}),
       },
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    if (!response.ok) { const body = await response.text().catch(() => ''); throw new Error('HTTP ' + response.status + ': ' + body.slice(0, 200)) }
     return await response.json()
   } finally {
     window.clearTimeout(timer)
@@ -1204,6 +1204,7 @@ export default function ImageWorkbench({ onBack }) {
           <div className="wbx-stat"><span className="wbx-stat__label">Inventory</span><span className="wbx-stat__value">{inventoryStatus}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Current model</span><span className="wbx-stat__value">{currentModel || 'unknown'}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Selected model</span><span className="wbx-stat__value">{selectedModelTitle || 'auto'}</span></div>
+          <div className="wbx-stat"><span className="wbx-stat__label">Orchestrator</span><span className="wbx-stat__value">{orchestratorUrl}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Progress</span><span className="wbx-stat__value">{jobProgress}% · {jobEta}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Targets</span><span className="wbx-stat__value">{editTargets.length} color target(s)</span></div>
         </section>
@@ -1232,6 +1233,7 @@ export default function ImageWorkbench({ onBack }) {
               <input type="checkbox" checked={modelLock === 'true'} onChange={(event) => setModelLock(event.target.checked ? 'true' : 'false')} />
               <span>Keep selected model active</span>
             </label>
+            <label className="wbx-field"><span>Orchestrator URL <span style="color:#64748b;font-size:0.7rem">(Hermes: http://10.10.10.64:8765)</span></span><input className="wbx-input" type="text" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} placeholder="https://..." /></label>
           </div>
         </section>
 

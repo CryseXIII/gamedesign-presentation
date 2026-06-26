@@ -1,10 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
 
 .wbx-screen {
   width: 100%;
-  height: 100dvh;
   min-height: 100dvh;
-  padding: 0.75rem;
+  padding: 1rem;
   background:
     radial-gradient(ellipse at top, rgba(55, 98, 150, 0.18), transparent 58%),
     linear-gradient(180deg, #061017, #070d14 55%, #04070b);
@@ -12,12 +12,15 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .wbx-shell {
   width: min(2400px, calc(100% - 0.5rem));
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid rgba(127, 184, 255, 0.22);
   border-radius: 20px;
   background: rgba(12, 18, 27, 0.94);
@@ -25,7 +28,7 @@
   backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .wbx-header {
@@ -36,22 +39,27 @@
 }
 
 .wbx-kicker {
-  font-size: 0.48rem;
-  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #7fb8ff;
+  margin-bottom: 0.3rem;
 }
 
 .wbx-title {
-  font-size: clamp(2rem, 3.8vw, 4rem);
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 .wbx-subtitle {
   max-width: 78ch;
   color: #a6b9cd;
   margin-top: 0.4rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .wbx-header__actions,
@@ -61,25 +69,24 @@
 .wbx-modal__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
   justify-content: flex-end;
 }
 
 .wbx-status-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 0.6rem;
 }
 
 .wbx-stat {
-  padding: 0.75rem 0.85rem;
+  padding: 0.7rem 0.9rem;
   border: 1px solid rgba(127, 184, 255, 0.12);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .wbx-stat__label,
-.wbx-panel__title,
 .wbx-panel__note,
 .wbx-log__time,
 .wbx-log__meta,
@@ -91,14 +98,17 @@
 
 .wbx-stat__label {
   display: block;
-  font-size: 0.34rem;
+  font-size: 0.6rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1em;
   margin-bottom: 0.25rem;
 }
 
 .wbx-stat__value {
+  font-size: 0.92rem;
   line-height: 1.4;
+  font-weight: 500;
 }
 
 .wbx-tabs {
@@ -129,8 +139,10 @@
 }
 
 .wbx-tab {
-  padding: 0.65rem 1rem;
-  letter-spacing: 0.08em;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -143,10 +155,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.8rem;
+  padding: 0.5rem 0.9rem;
   border: 1px dashed rgba(127, 184, 255, 0.22);
   border-radius: 12px;
   color: #a6b9cd;
+  font-size: 0.82rem;
 }
 
 .wbx-inline-file input,
@@ -166,11 +179,11 @@
 .wbx-prompt-panel,
 .wbx-checkpoints-panel,
 .wbx-grid-tab {
-  margin-top: 0.15rem;
+  margin-top: 0.25rem;
 }
 
 .wbx-panel {
-  padding: 1rem;
+  padding: 1.1rem;
   border: 1px solid rgba(127, 184, 255, 0.16);
   border-radius: 18px;
   background: rgba(15, 22, 33, 0.96);
@@ -187,13 +200,15 @@
 }
 
 .wbx-panel__title {
-  font-size: 1.1rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: #f0f7ff;
 }
 
 .wbx-panel__note {
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .wbx-mini,
@@ -201,14 +216,15 @@
 .wbx-stamp-button,
 .wbx-tab,
 .wbx-grid-cell {
-  padding: 0.6rem 0.85rem;
+  padding: 0.55rem 0.9rem;
   border-radius: 12px;
 }
 
 .wbx-mini {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 
 .wbx-mini--file {
@@ -218,6 +234,12 @@
 .wbx-mini--static {
   display: inline-flex;
   align-items: center;
+}
+
+.wbx-button {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.6rem 1.1rem;
 }
 
 .wbx-button--primary,
@@ -318,6 +340,8 @@
   gap: 0.45rem;
   align-items: center;
   color: #a6b9cd;
+  font-size: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .wbx-stamp-button {
@@ -325,7 +349,7 @@
   place-items: center;
   width: 100%;
   min-height: 72px;
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   background: linear-gradient(180deg, rgba(127, 184, 255, 0.18), rgba(82, 214, 221, 0.08));
 }
 
@@ -383,8 +407,9 @@
   gap: 0.5rem;
   align-items: center;
   text-align: left;
-  padding: 0.6rem 0.7rem;
+  padding: 0.55rem 0.7rem;
   border-radius: 12px;
+  font-size: 0.88rem;
 }
 
 .wbx-target__swatch,
@@ -397,7 +422,7 @@
 }
 
 .wbx-target__meta {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
 
 .wbx-field {
@@ -405,6 +430,7 @@
   flex-direction: column;
   gap: 0.35rem;
   color: #a6b9cd;
+  font-size: 0.85rem;
 }
 
 .wbx-field--check {
@@ -420,20 +446,22 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   color: #eaf2fb;
-  padding: 0.78rem 0.85rem;
+  padding: 0.7rem 0.85rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.88rem;
 }
 
 .wbx-textarea {
-  min-height: 180px;
+  min-height: 140px;
   resize: vertical;
 }
 
 .wbx-textarea--compact {
-  min-height: 88px;
+  min-height: 72px;
 }
 
 .wbx-textarea--job {
-  min-height: 320px;
+  min-height: 260px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.82rem;
 }
@@ -457,12 +485,13 @@
 }
 
 .wbx-output-meta {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .wbx-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.6rem;
 }
 
@@ -476,7 +505,7 @@
 }
 
 .wbx-gallery__item--active {
-  border-color: rgba(127, 184, 255, 0.45);
+  border-color: rgba(127, 184, 255, 0.5);
 }
 
 .wbx-gallery__image {
@@ -496,8 +525,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  max-height: 220px;
-  overflow: auto;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .wbx-log__item {
@@ -508,17 +537,32 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(127, 184, 255, 0.1);
+  font-size: 0.82rem;
+}
+
+.wbx-log__time {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.wbx-log__message {
+  font-size: 0.85rem;
+}
+
+.wbx-log__meta {
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .wbx-prompt-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 0.75rem;
 }
 
 .wbx-checkpoint-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0.7rem;
 }
 
@@ -530,6 +574,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  font-size: 0.85rem;
 }
 
 .wbx-checkpoint__head {
@@ -560,7 +605,7 @@
 
 .wbx-grid-cell {
   border-radius: 0;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   padding: 0;
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(255,255,255,0.08);
@@ -570,6 +615,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  font-size: 0.88rem;
 }
 
 .wbx-grid-side__block {
@@ -594,7 +640,7 @@
   width: min(1600px, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: 20px;
   background: rgba(12, 18, 27, 0.98);
   border: 1px solid rgba(127, 184, 255, 0.18);
@@ -643,6 +689,7 @@
   border-radius: 14px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(127,184,255,0.12);
+  font-size: 0.88rem;
 }
 
 .wbx-editor-color-row {
@@ -668,6 +715,7 @@
   padding: 1rem;
   color: #a6b9cd;
   text-align: center;
+  font-size: 0.88rem;
 }
 
 .wbx-output-image {
@@ -709,6 +757,6 @@
 
   .wbx-shell {
     width: calc(100% - 0.15rem);
-    padding: 0.75rem;
+    padding: 0.85rem;
   }
 }
