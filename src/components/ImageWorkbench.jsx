@@ -1303,7 +1303,7 @@ export default function ImageWorkbench({ onBack }) {
               <input type="checkbox" checked={modelLock === 'true'} onChange={(event) => setModelLock(event.target.checked ? 'true' : 'false')} />
               <span>Keep selected model active</span>
             </label>
-            <label className="wbx-field"><span>Orchestrator URL <span style="color:#64748b;font-size:0.7rem">(Hermes: http://10.10.10.64:8765)</span></span><input className="wbx-input" type="text" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} placeholder="https://..." /></label>
+            <label className="wbx-field"><span>Orchestrator URL <span style={{ color: '#64748b', fontSize: '0.7rem' }}>(Hermes: http://10.10.10.64:8765)</span></span><input className="wbx-input" type="text" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} placeholder="https://..." /></label>
           </div>
         </section>
 
