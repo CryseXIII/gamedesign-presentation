@@ -32,6 +32,12 @@ html, body, #root {
   overflow: hidden;
 }
 
+body.wbx-page,
+body.wbx-page #root {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 button {
   cursor: pointer;
   font-family: inherit;

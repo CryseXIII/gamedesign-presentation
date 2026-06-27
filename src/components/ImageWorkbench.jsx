@@ -587,6 +587,12 @@ export default function ImageWorkbench({ onBack }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined
+    document.body.classList.add('wbx-page')
+    return () => document.body.classList.remove('wbx-page')
+  }, [])
+
   const selectedTarget = useMemo(
     () => editTargets.find((target) => target.id === selectedTargetId) || editTargets[0] || null,
     [editTargets, selectedTargetId],
@@ -1243,10 +1249,8 @@ export default function ImageWorkbench({ onBack }) {
   function copyJobJson() {
     navigator.clipboard.writeText(JSON.stringify(promptBundle.jobSpec, null, 2))
       .then(() => {
-        setJobJsonCopied(true)
         setPromptCopyState('Copied')
         window.setTimeout(() => {
-          setJobJsonCopied(false)
           setPromptCopyState('Copy job JSON')
         }, 1400)
       })
@@ -1277,46 +1281,6 @@ export default function ImageWorkbench({ onBack }) {
           <div className="wbx-stat"><span className="wbx-stat__label">Orchestrator</span><span className="wbx-stat__value">{orchestratorUrl}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Progress</span><span className="wbx-stat__value">{jobProgress}% · {jobEta}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Targets</span><span className="wbx-stat__value">{editTargets.length} color target(s)</span></div>
-        </section>
-
-        <section className="wbx-panel">
-          <div className="wbx-panel__head">
-            <div>
-              <p className="wbx-panel__title">Model Control</p>
-              <p className="wbx-panel__note">Pick a checkpoint, then sync it before generating.</p>
-            </div>
-            <div className="wbx-panel__actions">
-              <button type="button" className="wbx-mini" onClick={() => void ensureSelectedModelActive()}>Sync model</button>
-              <button type="button" className="wbx-mini" onClick={() => void refreshInventory()}>Rescan</button>
-            </div>
-          </div>
-          <div className="wbx-prompt-grid">
-            <label className="wbx-field">
-              <span>Pinned checkpoint</span>
-              <select className="wbx-input" value={selectedModelTitle} onChange={(event) => setSelectedModelTitle(event.target.value)}>
-                {models.map((model) => (
-                  <option key={model.title} value={model.title}>{model.title}</option>
-                ))}
-              </select>
-            </label>
-            <label className="wbx-field wbx-field--check">
-              <input type="checkbox" checked={modelLock === 'true'} onChange={(event) => setModelLock(event.target.checked ? 'true' : 'false')} />
-              <span>Keep selected model active</span>
-            </label>
-            <label className="wbx-field"><span>Orchestrator URL <span style={{ color: '#64748b', fontSize: '0.7rem' }}>(Hermes: http://10.10.10.64:8765)</span></span><input className="wbx-input" type="text" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} placeholder="https://..." /></label>
-          </div>
-        </section>
-
-        <section className="wbx-tabs">
-          <button type="button" className={`wbx-tab ${activeTab === 'main' ? 'wbx-tab--active' : ''}`} onClick={() => setActiveTab('main')}>Main</button>
-          <button type="button" className={`wbx-tab ${activeTab === 'grid' ? 'wbx-tab--active' : ''}`} onClick={() => setActiveTab('grid')}>Grid</button>
-          <label className="wbx-inline-file">
-            <span>Import checkpoint zip</span>
-            <input type="file" accept=".zip,application/zip" onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) void importCheckpointFile(file)
-            }} />
-          </label>
         </section>
 
         {activeTab === 'main' ? (
