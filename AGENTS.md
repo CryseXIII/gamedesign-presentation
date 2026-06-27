@@ -33,7 +33,8 @@ Command when needed: `pct snapshot <id> <name>` or `qm snapshot <id> <name>`.
 
 ## Current Focus
 
-- Build the presentation around a Dark Souls tutorial walkthrough, preferably recorded.
+- Gameron (game presentation) is **complete** — no further changes unless explicitly asked.
+- Active work: VPS infrastructure, image workbench, Hermes agent, multi-device context sync.
 - Harden the Proxmox host before exposing any new service to the internet.
 
 ## Coding Instructions — Context7
