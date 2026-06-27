@@ -10,8 +10,10 @@ cd "$REPO_DIR"
 # Pull remote changes first to avoid push conflicts
 git pull --rebase --autostash 2>/dev/null || true
 
-# Check for changes in docs/ or AGENTS.md
-if git diff --quiet -- docs/ AGENTS.md && git diff --cached --quiet -- docs/ AGENTS.md; then
+# Check for changes in docs/ or AGENTS.md (including untracked files)
+if git status --porcelain -- docs/ AGENTS.md | grep -q .; then
+  :
+else
   exit 0  # nothing to commit
 fi
 
