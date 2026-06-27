@@ -102,20 +102,24 @@ Every project gets its own GitHub repository under the `CryseXIII` account.
 OpenCode instances run on multiple devices (laptop, VPS, tablet). Context is shared via git:
 
 **Session start (every device):**
-1. Run `git pull` to fetch updates from other sessions
+1. `git pull`
 2. Read `docs/project-memory.md`
 3. Read the 3 most recent files from `docs/milestones/` (sorted by name descending)
 4. Read `docs/archive/` summaries if referenced by project-memory
 
-**After edits (VPS instances only):**
-1. `git add -A && git commit -m "docs: auto-sync $(date -u +%Y-%m-%d_%H%M%S)"`
-2. `git push`
+**VPS instances (CT202, CT205):**
+- Auto-commit + push every 10 min via systemd timer (`docs-auto-sync.timer`)
+- Script: `scripts/docs-auto-sync.sh`
+- SSH key auth to GitHub (deploy key on each container)
 
-**Laptop instances:** Only pull (no auto-push). Commit manually when ready.
+**Laptop instances:**
+- Run `scripts/push-docs.ps1` to commit+push docs/ changes
+- Credentials stored in Windows Credential Manager (GCM)
+- Only push when you have docs/milestones/ or AGENTS.md changes to share
 
 **Milestone aging:**
 - Milestones older than 14 days are candidates for compression
-- A summarization script (`scripts/summarize-memory.sh`) consolidates old milestones into `docs/archive/YYYY-MM_summary.md`
+- `scripts/summarize-memory.sh` consolidates old milestones into `docs/archive/YYYY-MM_summary.md`
 - Compressed milestones get a header in the archive file and are deleted from `docs/milestones/`
 - `docs/project-memory.md` is updated to reference the archive
 

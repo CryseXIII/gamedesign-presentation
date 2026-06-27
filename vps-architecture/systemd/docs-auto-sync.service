@@ -1,0 +1,10 @@
+[Unit]
+Description=Auto-sync docs/ changes to GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/gamedesign-app/scripts/docs-auto-sync.sh
+User=root
+WorkingDirectory=/root/gamedesign-app
