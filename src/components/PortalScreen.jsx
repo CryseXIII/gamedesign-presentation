@@ -16,10 +16,17 @@ function ServiceStatusPanel() {
   const [error, setError] = useState(null)
   const [action, setAction] = useState({})
   const ref = useRef(null)
+  const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const isHttpLauncher = launcherConfig.url.startsWith('http://')
+  const mixedContentBlocked = isHttpsPage && isHttpLauncher
 
   async function fetchStatus() {
     if (!launcherConfig.token) {
       setError('VITE_LAUNCHER_TOKEN not set')
+      return
+    }
+    if (mixedContentBlocked) {
+      setError('Launcher URL uses HTTP and is blocked by this HTTPS page. Set VITE_LAUNCHER_URL to an HTTPS endpoint.')
       return
     }
     try {
@@ -35,12 +42,17 @@ function ServiceStatusPanel() {
   }
 
   useEffect(() => {
+    if (!launcherConfig.token || mixedContentBlocked) return undefined
     fetchStatus()
     ref.current = setInterval(fetchStatus, 30000)
     return () => clearInterval(ref.current)
-  }, [])
+  }, [mixedContentBlocked])
 
   async function doAction(endpoint) {
+    if (mixedContentBlocked) {
+      setError('Launcher URL uses HTTP and is blocked by this HTTPS page. Set VITE_LAUNCHER_URL to an HTTPS endpoint.')
+      return
+    }
     setAction(s => ({ ...s, [endpoint]: 'pending' }))
     try {
       const r = await fetch(`${launcherConfig.url}${endpoint}`, {
@@ -73,6 +85,22 @@ function ServiceStatusPanel() {
             <p className="portal-panel__note">Set VITE_LAUNCHER_TOKEN to enable live status.</p>
           </div>
         </div>
+      </section>
+    )
+  }
+
+  if (mixedContentBlocked) {
+    return (
+      <section className="portal-panel">
+        <div className="portal-panel__head">
+          <div>
+            <p className="portal-panel__title">Service Status</p>
+            <p className="portal-panel__note">Launcher status needs a secure HTTPS endpoint on this page.</p>
+          </div>
+        </div>
+        <p className="portal-status-msg">
+          VITE_LAUNCHER_URL is set to {launcherConfig.url}. Browsers block HTTP fetches from HTTPS pages.
+        </p>
       </section>
     )
   }

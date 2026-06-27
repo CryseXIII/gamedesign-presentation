@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-27 23:58 UTC (workbench scroll/layout fix)
+Last updated: 2026-06-27 23:06 UTC (workbench upload-analysis copy flow)
 
 ## Project Objective
 
@@ -35,7 +35,10 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
-- `ImageWorkbench` now uses a true three-column desktop layout: left source/input and compact prompt snapshots, center workspace controls plus the four main cards, and right live Stable Diffusion / ChatGPT / Gemini prompt cards
+- `ImageWorkbench` now auto-analyzes uploaded main images through `/vision/analyze`, fills the source / SD / ChatGPT / Gemini prompt fields from that result, exposes copy buttons for each prompt plus a copy-bundle action, and removes the old prompt snapshot / workflow-note clutter
+- Prompt generation now also carries cutout zoom, selection coordinates, and per-edit-area bounds into the copied bundle so the downstream prompts stay precise
+- Portal launcher status is now env-only and explicitly blocks mixed-content fetches on the HTTPS portal, so HTTP launcher URLs fail fast with a clear warning instead of a browser fetch error
+- `portalTargets.js` now defaults A1111 and ComfyUI links to the public HTTPS hostnames, matching the current tailnet/public split better than the old raw HTTP IP links
 - `GameEngine` now registers all scenes directly in the Phaser config, removing the `ready`-callback scene-add race that could leave the first level unavailable after character select
 - `K` now fires the diamond-shot gate deactivation globally once the speedup is unlocked, and the time gate is stretched to full scene height so it actually blocks the route until removed
 - Zone 2 copper-stich portraits are now sized as tall portrait cards instead of square blocks, the brown intro underlay rectangles were removed, and the Scene 1 exit now uses a delayed fallback start so the transition is less fragile
@@ -51,7 +54,8 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - `PlayerController` now tolerates missing animation frames at startup by falling back to frame 0 instead of crashing on `play`, which fixes the loading-screen hang on CT205 when the player sheets are still incomplete or stale
 - Image Workbench build is now live on CT205: rebuilt `dist/` was streamed into `/root/gamedesign-app/dist`, `gamedesign-prod.service` was restarted, and the public portal still returns `200 OK`
 - Image Workbench rebuilt around the requested workflow: main tab now has drag/drop base loading, a pan/zoom/right-drag cutout viewport with minimap, a FontAwesome stamp button, a modal cutout editor with color-by-stroke paint, right-click continuation, whole-stroke erase, undo/redo, save/close, edit-target generation, output gallery, and checkpoint zip export/import/restore; grid mode is now isolated into its own tab
-- Image Workbench desktop layout is now a deliberate 3-column workbench: left = base input + compact prompt previews, center = image editing workspace with the four main cards, edit areas, output, and checkpoints, right = live Stable Diffusion / ChatGPT / Gemini prompt cards
+- The cutout editor now only advances the color wheel on left-click paint strokes, and edit areas can now be deleted from the target cards so colors and targets stay in sync after erasing
+- The workbench header no longer shows the sample button, the duplicated main-image select card is gone, and the job log now lives in the right column while the gallery gets the full output width
 - React error #62 on `#/workbench` was caused by an accidental string `style` attribute in the orchestrator URL label; it was changed back to a proper JSX style object and the build passed again
 - `#/workbench` now scrolls again via a route-specific body class, and the layout was tightened so the center workspace stays dominant while the side columns remain narrower
 - CT215 SillyTavern `SD Generate` now works again from the browser: CT201 Caddy adds CORS preflight/response headers on `sd-orchestrator.gamedesign.152.53.117.246.sslip.io`, the stale duplicate `orchestrator.service` on CT210 was disabled, and the browser now receives `POST /generate/planned` `200` responses with returned image data

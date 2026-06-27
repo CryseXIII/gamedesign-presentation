@@ -10,8 +10,8 @@ const oobaChatUrl = (import.meta.env.VITE_OOBA_CHAT_URL || 'http://100.109.133.9
 const oobaApiUrl = (import.meta.env.VITE_OOBA_API_URL || 'http://100.109.133.95:5000/v1/models').trim()
 const sillyTavernUrl = (import.meta.env.VITE_SILLYTAVERN_URL || 'https://sillytavern.gamedesign.152.53.117.246.sslip.io/').trim()
 const visionUrl = (import.meta.env.VITE_VISION_URL || 'https://gamedesign.152.53.117.246.sslip.io/#/vision').trim()
-const a1111Url = (import.meta.env.VITE_A1111_URL || 'http://100.109.133.95:7860').trim()
-const comfyUiUrl = (import.meta.env.VITE_COMFYUI_URL || 'http://100.109.133.95:8189').trim()
+const a1111Url = (import.meta.env.VITE_A1111_URL || 'https://a1111.gamedesign.152.53.117.246.sslip.io/').trim()
+const comfyUiUrl = (import.meta.env.VITE_COMFYUI_URL || 'https://comfyui.gamedesign.152.53.117.246.sslip.io/').trim()
 
 export const portalUrls = [
   {

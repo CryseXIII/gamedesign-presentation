@@ -8,6 +8,7 @@ const SAMPLE_BASE_IMAGE = '/assets/bg_castle.png'
 const SAMPLE_EXCERPT = `The editor inspects the image, then selects one specific region for repair or regeneration while keeping the rest of the scene's mood, color, and composition intact.`
 const SAMPLE_ANALYSIS = `Base image: preserve the full composition and atmosphere. Target 1 should be the visible error or detraction area. Use the attachments as strict visual reference, not as loose inspiration.`
 const SAMPLE_SD_PROMPT = `sharp high-resolution image, cinematic lighting, coherent structure, strong composition, preserve atmosphere, modify only the marked area, no extra elements, no blur, no text, no watermark`
+const IMAGE_ANALYSIS_QUERY = 'Describe the main image for image-editing work. Identify the subject, composition, lighting, visible objects, background layers, notable issues, and the best region to edit. Return concise notes that can be turned into prompts.'
 const COLOR_PALETTE = ['#ff4d4d', '#ff9f43', '#feca57', '#1dd1a1', '#54a0ff', '#5f27cd', '#ff6b81', '#00d2d3', '#2ecc71', '#e056fd', '#7bed9f', '#ff9ff3']
 const LOCAL_MODELS = [
   { title: 'albedobaseXL_v13.safetensors', name: 'albedobaseXL_v13.safetensors' },
@@ -152,7 +153,7 @@ function strokeBounds(stroke) {
 }
 
 function defaultInstruction(color, index) {
-  return `Target ${index + 1} (${color}): edit only the region marked with this color, preserve surrounding composition, keep lighting and texture consistent, and keep the rest of the image unchanged.`
+  return `Target ${index + 1} (${color}): edit only the region marked with this color. Preserve the scene, keep lighting, perspective, texture, and scale consistent, and do not change unmarked areas.`
 }
 
 function compactText(value, limit = 180) {
@@ -161,69 +162,132 @@ function compactText(value, limit = 180) {
   return `${text.slice(0, limit).trimEnd()}…`
 }
 
+function stripExtension(name) {
+  return safeText(name).replace(/\.[^.]+$/, '')
+}
+
+function formatRect(rect) {
+  if (!rect) return 'none'
+  return `x=${Math.round(rect.x)} y=${Math.round(rect.y)} w=${Math.round(rect.w)} h=${Math.round(rect.h)}`
+}
+
+function formatZoom(value) {
+  const zoom = Number(value) || 1
+  return `${zoom.toFixed(2)}x`
+}
+
+function mergeBounds(a, b) {
+  if (!a) return b ? { ...b } : null
+  if (!b) return { ...a }
+  const x1 = Math.min(a.x, b.x)
+  const y1 = Math.min(a.y, b.y)
+  const x2 = Math.max(a.x + a.w, b.x + b.w)
+  const y2 = Math.max(a.y + a.h, b.y + b.h)
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 }
+}
+
+function buildTargetGeometry(strokes) {
+  const stats = new Map()
+  for (const stroke of strokes || []) {
+    if (stroke.tool !== 'paint' || !stroke.points?.length) continue
+    const current = stats.get(stroke.color) || { bounds: null, strokeCount: 0 }
+    stats.set(stroke.color, {
+      bounds: mergeBounds(current.bounds, strokeBounds(stroke)),
+      strokeCount: current.strokeCount + 1,
+    })
+  }
+  return stats
+}
+
 function deriveEditTargets(strokes, previousTargets = []) {
   const paintColors = [...new Set((strokes || []).filter((stroke) => stroke.tool === 'paint').map((stroke) => stroke.color))]
   const previousByColor = new Map(previousTargets.map((target) => [target.color, target]))
+  const geometryByColor = buildTargetGeometry(strokes)
   return paintColors.map((color, index) => {
     const previous = previousByColor.get(color)
+    const geometry = geometryByColor.get(color) || { bounds: null, strokeCount: 0 }
     return {
       id: previous?.id || makeId(),
       label: previous?.label || `Target ${index + 1}`,
       color,
       instruction: previous?.instruction || defaultInstruction(color, index),
       note: previous?.note || '',
+      bounds: geometry.bounds,
+      strokeCount: geometry.strokeCount,
     }
   })
 }
 
-function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImage, cutoutRect, cutoutImage, editMapImage, editTargets }) {
-  const targetLines = editTargets.map((target, index) => `${index + 1}. ${target.label} | ${target.color} | ${target.instruction}`)
+function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImage, cutoutRect, cutoutImage, editMapImage, editTargets, viewerZoom }) {
+  const targetLines = editTargets.map((target, index) => {
+    const geometry = target.bounds ? `${formatRect(target.bounds)} · ${target.strokeCount || 0} stroke(s)` : 'area unknown'
+    return `${index + 1}. ${target.label} | ${target.color} | ${geometry} | ${target.instruction}`
+  })
   const targetSummary = targetLines.length ? targetLines.join('\n') : 'none'
   const sourceContext = safeText(excerpt, 'No source context yet.')
   const cinematicSummary = safeText(analysis, 'No cinematic summary yet.')
   const sdSeed = safeText(sdPrompt, 'No Stable Diffusion seed yet.')
   const modelLine = selectedModel ? `Selected checkpoint: ${selectedModel}` : 'Selected checkpoint: auto'
   const loraLine = 'Selected LoRAs: none'
+  const objectiveLine = 'Goal: edit the marked zones while keeping the rest of the image visually consistent.'
+  const cropLine = `Selection rect: ${formatRect(cutoutRect)}`
+  const zoomLine = `Selection zoom: ${formatZoom(viewerZoom)}`
+  const cutoutLine = cutoutImage ? `Cutout image: ${cutoutImage.width}x${cutoutImage.height}` : 'Cutout image: none'
+  const editMapLine = editMapImage ? `Edit map: ${editMapImage.width}x${editMapImage.height}` : 'Edit map: none'
+  const baseLine = baseImage ? `Base image: ${baseImage.width}x${baseImage.height} (${baseImage.name})` : 'Base image: none'
+  const targetGuidance = editTargets.length ? `Target guidance:\n${targetSummary}` : 'Target guidance: none'
 
   const strictPrompt = [
-    'Image edit job for Stable Diffusion.',
+    'Strict image edit brief for Stable Diffusion.',
+    objectiveLine,
     modelLine,
     loraLine,
-    baseImage ? `Base image: ${baseImage.width}x${baseImage.height}` : 'Base image: none',
-    cutoutRect ? `Cutout rect: x=${Math.round(cutoutRect.x)} y=${Math.round(cutoutRect.y)} w=${Math.round(cutoutRect.w)} h=${Math.round(cutoutRect.h)}` : 'Cutout rect: none',
-    cutoutImage ? `Stamped cutout: ${cutoutImage.width}x${cutoutImage.height}` : 'Stamped cutout: none',
-    editMapImage ? `Edit map: ${editMapImage.width}x${editMapImage.height}` : 'Edit map: none',
+    baseLine,
+    cropLine,
+    zoomLine,
+    cutoutLine,
+    editMapLine,
     `Source context:\n${sourceContext}`,
     `Cinematic summary:\n${cinematicSummary}`,
     `Stable Diffusion guidance:\n${sdSeed}`,
-    `Edit targets:\n${targetSummary}`,
-    'Preserve all unmarked areas.',
+    targetGuidance,
+    'Preserve all unmarked regions exactly as they are.',
     'Only modify the colored targets.',
+    'Keep lighting, perspective, camera angle, texture, and overall style consistent with the source.',
+    'Return only the edited image result; do not add commentary.',
   ].join('\n\n')
 
   const naturalPrompt = [
-    'Prepare a natural-language image editing brief from the current workbench state.',
-    modelLine,
-    `Base image present: ${baseImage ? 'yes' : 'no'}`,
-    `Cutout present: ${cutoutImage ? 'yes' : 'no'}`,
-    `Edit map present: ${editMapImage ? 'yes' : 'no'}`,
+    'Write a strict natural-language image editing brief from the current workbench state.',
+    objectiveLine,
+    baseLine,
+    cropLine,
+    zoomLine,
+    cutoutLine,
+    editMapLine,
     `Source context:\n${sourceContext}`,
     `Cinematic summary:\n${cinematicSummary}`,
-    `Stable Diffusion seed:\n${sdSeed}`,
-    `Targets:\n${targetSummary}`,
-    'Write clearly for a human assistant or planning model.',
-    'Keep the wording concise, cinematic, and localized to the marked areas.',
+    `Visual seed notes:\n${sdSeed}`,
+    `Target details:\n${targetSummary}`,
+    'Use short, exact sentences.',
+    'Preserve the composition, lighting, colors, and unmarked regions.',
+    'Focus only on the marked areas and describe exactly what should change there.',
+    'Do not mention checkpoints or internal tooling.',
   ].join('\n\n')
 
   const geminiPrompt = [
-    'Rewrite the current workbench brief for Gemini.',
-    modelLine,
-    `Source context:\n${sourceContext}`,
-    `Cinematic summary:\n${cinematicSummary}`,
-    `Stable Diffusion seed:\n${sdSeed}`,
-    `Edit targets:\n${targetSummary}`,
-    'Return concise natural-language instructions.',
-    'Preserve the scene, change only the marked regions, and keep the language clear.',
+    'Write a strict Gemini image-edit brief.',
+    objectiveLine,
+    baseLine,
+    cropLine,
+    zoomLine,
+    `Scene notes:\n${sourceContext}`,
+    `Visual analysis:\n${cinematicSummary}`,
+    `Visual seed notes:\n${sdSeed}`,
+    `Target details:\n${targetSummary}`,
+    'Keep the language direct, concrete, and image-focused.',
+    'Preserve the overall scene and only change the marked regions.',
+    'Do not mention checkpoints or internal tooling.',
   ].join('\n\n')
 
   const jobSpec = {
@@ -233,6 +297,7 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
     selected_loras: [],
     base_image: baseImage ? { width: baseImage.width, height: baseImage.height, name: baseImage.name } : null,
     crop_rect: cutoutRect ? { x: Math.round(cutoutRect.x), y: Math.round(cutoutRect.y), w: Math.round(cutoutRect.w), h: Math.round(cutoutRect.h) } : null,
+    viewer_zoom: Number(viewerZoom) || 1,
     cutout_image: cutoutImage ? { width: cutoutImage.width, height: cutoutImage.height, name: cutoutImage.name } : null,
     edit_map_image: editMapImage ? { width: editMapImage.width, height: editMapImage.height, name: editMapImage.name } : null,
     edit_targets: editTargets.map((target) => ({
@@ -241,6 +306,8 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
       color: target.color,
       instruction: target.instruction,
       note: target.note,
+      bounds: target.bounds || null,
+      stroke_count: target.strokeCount || 0,
     })),
     prompts: {
       baseInput: sourceContext,
@@ -347,7 +414,8 @@ export default function ImageWorkbench({ onBack }) {
 
   const [models, setModels] = useState(LOCAL_MODELS)
   const [currentModel, setCurrentModel] = useState(LOCAL_MODELS[0].title)
-  const [inventoryStatus, setInventoryStatus] = useState('Using local model list.')
+  const [inventoryStatus, setInventoryStatus] = useState('Local model list')
+  const [analysisStatus, setAnalysisStatus] = useState('Upload a main image to analyze it.')
   const [jobStatus, setJobStatus] = useState('Idle')
   const [jobProgress, setJobProgress] = useState(0)
   const [jobEta, setJobEta] = useState('0s')
@@ -384,7 +452,7 @@ export default function ImageWorkbench({ onBack }) {
   const [showMiniMap, setShowMiniMap] = useState(true)
   const [viewerSize, setViewerSize] = useState({ width: 0, height: 0 })
 
-  const [promptCopyState, setPromptCopyState] = useState('Copy job JSON')
+  const [promptCopyState, setPromptCopyState] = useState('Copy bundle')
 
   const baseDropRef = useRef(null)
   const viewerRef = useRef(null)
@@ -398,6 +466,7 @@ export default function ImageWorkbench({ onBack }) {
   const viewerTouchedRef = useRef(false)
   const viewerInitSourceRef = useRef('')
   const editorStrokesRef = useRef([])
+  const analysisRequestRef = useRef(0)
 
   useEffect(() => {
     editorStrokesRef.current = editorStrokes
@@ -593,6 +662,18 @@ export default function ImageWorkbench({ onBack }) {
     return () => document.body.classList.remove('wbx-page')
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const handlePaste = (event) => {
+      const file = Array.from(event.clipboardData?.files || []).find((item) => item.type.startsWith('image/'))
+      if (!file) return
+      event.preventDefault()
+      void loadBaseImageFromFile(file)
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [])
+
   const selectedTarget = useMemo(
     () => editTargets.find((target) => target.id === selectedTargetId) || editTargets[0] || null,
     [editTargets, selectedTargetId],
@@ -609,8 +690,9 @@ export default function ImageWorkbench({ onBack }) {
       cutoutImage,
       editMapImage,
       editTargets,
+      viewerZoom,
     }),
-    [excerpt, analysis, sdPrompt, selectedModelTitle, baseImage, cutoutRect, cutoutImage, editMapImage, editTargets],
+    [excerpt, analysis, sdPrompt, selectedModelTitle, baseImage, cutoutRect, cutoutImage, editMapImage, editTargets, viewerZoom],
   )
 
   const selectedGeneration = useMemo(
@@ -618,30 +700,24 @@ export default function ImageWorkbench({ onBack }) {
     [generationItems, selectedGenerationId],
   )
 
-  const promptPreviewCards = [
-    { title: 'Stable Diffusion Prompt', note: 'Tag/model oriented image generation prompt.', value: promptBundle.stableDiffusionPrompt },
-    { title: 'ChatGPT Prompt', note: 'Natural-language rewrite for planning and refinement.', value: promptBundle.chatgptPrompt },
-    { title: 'Gemini Prompt', note: 'Concise natural-language variant for Gemini.', value: promptBundle.geminiPrompt },
-  ]
-
   const promptDetailCards = [
     {
       title: 'Stable Diffusion Prompt',
-      note: 'Auto-updates from the source context, stamp, edit areas, and checkpoint.',
+      note: 'Uses the current image analysis, crop, edit areas, and selected checkpoint.',
       value: promptBundle.stableDiffusionPrompt,
-      meta: [selectedModelTitle || currentModel || 'auto', `${editTargets.length} edit area(s)`],
+      copyLabel: 'Copy SD prompt',
     },
     {
       title: 'ChatGPT Prompt',
-      note: 'Natural-language prompt variant for text-based refinement.',
+      note: 'Natural-language variant for prompt refinement and editing notes.',
       value: promptBundle.chatgptPrompt,
-      meta: [compactText(excerpt, 56), compactText(analysis, 56)],
+      copyLabel: 'Copy ChatGPT prompt',
     },
     {
       title: 'Gemini Prompt',
-      note: 'Natural-language prompt variant for Gemini.',
+      note: 'Natural-language variant for Gemini with the same crop and edit context.',
       value: promptBundle.geminiPrompt,
-      meta: [cutoutSrc ? 'Stamped cutout present' : 'No stamped cutout', editMapSrc ? 'Edit map ready' : 'No edit map yet'],
+      copyLabel: 'Copy Gemini prompt',
     },
   ]
 
@@ -679,11 +755,81 @@ export default function ImageWorkbench({ onBack }) {
     setJobEta('0s')
   }
 
+  async function analyzeBaseImage(src, name, requestId) {
+    const label = stripExtension(name) || 'main-image'
+    const baseUrl = orchestratorUrl.replace(/\/$/, '')
+    setAnalysisStatus('Analyzing main image...')
+    try {
+      const response = await fetchJson(`${baseUrl}/vision/analyze`, {
+        method: 'POST',
+        body: JSON.stringify({
+          images: [src],
+          labels: [label],
+          query: IMAGE_ANALYSIS_QUERY,
+        }),
+      }, 240000)
+
+      const item = Array.isArray(response?.results) ? response.results[0] || {} : (response || {})
+      const detailBoxes = Array.isArray(item?.vision_layout?.detail_boxes) ? item.vision_layout.detail_boxes : []
+      const analysisText = safeText(
+        item.analysis
+        || item.description
+        || item.summary
+        || item.text
+        || response?.analysis
+        || response?.summary,
+      )
+
+      const sourceBits = [
+        `Main image: ${label}.`,
+        item.source_size ? `Source size: ${item.source_size.width}x${item.source_size.height}.` : '',
+        item.vision_layout?.detail_mode ? `Layout: ${item.vision_layout.detail_mode}.` : '',
+        detailBoxes.length ? `Detail boxes: ${detailBoxes.length}.` : '',
+        analysisText || `No analysis text returned for ${label}.`,
+      ].filter(Boolean).join(' ')
+
+      const promptSeed = [
+        `Edit the image ${label} using the uploaded image as the reference.`,
+        analysisText || 'Use the uploaded image as the visual reference.',
+        cutoutRect ? `Current crop: ${formatRect(cutoutRect)}.` : 'Current crop: none yet.',
+        `Selection zoom: ${formatZoom(viewerZoom)}.`,
+        'Preserve the overall composition and only change the marked areas.',
+      ].join(' ')
+
+      if (requestId !== analysisRequestRef.current) return
+
+      setExcerpt(sourceBits)
+      setAnalysis(analysisText || `Image analysis for ${label}.`)
+      setSdPrompt(promptSeed)
+      setAnalysisStatus('Main image analyzed.')
+      pushLog(`Analyzed main image: ${label}`, 8, '0s')
+    } catch (error) {
+      const fallback = [
+        `Main image: ${label}.`,
+        cutoutRect ? `Current crop: ${formatRect(cutoutRect)}.` : '',
+        `Selection zoom: ${formatZoom(viewerZoom)}.`,
+        'Use this image as the reference and keep the marked area aligned with the surrounding composition.',
+      ].filter(Boolean).join(' ')
+
+      if (requestId !== analysisRequestRef.current) return
+
+      setExcerpt(fallback)
+      setAnalysis(`Image analysis unavailable for ${label}.`)
+      setSdPrompt(`Use the uploaded image ${label} as the reference and only edit the marked area.`)
+      setAnalysisStatus('Main image loaded; analysis unavailable.')
+      pushLog(`Main image analysis failed: ${error.message}`, 8, 'fallback')
+    }
+  }
+
   async function loadBaseImageFromFile(file) {
     const src = await readFileAsDataUrl(file)
     setBaseImageSrc(src)
     resetDerivedState()
+    setAnalysisStatus('Main image loaded.')
+    const requestId = analysisRequestRef.current + 1
+    analysisRequestRef.current = requestId
     pushLog(`Loaded base image: ${file.name}`, 3, '0s')
+    void analyzeBaseImage(src, file.name, requestId)
   }
 
   async function handleBaseDrop(event) {
@@ -693,11 +839,13 @@ export default function ImageWorkbench({ onBack }) {
   }
 
   function setDemoScene() {
+    analysisRequestRef.current += 1
     setExcerpt(SAMPLE_EXCERPT)
     setAnalysis(SAMPLE_ANALYSIS)
     setSdPrompt(SAMPLE_SD_PROMPT)
     setBaseImageSrc(SAMPLE_BASE_IMAGE)
     resetDerivedState()
+    setAnalysisStatus('Demo image loaded.')
     pushLog('Loaded the demo base image and sample instructions.', 2, '0s')
   }
 
@@ -818,7 +966,7 @@ export default function ImageWorkbench({ onBack }) {
     const isRight = event.button === 2
     const paintColor = COLOR_PALETTE[editorPaletteIndex % COLOR_PALETTE.length]
 
-    if (!isRight) {
+    if (editorTool === 'paint' && !isRight) {
       setEditorPaletteIndex((value) => value + 1)
     }
     if (editorTool !== 'erase') setSelectedTargetId((current) => current || editTargets[0]?.id || '')
@@ -895,6 +1043,7 @@ export default function ImageWorkbench({ onBack }) {
     setEditorStrokes([])
     setEditorDraftStroke(null)
     setEditTargets([])
+    setSelectedTargetId('')
   }
 
   async function saveEditorMap() {
@@ -927,6 +1076,22 @@ export default function ImageWorkbench({ onBack }) {
     if (!selectedTargetId && nextTargets[0]?.id) setSelectedTargetId(nextTargets[0].id)
     setEditorOpen(false)
     pushLog('Saved the edit map and generated edit targets.', 54, 'ready')
+  }
+
+  async function deleteEditTarget(targetId) {
+    const target = editTargets.find((item) => item.id === targetId)
+    if (!target) return
+    pushEditorUndoSnapshot()
+    const nextStrokes = editorStrokesRef.current.filter((stroke) => stroke.tool !== 'paint' || stroke.color !== target.color)
+    editorStrokesRef.current = nextStrokes
+    setEditorStrokes(nextStrokes)
+    const nextTargets = deriveEditTargets(nextStrokes, editTargets.filter((item) => item.id !== targetId))
+    setEditTargets(nextTargets)
+    if (selectedTargetId === targetId) setSelectedTargetId(nextTargets[0]?.id || '')
+    if (cutoutImage) {
+      await saveEditorMap()
+    }
+    pushLog(`Deleted edit area ${target.label}.`, 58, 'ready')
   }
 
   function restoreViewerFromSelection(rect) {
@@ -966,12 +1131,12 @@ export default function ImageWorkbench({ onBack }) {
         : []
       setModels(normalized.length ? normalized : LOCAL_MODELS)
       setCurrentModel(normalized[0]?.title || LOCAL_MODELS[0].title)
-      setInventoryStatus(`Loaded ${normalized.length || LOCAL_MODELS.length} checkpoint(s).`)
+      setInventoryStatus(normalized.length ? `Live: ${normalized.length} checkpoint(s)` : 'Local model list')
       if (!selectedModelTitle || !normalized.some((model) => model.title === selectedModelTitle)) {
         setSelectedModelTitle(normalized[0]?.title || LOCAL_MODELS[0].title)
       }
     } catch {
-      setInventoryStatus('Live inventory unavailable; using local model list.')
+      setInventoryStatus('Local model list')
       setModels(LOCAL_MODELS)
       setCurrentModel(LOCAL_MODELS[0].title)
     }
@@ -1246,15 +1411,39 @@ export default function ImageWorkbench({ onBack }) {
     setActiveTab('main')
   }
 
-  function copyJobJson() {
-    navigator.clipboard.writeText(JSON.stringify(promptBundle.jobSpec, null, 2))
+  function copyTextBlock(text, label = 'Copied') {
+    if (!navigator.clipboard?.writeText) return
+    navigator.clipboard.writeText(text)
       .then(() => {
-        setPromptCopyState('Copied')
+        setPromptCopyState(label)
         window.setTimeout(() => {
-          setPromptCopyState('Copy job JSON')
+          setPromptCopyState('Copy bundle')
         }, 1400)
       })
       .catch(() => {})
+  }
+
+  function copyPromptBlock(text, label) {
+    copyTextBlock(text, label)
+  }
+
+  function copyBundleJson() {
+    const bundle = {
+      ...promptBundle.jobSpec,
+      viewer_zoom: viewerZoom,
+      images: {
+        base: baseImageSrc || '',
+        cutout: cutoutSrc || '',
+        edit_map: editMapSrc || '',
+        selected_generation: selectedGeneration?.src || '',
+      },
+      prompt_texts: {
+        stable_diffusion: promptBundle.stableDiffusionPrompt,
+        chatgpt: promptBundle.chatgptPrompt,
+        gemini: promptBundle.geminiPrompt,
+      },
+    }
+    copyTextBlock(JSON.stringify(bundle, null, 2), 'Copied bundle')
   }
 
   return (
@@ -1262,25 +1451,19 @@ export default function ImageWorkbench({ onBack }) {
       <div className="wbx-shell">
         <header className="wbx-header">
           <div>
-            <p className="wbx-kicker">COMFYUI / SD ORCHESTRATOR / CHECKPOINTS</p>
             <h1 className="wbx-title">Image Workbench</h1>
-            <p className="wbx-subtitle">Base image, interactive cutout, stamp, editor, edit map, preview gallery, and checkpoint restore. Grid mode lives in its own tab.</p>
           </div>
           <div className="wbx-header__actions">
             <button type="button" className="wbx-button" onClick={onBack}>Portal</button>
-            <button type="button" className="wbx-button" onClick={setDemoScene}>Load Sample</button>
-            <button type="button" className="wbx-button" onClick={() => void refreshInventory()}>Rescan</button>
-            <button type="button" className="wbx-button wbx-button--primary" onClick={() => void generatePreview()}>Generate</button>
           </div>
         </header>
 
         <section className="wbx-status-row">
+          <div className="wbx-stat"><span className="wbx-stat__label">Main image</span><span className="wbx-stat__value">{analysisStatus}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Inventory</span><span className="wbx-stat__value">{inventoryStatus}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Current model</span><span className="wbx-stat__value">{currentModel || 'unknown'}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Selected model</span><span className="wbx-stat__value">{selectedModelTitle || 'auto'}</span></div>
-          <div className="wbx-stat"><span className="wbx-stat__label">Orchestrator</span><span className="wbx-stat__value">{orchestratorUrl}</span></div>
           <div className="wbx-stat"><span className="wbx-stat__label">Progress</span><span className="wbx-stat__value">{jobProgress}% · {jobEta}</span></div>
-          <div className="wbx-stat"><span className="wbx-stat__label">Targets</span><span className="wbx-stat__value">{editTargets.length} color target(s)</span></div>
         </section>
 
         {activeTab === 'main' ? (
@@ -1288,18 +1471,15 @@ export default function ImageWorkbench({ onBack }) {
             <div className="wbx-column wbx-column--left">
               <Panel
                 title="Main Input"
-                note="Drop the source image here or upload one from disk."
+                note="Drop, upload, or paste the main image."
                 actions={(
-                  <>
-                    <button type="button" className="wbx-mini" onClick={setDemoScene}>Sample</button>
-                    <label className="wbx-mini wbx-mini--file">
-                      Upload
-                      <input type="file" accept="image/*" onChange={(event) => {
-                        const file = event.target.files?.[0]
-                        if (file) void loadBaseImageFromFile(file)
-                      }} />
-                    </label>
-                  </>
+                  <label className="wbx-mini wbx-mini--file">
+                    Upload
+                    <input type="file" accept="image/*" onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) void loadBaseImageFromFile(file)
+                    }} />
+                  </label>
                 )}
               >
                 <div
@@ -1308,8 +1488,9 @@ export default function ImageWorkbench({ onBack }) {
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => void handleBaseDrop(event)}
                 >
-                  {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Drop an image here or use Upload.</div>}
+                  {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Drop an image here, choose Upload, or press Ctrl+V.</div>}
                 </div>
+                <p className="wbx-main-input__status">{analysisStatus}</p>
               </Panel>
 
               <Panel
@@ -1320,25 +1501,6 @@ export default function ImageWorkbench({ onBack }) {
                   <label className="wbx-field"><span>Source context</span><textarea className="wbx-textarea" value={excerpt} onChange={(event) => setExcerpt(event.target.value)} /></label>
                   <label className="wbx-field"><span>Cinematic summary</span><textarea className="wbx-textarea" value={analysis} onChange={(event) => setAnalysis(event.target.value)} /></label>
                   <label className="wbx-field"><span>SD prompt seed</span><textarea className="wbx-textarea" value={sdPrompt} onChange={(event) => setSdPrompt(event.target.value)} /></label>
-                </div>
-              </Panel>
-
-              <Panel
-                title="Prompt Snapshots"
-                note="Compact previews for quick review before generation."
-              >
-                <div className="wbx-prompt-snapshot-list">
-                  {promptPreviewCards.map((card) => (
-                    <article key={card.title} className="wbx-prompt-snapshot">
-                      <div className="wbx-prompt-snapshot__head">
-                        <div>
-                          <p className="wbx-prompt-snapshot__title">{card.title}</p>
-                          <p className="wbx-prompt-snapshot__note">{card.note}</p>
-                        </div>
-                      </div>
-                      <p className="wbx-prompt-snapshot__body">{compactText(card.value, 220)}</p>
-                    </article>
-                  ))}
                 </div>
               </Panel>
             </div>
@@ -1385,15 +1547,6 @@ export default function ImageWorkbench({ onBack }) {
               </section>
 
               <section className="wbx-main-grid">
-                <Panel
-                  title="Main Image Select"
-                  note="Mirrors the selected source frame used by the rest of the workbench."
-                >
-                  <div className="wbx-preview-wrap">
-                    {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Load a base image from the left column.</div>}
-                  </div>
-                </Panel>
-
                 <Panel
                   title="Cutout Stamp Selector"
                   note="Left-drag pans, right-drag draws the cutout rectangle, mouse wheel zooms."
@@ -1460,6 +1613,7 @@ export default function ImageWorkbench({ onBack }) {
                       <span>y {Math.round(cutoutRect.y)}</span>
                       <span>w {Math.round(cutoutRect.w)}</span>
                       <span>h {Math.round(cutoutRect.h)}</span>
+                      <span>zoom {formatZoom(viewerZoom)}</span>
                       <button type="button" className="wbx-mini" onClick={() => restoreViewerFromSelection(cutoutRect)}>Focus</button>
                     </div>
                   ) : null}
@@ -1468,11 +1622,6 @@ export default function ImageWorkbench({ onBack }) {
                 <Panel
                   title="Active Cutout Stamp"
                   note="Stamp the selected region into image 3, then reopen it in the editor if needed."
-                  actions={(
-                    <button type="button" className="wbx-stamp-button" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>
-                      <i className="fa-solid fa-stamp" />
-                    </button>
-                  )}
                 >
                   <div className="wbx-mini-stack">
                     <button type="button" className="wbx-button wbx-button--primary" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>Stamp cutout</button>
@@ -1504,7 +1653,7 @@ export default function ImageWorkbench({ onBack }) {
               </section>
 
               <section className="wbx-targets-panel">
-                <Panel title="Edit Areas" note="Each unique color from the editor becomes one Stable Diffusion-friendly target.">
+                <Panel title="Edit Areas" note="Each unique color from the editor becomes one target. Use Delete to remove a color from the map and targets together.">
                   <div className="wbx-targets-grid">
                     {editTargets.length ? editTargets.map((target, index) => (
                       <div key={target.id} className={`wbx-target ${selectedTargetId === target.id ? 'wbx-target--active' : ''}`}>
@@ -1514,7 +1663,10 @@ export default function ImageWorkbench({ onBack }) {
                         </button>
                         <input className="wbx-input" value={target.label} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, label: event.target.value } : item))} />
                         <textarea className="wbx-textarea wbx-textarea--compact" value={target.instruction} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, instruction: event.target.value } : item))} />
-                        <div className="wbx-target__meta">{index + 1}. {target.color}</div>
+                        <div className="wbx-target__meta-row">
+                          <div className="wbx-target__meta">{index + 1}. {target.color}{target.bounds ? ` · ${Math.round(target.bounds.x)},${Math.round(target.bounds.y)} ${Math.round(target.bounds.w)}x${Math.round(target.bounds.h)}` : ''}{target.strokeCount ? ` · ${target.strokeCount} stroke(s)` : ''}</div>
+                          <button type="button" className="wbx-mini" onClick={() => void deleteEditTarget(target.id)}>Delete</button>
+                        </div>
                       </div>
                     )) : <div className="wbx-empty">Paint a map and save it to generate targets.</div>}
                   </div>
@@ -1528,35 +1680,21 @@ export default function ImageWorkbench({ onBack }) {
                   actions={(
                     <>
                       <button type="button" className="wbx-mini" onClick={() => void generatePreview()}>Generate</button>
-                      <button type="button" className="wbx-mini" onClick={copyJobJson}>{promptCopyState}</button>
+                      <button type="button" className="wbx-mini" onClick={copyBundleJson}>{promptCopyState}</button>
                     </>
                   )}
                 >
-                  <div className="wbx-output-layout">
-                    <div className="wbx-output-main">
-                      {selectedGeneration ? (
-                        <>
-                          <img src={selectedGeneration.src} alt="Generated result" className="wbx-output-image" />
-                          <div className="wbx-output-meta">{selectedGeneration.note} · {selectedGeneration.model}{selectedGeneration.seed !== null ? ` · seed ${selectedGeneration.seed}` : ''}</div>
-                        </>
-                      ) : <div className="wbx-empty">Run Generate to fill the gallery.</div>}
-                      <div className="wbx-output-actions">
-                        <button type="button" className="wbx-button wbx-button--primary" onClick={() => void approveSelectedGeneration('cutout')} disabled={!selectedGeneration}>Approve cutout</button>
-                        <button type="button" className="wbx-button" onClick={() => void approveSelectedGeneration('base')} disabled={!selectedGeneration}>Merge to base</button>
-                        <button type="button" className="wbx-button" onClick={() => setGenerationItems([])}>Clear gallery</button>
-                      </div>
-                    </div>
-                    <div className="wbx-output-side">
-                      <textarea className="wbx-textarea wbx-textarea--job" value={JSON.stringify(promptBundle.jobSpec, null, 2)} readOnly />
-                      <div className="wbx-log">
-                        {jobLog.map((entry) => (
-                          <div key={entry.id} className="wbx-log__item">
-                            <span className="wbx-log__time">{entry.time}</span>
-                            <span className="wbx-log__message">{entry.message}</span>
-                            <span className="wbx-log__meta">{entry.percent !== null ? `${entry.percent}%` : ''} {entry.eta ? `· ${entry.eta}` : ''}</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="wbx-output-main">
+                    {selectedGeneration ? (
+                      <>
+                        <img src={selectedGeneration.src} alt="Generated result" className="wbx-output-image" />
+                        <div className="wbx-output-meta">{selectedGeneration.note} · {selectedGeneration.model}{selectedGeneration.seed !== null ? ` · seed ${selectedGeneration.seed}` : ''}</div>
+                      </>
+                    ) : <div className="wbx-empty">Run Generate to fill the gallery.</div>}
+                    <div className="wbx-output-actions">
+                      <button type="button" className="wbx-button wbx-button--primary" onClick={() => void approveSelectedGeneration('cutout')} disabled={!selectedGeneration}>Approve cutout</button>
+                      <button type="button" className="wbx-button" onClick={() => void approveSelectedGeneration('base')} disabled={!selectedGeneration}>Merge to base</button>
+                      <button type="button" className="wbx-button" onClick={() => setGenerationItems([])}>Clear gallery</button>
                     </div>
                   </div>
 
@@ -1568,6 +1706,25 @@ export default function ImageWorkbench({ onBack }) {
                       </button>
                     ))}
                     {!generationItems.length ? <div className="wbx-empty">No generated candidates yet.</div> : null}
+                  </div>
+
+                  <div className="wbx-job-panel">
+                    <div className="wbx-panel__head">
+                      <div>
+                        <p className="wbx-panel__title">Job Payload</p>
+                        <p className="wbx-panel__note">Copied bundle includes prompts, crop metadata, and image data URLs.</p>
+                      </div>
+                    </div>
+                    <textarea className="wbx-textarea wbx-textarea--job" value={JSON.stringify({
+                      ...promptBundle.jobSpec,
+                      viewer_zoom: viewerZoom,
+                      images: {
+                        base: baseImageSrc || '',
+                        cutout: cutoutSrc || '',
+                        edit_map: editMapSrc || '',
+                        selected_generation: selectedGeneration?.src || '',
+                      },
+                    }, null, 2)} readOnly />
                   </div>
                 </Panel>
               </section>
@@ -1603,26 +1760,31 @@ export default function ImageWorkbench({ onBack }) {
                   </div>
                 </Panel>
               </section>
-
-              <section className="wbx-note-panel">
-                <Panel
-                  title="Workflow Note"
-                  note="This is the intended order for the workbench: load base image, define the cutout, stamp it, paint edit areas, then generate and checkpoint."
-                >
-                  <p className="wbx-workflow-note">Grid mode stays separate on the other tab, and the prompt cards on the left/right stay synced to the current base image, edit areas, and selected checkpoint.</p>
-                </Panel>
-              </section>
             </div>
 
             <div className="wbx-column wbx-column--right">
               {promptDetailCards.map((card) => (
-                <Panel key={card.title} title={card.title} note={card.note}>
+                <Panel
+                  key={card.title}
+                  title={card.title}
+                  note={card.note}
+                  actions={<button type="button" className="wbx-mini" onClick={() => copyPromptBlock(card.value, card.copyLabel)}>{promptCopyState === card.copyLabel ? 'Copied' : 'Copy'}</button>}
+                >
                   <textarea className="wbx-textarea wbx-textarea--job" value={card.value} readOnly />
-                  <div className="wbx-prompt-meta-row">
-                    {card.meta.map((item) => <span key={item} className="wbx-prompt-meta">{item}</span>)}
-                  </div>
                 </Panel>
               ))}
+
+              <Panel title="Job Log" note="Recent progress and status messages.">
+                <div className="wbx-log">
+                  {jobLog.map((entry) => (
+                    <div key={entry.id} className="wbx-log__item">
+                      <span className="wbx-log__time">{entry.time}</span>
+                      <span className="wbx-log__message">{entry.message}</span>
+                      <span className="wbx-log__meta">{entry.percent !== null ? `${entry.percent}%` : ''} {entry.eta ? `· ${entry.eta}` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
             </div>
           </section>
         ) : (
