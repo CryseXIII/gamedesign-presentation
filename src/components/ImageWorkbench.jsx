@@ -155,6 +155,12 @@ function defaultInstruction(color, index) {
   return `Target ${index + 1} (${color}): edit only the region marked with this color, preserve surrounding composition, keep lighting and texture consistent, and keep the rest of the image unchanged.`
 }
 
+function compactText(value, limit = 180) {
+  const text = safeText(value, 'No prompt yet.')
+  if (text.length <= limit) return text
+  return `${text.slice(0, limit).trimEnd()}…`
+}
+
 function deriveEditTargets(strokes, previousTargets = []) {
   const paintColors = [...new Set((strokes || []).filter((stroke) => stroke.tool === 'paint').map((stroke) => stroke.color))]
   const previousByColor = new Map(previousTargets.map((target) => [target.color, target]))
@@ -173,37 +179,58 @@ function deriveEditTargets(strokes, previousTargets = []) {
 function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImage, cutoutRect, cutoutImage, editMapImage, editTargets }) {
   const targetLines = editTargets.map((target, index) => `${index + 1}. ${target.label} | ${target.color} | ${target.instruction}`)
   const targetSummary = targetLines.length ? targetLines.join('\n') : 'none'
-  const modelLine = selectedModel ? `Preferred model: ${selectedModel}` : 'Preferred model: auto'
+  const sourceContext = safeText(excerpt, 'No source context yet.')
+  const cinematicSummary = safeText(analysis, 'No cinematic summary yet.')
+  const sdSeed = safeText(sdPrompt, 'No Stable Diffusion seed yet.')
+  const modelLine = selectedModel ? `Selected checkpoint: ${selectedModel}` : 'Selected checkpoint: auto'
+  const loraLine = 'Selected LoRAs: none'
 
   const strictPrompt = [
-    'Image edit job.',
+    'Image edit job for Stable Diffusion.',
     modelLine,
+    loraLine,
     baseImage ? `Base image: ${baseImage.width}x${baseImage.height}` : 'Base image: none',
     cutoutRect ? `Cutout rect: x=${Math.round(cutoutRect.x)} y=${Math.round(cutoutRect.y)} w=${Math.round(cutoutRect.w)} h=${Math.round(cutoutRect.h)}` : 'Cutout rect: none',
     cutoutImage ? `Stamped cutout: ${cutoutImage.width}x${cutoutImage.height}` : 'Stamped cutout: none',
     editMapImage ? `Edit map: ${editMapImage.width}x${editMapImage.height}` : 'Edit map: none',
-    `Source excerpt:\n${excerpt}`,
-    `Scene analysis:\n${analysis}`,
-    `SD prompt:\n${sdPrompt}`,
+    `Source context:\n${sourceContext}`,
+    `Cinematic summary:\n${cinematicSummary}`,
+    `Stable Diffusion guidance:\n${sdSeed}`,
     `Edit targets:\n${targetSummary}`,
     'Preserve all unmarked areas.',
     'Only modify the colored targets.',
   ].join('\n\n')
 
   const naturalPrompt = [
-    'Prepare an image edit prompt from the current workbench state.',
+    'Prepare a natural-language image editing brief from the current workbench state.',
+    modelLine,
     `Base image present: ${baseImage ? 'yes' : 'no'}`,
     `Cutout present: ${cutoutImage ? 'yes' : 'no'}`,
     `Edit map present: ${editMapImage ? 'yes' : 'no'}`,
+    `Source context:\n${sourceContext}`,
+    `Cinematic summary:\n${cinematicSummary}`,
+    `Stable Diffusion seed:\n${sdSeed}`,
     `Targets:\n${targetSummary}`,
-    `Excerpt:\n${excerpt}`,
-    `Analysis:\n${analysis}`,
-    `Prompt draft:\n${sdPrompt}`,
+    'Write clearly for a human assistant or planning model.',
+    'Keep the wording concise, cinematic, and localized to the marked areas.',
+  ].join('\n\n')
+
+  const geminiPrompt = [
+    'Rewrite the current workbench brief for Gemini.',
+    modelLine,
+    `Source context:\n${sourceContext}`,
+    `Cinematic summary:\n${cinematicSummary}`,
+    `Stable Diffusion seed:\n${sdSeed}`,
+    `Edit targets:\n${targetSummary}`,
+    'Return concise natural-language instructions.',
+    'Preserve the scene, change only the marked regions, and keep the language clear.',
   ].join('\n\n')
 
   const jobSpec = {
     mode: 'image-workbench',
     selected_model_title: selectedModel || null,
+    selected_checkpoint: selectedModel || null,
+    selected_loras: [],
     base_image: baseImage ? { width: baseImage.width, height: baseImage.height, name: baseImage.name } : null,
     crop_rect: cutoutRect ? { x: Math.round(cutoutRect.x), y: Math.round(cutoutRect.y), w: Math.round(cutoutRect.w), h: Math.round(cutoutRect.h) } : null,
     cutout_image: cutoutImage ? { width: cutoutImage.width, height: cutoutImage.height, name: cutoutImage.name } : null,
@@ -215,10 +242,21 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
       instruction: target.instruction,
       note: target.note,
     })),
-    prompts: { excerpt, analysis, sdPrompt, strictPrompt, naturalPrompt },
+    prompts: {
+      baseInput: sourceContext,
+      cinematicSummary,
+      stableDiffusionPrompt: strictPrompt,
+      chatgptPrompt: naturalPrompt,
+      geminiPrompt,
+      excerpt: sourceContext,
+      analysis: cinematicSummary,
+      sdPrompt: sdSeed,
+      strictPrompt,
+      naturalPrompt,
+    },
   }
 
-  return { strictPrompt, naturalPrompt, jobSpec }
+  return { sourceContext, cinematicSummary, stableDiffusionPrompt: strictPrompt, chatgptPrompt: naturalPrompt, geminiPrompt, strictPrompt, naturalPrompt, jobSpec }
 }
 
 async function fetchJson(url, options = {}, timeoutMs = 30000) {
@@ -314,7 +352,6 @@ export default function ImageWorkbench({ onBack }) {
   const [jobProgress, setJobProgress] = useState(0)
   const [jobEta, setJobEta] = useState('0s')
   const [jobLog, setJobLog] = useState([])
-  const [jobJsonCopied, setJobJsonCopied] = useState(false)
 
   const [excerpt, setExcerpt] = useState(SAMPLE_EXCERPT)
   const [analysis, setAnalysis] = useState(SAMPLE_ANALYSIS)
@@ -574,6 +611,39 @@ export default function ImageWorkbench({ onBack }) {
     () => generationItems.find((item) => item.id === selectedGenerationId) || generationItems[0] || null,
     [generationItems, selectedGenerationId],
   )
+
+  const promptPreviewCards = [
+    { title: 'Stable Diffusion Prompt', note: 'Tag/model oriented image generation prompt.', value: promptBundle.stableDiffusionPrompt },
+    { title: 'ChatGPT Prompt', note: 'Natural-language rewrite for planning and refinement.', value: promptBundle.chatgptPrompt },
+    { title: 'Gemini Prompt', note: 'Concise natural-language variant for Gemini.', value: promptBundle.geminiPrompt },
+  ]
+
+  const promptDetailCards = [
+    {
+      title: 'Stable Diffusion Prompt',
+      note: 'Auto-updates from the source context, stamp, edit areas, and checkpoint.',
+      value: promptBundle.stableDiffusionPrompt,
+      meta: [selectedModelTitle || currentModel || 'auto', `${editTargets.length} edit area(s)`],
+    },
+    {
+      title: 'ChatGPT Prompt',
+      note: 'Natural-language prompt variant for text-based refinement.',
+      value: promptBundle.chatgptPrompt,
+      meta: [compactText(excerpt, 56), compactText(analysis, 56)],
+    },
+    {
+      title: 'Gemini Prompt',
+      note: 'Natural-language prompt variant for Gemini.',
+      value: promptBundle.geminiPrompt,
+      meta: [cutoutSrc ? 'Stamped cutout present' : 'No stamped cutout', editMapSrc ? 'Edit map ready' : 'No edit map yet'],
+    },
+  ]
+
+  const targetPromptText = (target, index) => [
+    safeText(target.instruction, defaultInstruction(target.color, index)),
+    safeText(sdPrompt, 'No Stable Diffusion seed yet.'),
+    `Color marker: ${target.color}`,
+  ].join('\n\n')
 
   function pushLog(message, percent = null, eta = null) {
     const entry = {
@@ -1250,11 +1320,11 @@ export default function ImageWorkbench({ onBack }) {
         </section>
 
         {activeTab === 'main' ? (
-          <>
-            <section className="wbx-main-grid">
+          <section className="wbx-workbench-layout">
+            <div className="wbx-column wbx-column--left">
               <Panel
-                title="Base Image"
-                note="Drag and drop a file or pick one. This is the source image for the entire workbench."
+                title="Main Input"
+                note="Drop the source image here or upload one from disk."
                 actions={(
                   <>
                     <button type="button" className="wbx-mini" onClick={setDemoScene}>Sample</button>
@@ -1279,227 +1349,318 @@ export default function ImageWorkbench({ onBack }) {
               </Panel>
 
               <Panel
-                title="Define Cutout"
-                note="Left-drag pans, right-drag draws the cutout rectangle, mouse wheel zooms. The minimap can be hidden with the eye button."
-                actions={(
-                  <button type="button" className="wbx-mini" onClick={() => setShowMiniMap((value) => !value)}>
-                    <i className={`fa-solid ${showMiniMap ? 'fa-eye' : 'fa-eye-slash'}`} />
-                  </button>
-                )}
+                title="Source Context"
+                note="Editable scene brief, cinematic summary, and Stable Diffusion seed."
               >
-                <div
-                  ref={viewerRef}
-                  className="wbx-viewport"
-                  onPointerDown={(event) => startViewerInteraction(event)}
-                  onPointerMove={(event) => moveViewerInteraction(event)}
-                  onPointerUp={(event) => endViewerInteraction(event)}
-                  onPointerCancel={(event) => endViewerInteraction(event)}
-                  onContextMenu={(event) => event.preventDefault()}
-                  onWheel={(event) => zoomViewer(event)}
+                <div className="wbx-prompt-grid wbx-prompt-grid--stack">
+                  <label className="wbx-field"><span>Source context</span><textarea className="wbx-textarea" value={excerpt} onChange={(event) => setExcerpt(event.target.value)} /></label>
+                  <label className="wbx-field"><span>Cinematic summary</span><textarea className="wbx-textarea" value={analysis} onChange={(event) => setAnalysis(event.target.value)} /></label>
+                  <label className="wbx-field"><span>SD prompt seed</span><textarea className="wbx-textarea" value={sdPrompt} onChange={(event) => setSdPrompt(event.target.value)} /></label>
+                </div>
+              </Panel>
+
+              <Panel
+                title="Prompt Snapshots"
+                note="Compact previews for quick review before generation."
+              >
+                <div className="wbx-prompt-snapshot-list">
+                  {promptPreviewCards.map((card) => (
+                    <article key={card.title} className="wbx-prompt-snapshot">
+                      <div className="wbx-prompt-snapshot__head">
+                        <div>
+                          <p className="wbx-prompt-snapshot__title">{card.title}</p>
+                          <p className="wbx-prompt-snapshot__note">{card.note}</p>
+                        </div>
+                      </div>
+                      <p className="wbx-prompt-snapshot__body">{compactText(card.value, 220)}</p>
+                    </article>
+                  ))}
+                </div>
+              </Panel>
+            </div>
+
+            <div className="wbx-column wbx-column--center">
+              <section className="wbx-panel">
+                <div className="wbx-panel__head">
+                  <div>
+                    <p className="wbx-panel__title">Model Control</p>
+                    <p className="wbx-panel__note">Pick a checkpoint, then sync it before generating.</p>
+                  </div>
+                  <div className="wbx-panel__actions">
+                    <button type="button" className="wbx-mini" onClick={() => void ensureSelectedModelActive()}>Sync model</button>
+                    <button type="button" className="wbx-mini" onClick={() => void refreshInventory()}>Rescan</button>
+                  </div>
+                </div>
+                <div className="wbx-prompt-grid wbx-prompt-grid--stack">
+                  <label className="wbx-field">
+                    <span>Pinned checkpoint</span>
+                    <select className="wbx-input" value={selectedModelTitle} onChange={(event) => setSelectedModelTitle(event.target.value)}>
+                      {models.map((model) => (
+                        <option key={model.title} value={model.title}>{model.title}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="wbx-field wbx-field--check">
+                    <input type="checkbox" checked={modelLock === 'true'} onChange={(event) => setModelLock(event.target.checked ? 'true' : 'false')} />
+                    <span>Keep selected model active</span>
+                  </label>
+                  <label className="wbx-field"><span>Orchestrator URL <span style={{ color: '#64748b', fontSize: '0.7rem' }}>(Hermes: http://10.10.10.64:8765)</span></span><input className="wbx-input" type="text" value={orchestratorUrl} onChange={(event) => setOrchestratorUrl(event.target.value)} placeholder="https://..." /></label>
+                </div>
+              </section>
+
+              <section className="wbx-tabs">
+                <button type="button" className={`wbx-tab ${activeTab === 'main' ? 'wbx-tab--active' : ''}`} onClick={() => setActiveTab('main')}>Main</button>
+                <button type="button" className={`wbx-tab ${activeTab === 'grid' ? 'wbx-tab--active' : ''}`} onClick={() => setActiveTab('grid')}>Grid</button>
+                <label className="wbx-inline-file">
+                  <span>Import checkpoint zip</span>
+                  <input type="file" accept=".zip,application/zip" onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    if (file) void importCheckpointFile(file)
+                  }} />
+                </label>
+              </section>
+
+              <section className="wbx-main-grid">
+                <Panel
+                  title="Main Image Select"
+                  note="Mirrors the selected source frame used by the rest of the workbench."
                 >
-                  {baseImage ? (
-                    <img
-                      src={baseImage.src}
-                      alt="Cutout viewport"
-                      className="wbx-viewport__image"
-                      style={{ width: baseImage.width, height: baseImage.height, transform: `translate(${viewerPan.x}px, ${viewerPan.y}px) scale(${viewerZoom})`, transformOrigin: 'top left' }}
-                      draggable="false"
-                    />
-                  ) : <div className="wbx-empty">Load a base image first.</div>}
+                  <div className="wbx-preview-wrap">
+                    {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Load a base image from the left column.</div>}
+                  </div>
+                </Panel>
+
+                <Panel
+                  title="Cutout Stamp Selector"
+                  note="Left-drag pans, right-drag draws the cutout rectangle, mouse wheel zooms."
+                  actions={(
+                    <button type="button" className="wbx-mini" onClick={() => setShowMiniMap((value) => !value)}>
+                      <i className={`fa-solid ${showMiniMap ? 'fa-eye' : 'fa-eye-slash'}`} />
+                    </button>
+                  )}
+                >
+                  <div
+                    ref={viewerRef}
+                    className="wbx-viewport"
+                    onPointerDown={(event) => startViewerInteraction(event)}
+                    onPointerMove={(event) => moveViewerInteraction(event)}
+                    onPointerUp={(event) => endViewerInteraction(event)}
+                    onPointerCancel={(event) => endViewerInteraction(event)}
+                    onContextMenu={(event) => event.preventDefault()}
+                    onWheel={(event) => zoomViewer(event)}
+                  >
+                    {baseImage ? (
+                      <img
+                        src={baseImage.src}
+                        alt="Cutout viewport"
+                        className="wbx-viewport__image"
+                        style={{ width: baseImage.width, height: baseImage.height, transform: `translate(${viewerPan.x}px, ${viewerPan.y}px) scale(${viewerZoom})`, transformOrigin: 'top left' }}
+                        draggable="false"
+                      />
+                    ) : <div className="wbx-empty">Load a base image first.</div>}
+
+                    {cutoutRect ? (
+                      <div
+                        className="wbx-rect"
+                        style={{
+                          left: viewerPan.x + cutoutRect.x * viewerZoom,
+                          top: viewerPan.y + cutoutRect.y * viewerZoom,
+                          width: cutoutRect.w * viewerZoom,
+                          height: cutoutRect.h * viewerZoom,
+                        }}
+                      />
+                    ) : null}
+
+                    {viewerRectDraft ? (
+                      <div
+                        className="wbx-rect wbx-rect--draft"
+                        style={{
+                          left: viewerPan.x + viewerRectDraft.x * viewerZoom,
+                          top: viewerPan.y + viewerRectDraft.y * viewerZoom,
+                          width: viewerRectDraft.w * viewerZoom,
+                          height: viewerRectDraft.h * viewerZoom,
+                        }}
+                      />
+                    ) : null}
+
+                    {showMiniMap ? (
+                      <div className="wbx-minimap">
+                        <canvas ref={minimapCanvasRef} className="wbx-minimap__canvas" />
+                      </div>
+                    ) : null}
+                  </div>
 
                   {cutoutRect ? (
-                    <div
-                      className="wbx-rect"
-                      style={{
-                        left: viewerPan.x + cutoutRect.x * viewerZoom,
-                        top: viewerPan.y + cutoutRect.y * viewerZoom,
-                        width: cutoutRect.w * viewerZoom,
-                        height: cutoutRect.h * viewerZoom,
-                      }}
-                    />
-                  ) : null}
-
-                  {viewerRectDraft ? (
-                    <div
-                      className="wbx-rect wbx-rect--draft"
-                      style={{
-                        left: viewerPan.x + viewerRectDraft.x * viewerZoom,
-                        top: viewerPan.y + viewerRectDraft.y * viewerZoom,
-                        width: viewerRectDraft.w * viewerZoom,
-                        height: viewerRectDraft.h * viewerZoom,
-                      }}
-                    />
-                  ) : null}
-
-                  {showMiniMap ? (
-                    <div className="wbx-minimap">
-                      <canvas ref={minimapCanvasRef} className="wbx-minimap__canvas" />
+                    <div className="wbx-readout">
+                      <span>x {Math.round(cutoutRect.x)}</span>
+                      <span>y {Math.round(cutoutRect.y)}</span>
+                      <span>w {Math.round(cutoutRect.w)}</span>
+                      <span>h {Math.round(cutoutRect.h)}</span>
+                      <button type="button" className="wbx-mini" onClick={() => restoreViewerFromSelection(cutoutRect)}>Focus</button>
                     </div>
                   ) : null}
-                </div>
+                </Panel>
 
-                {cutoutRect ? (
-                  <div className="wbx-readout">
-                    <span>x {Math.round(cutoutRect.x)}</span>
-                    <span>y {Math.round(cutoutRect.y)}</span>
-                    <span>w {Math.round(cutoutRect.w)}</span>
-                    <span>h {Math.round(cutoutRect.h)}</span>
-                    <button type="button" className="wbx-mini" onClick={() => restoreViewerFromSelection(cutoutRect)}>Focus</button>
+                <Panel
+                  title="Active Cutout Stamp"
+                  note="Stamp the selected region into image 3, then reopen it in the editor if needed."
+                  actions={(
+                    <button type="button" className="wbx-stamp-button" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>
+                      <i className="fa-solid fa-stamp" />
+                    </button>
+                  )}
+                >
+                  <div className="wbx-mini-stack">
+                    <button type="button" className="wbx-button wbx-button--primary" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>Stamp cutout</button>
+                    <div className="wbx-preview-wrap">
+                      {cutoutSrc ? (
+                        <button type="button" className="wbx-preview-button" onClick={openEditor}>
+                          <img src={cutoutSrc} alt="Stamped cutout" className="wbx-preview-image" />
+                        </button>
+                      ) : <div className="wbx-empty">Stamp the cutout to create image 3.</div>}
+                    </div>
                   </div>
-                ) : null}
-              </Panel>
+                </Panel>
 
-              <Panel
-                title="Stamp"
-                note="The rectangle defines the stamp. The zoom state only affects what you see while drawing the crop."
-                actions={(
-                  <button type="button" className="wbx-stamp-button" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>
-                    <i className="fa-solid fa-stamp" />
-                  </button>
-                )}
-              >
-                <div className="wbx-mini-stack">
-                  <button type="button" className="wbx-button wbx-button--primary" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>Stamp cutout</button>
-                  <div className="wbx-preview-wrap">
-                    {cutoutSrc ? (
+                <Panel
+                  title="Image With Colored Edit Areas"
+                  note="Save from the editor to transfer the painted map here. Click the preview to reopen the editor."
+                  actions={(
+                    <button type="button" className="wbx-mini" onClick={openEditor} disabled={!cutoutSrc}>Edit</button>
+                  )}
+                >
+                  <div className="wbx-preview-wrap wbx-preview-wrap--checker">
+                    {editMapSrc ? (
                       <button type="button" className="wbx-preview-button" onClick={openEditor}>
-                        <img src={cutoutSrc} alt="Stamped cutout" className="wbx-preview-image" />
+                        <img src={editMapSrc} alt="Edit map" className="wbx-preview-image" />
                       </button>
-                    ) : <div className="wbx-empty">Stamp the cutout to create image 3.</div>}
+                    ) : <div className="wbx-empty">Save a painted map from the editor to populate image 4.</div>}
                   </div>
-                </div>
-              </Panel>
+                </Panel>
+              </section>
 
-              <Panel
-                title="Edit Map"
-                note="Save from the editor to transfer the painted map here. Click the preview to reopen the editor."
-                actions={(
-                  <button type="button" className="wbx-mini" onClick={openEditor} disabled={!cutoutSrc}>Edit</button>
-                )}
-              >
-                <div className="wbx-preview-wrap wbx-preview-wrap--checker">
-                  {editMapSrc ? (
-                    <button type="button" className="wbx-preview-button" onClick={openEditor}>
-                      <img src={editMapSrc} alt="Edit map" className="wbx-preview-image" />
-                    </button>
-                  ) : <div className="wbx-empty">Save a painted map from the editor to populate image 4.</div>}
-                </div>
-              </Panel>
-            </section>
+              <section className="wbx-targets-panel">
+                <Panel title="Edit Areas" note="Each unique color from the editor becomes one Stable Diffusion-friendly target.">
+                  <div className="wbx-targets-grid">
+                    {editTargets.length ? editTargets.map((target, index) => (
+                      <div key={target.id} className={`wbx-target ${selectedTargetId === target.id ? 'wbx-target--active' : ''}`}>
+                        <button type="button" className="wbx-target__pick" onClick={() => setSelectedTargetId(target.id)}>
+                          <span className="wbx-target__swatch" style={{ background: target.color }} />
+                          <span>{target.label}</span>
+                        </button>
+                        <input className="wbx-input" value={target.label} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, label: event.target.value } : item))} />
+                        <textarea className="wbx-textarea wbx-textarea--compact" value={target.instruction} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, instruction: event.target.value } : item))} />
+                        <div className="wbx-target__meta">{index + 1}. {target.color}</div>
+                      </div>
+                    )) : <div className="wbx-empty">Paint a map and save it to generate targets.</div>}
+                  </div>
+                </Panel>
+              </section>
 
-            <section className="wbx-targets-panel">
-              <Panel title="Edit Targets" note="Each unique color from the editor becomes one Stable Diffusion-friendly target.">
-                <div className="wbx-targets-grid">
-                  {editTargets.length ? editTargets.map((target, index) => (
-                    <div key={target.id} className={`wbx-target ${selectedTargetId === target.id ? 'wbx-target--active' : ''}`}>
-                      <button type="button" className="wbx-target__pick" onClick={() => setSelectedTargetId(target.id)}>
-                        <span className="wbx-target__swatch" style={{ background: target.color }} />
-                        <span>{target.label}</span>
-                      </button>
-                      <input className="wbx-input" value={target.label} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, label: event.target.value } : item))} />
-                      <textarea className="wbx-textarea wbx-textarea--compact" value={target.instruction} onChange={(event) => setEditTargets((previous) => previous.map((item) => item.id === target.id ? { ...item, instruction: event.target.value } : item))} />
-                      <div className="wbx-target__meta">{index + 1}. {target.color}</div>
+              <section className="wbx-output-panel">
+                <Panel
+                  title="Stable Diffusion Output"
+                  note="Generate multiple candidates, then approve one as cutout or merge it back into the base."
+                  actions={(
+                    <>
+                      <button type="button" className="wbx-mini" onClick={() => void generatePreview()}>Generate</button>
+                      <button type="button" className="wbx-mini" onClick={copyJobJson}>{promptCopyState}</button>
+                    </>
+                  )}
+                >
+                  <div className="wbx-output-layout">
+                    <div className="wbx-output-main">
+                      {selectedGeneration ? (
+                        <>
+                          <img src={selectedGeneration.src} alt="Generated result" className="wbx-output-image" />
+                          <div className="wbx-output-meta">{selectedGeneration.note} · {selectedGeneration.model}{selectedGeneration.seed !== null ? ` · seed ${selectedGeneration.seed}` : ''}</div>
+                        </>
+                      ) : <div className="wbx-empty">Run Generate to fill the gallery.</div>}
+                      <div className="wbx-output-actions">
+                        <button type="button" className="wbx-button wbx-button--primary" onClick={() => void approveSelectedGeneration('cutout')} disabled={!selectedGeneration}>Approve cutout</button>
+                        <button type="button" className="wbx-button" onClick={() => void approveSelectedGeneration('base')} disabled={!selectedGeneration}>Merge to base</button>
+                        <button type="button" className="wbx-button" onClick={() => setGenerationItems([])}>Clear gallery</button>
+                      </div>
                     </div>
-                  )) : <div className="wbx-empty">Paint a map and save it to generate targets.</div>}
-                </div>
-              </Panel>
-            </section>
-
-            <section className="wbx-output-panel">
-              <Panel
-                title="Output / Gallery"
-                note="Generate multiple candidates, then approve one as cutout or merge it back into the base."
-                actions={(
-                  <>
-                    <button type="button" className="wbx-mini" onClick={() => void generatePreview()}>Generate</button>
-                    <button type="button" className="wbx-mini" onClick={copyJobJson}>{promptCopyState}</button>
-                  </>
-                )}
-              >
-                <div className="wbx-output-layout">
-                  <div className="wbx-output-main">
-                    {selectedGeneration ? (
-                      <>
-                        <img src={selectedGeneration.src} alt="Generated result" className="wbx-output-image" />
-                        <div className="wbx-output-meta">{selectedGeneration.note} · {selectedGeneration.model}{selectedGeneration.seed !== null ? ` · seed ${selectedGeneration.seed}` : ''}</div>
-                      </>
-                    ) : <div className="wbx-empty">Run Generate to fill the gallery.</div>}
-                    <div className="wbx-output-actions">
-                      <button type="button" className="wbx-button wbx-button--primary" onClick={() => void approveSelectedGeneration('cutout')} disabled={!selectedGeneration}>Approve cutout</button>
-                      <button type="button" className="wbx-button" onClick={() => void approveSelectedGeneration('base')} disabled={!selectedGeneration}>Merge to base</button>
-                      <button type="button" className="wbx-button" onClick={() => setGenerationItems([])}>Clear gallery</button>
+                    <div className="wbx-output-side">
+                      <textarea className="wbx-textarea wbx-textarea--job" value={JSON.stringify(promptBundle.jobSpec, null, 2)} readOnly />
+                      <div className="wbx-log">
+                        {jobLog.map((entry) => (
+                          <div key={entry.id} className="wbx-log__item">
+                            <span className="wbx-log__time">{entry.time}</span>
+                            <span className="wbx-log__message">{entry.message}</span>
+                            <span className="wbx-log__meta">{entry.percent !== null ? `${entry.percent}%` : ''} {entry.eta ? `· ${entry.eta}` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="wbx-output-side">
-                    <textarea className="wbx-textarea wbx-textarea--job" value={JSON.stringify(promptBundle.jobSpec, null, 2)} readOnly />
-                    <div className="wbx-log">
-                      {jobLog.map((entry) => (
-                        <div key={entry.id} className="wbx-log__item">
-                          <span className="wbx-log__time">{entry.time}</span>
-                          <span className="wbx-log__message">{entry.message}</span>
-                          <span className="wbx-log__meta">{entry.percent !== null ? `${entry.percent}%` : ''} {entry.eta ? `· ${entry.eta}` : ''}</span>
+
+                  <div className="wbx-gallery">
+                    {generationItems.map((item) => (
+                      <button key={item.id} type="button" className={`wbx-gallery__item ${selectedGenerationId === item.id ? 'wbx-gallery__item--active' : ''}`} onClick={() => selectGeneration(item.id)}>
+                        <img src={item.src} alt={item.note} className="wbx-gallery__image" />
+                        <span className="wbx-gallery__label">{item.model}</span>
+                      </button>
+                    ))}
+                    {!generationItems.length ? <div className="wbx-empty">No generated candidates yet.</div> : null}
+                  </div>
+                </Panel>
+              </section>
+
+              <section className="wbx-checkpoints-panel">
+                <Panel
+                  title="Checkpoint History"
+                  note="Approved generations are packaged into zip checkpoints that can be restored later."
+                  actions={(
+                    <>
+                      <button type="button" className="wbx-mini" onClick={() => void saveCheckpoint('manual', selectedGeneration || null)}>Save checkpoint</button>
+                      <button type="button" className="wbx-mini" onClick={keepNewestCheckpoint} disabled={!checkpoints.length}>Keep newest only</button>
+                    </>
+                  )}
+                >
+                  <div className="wbx-checkpoint-list">
+                    {checkpoints.map((record) => (
+                      <div key={record.id} className="wbx-checkpoint">
+                        <div className="wbx-checkpoint__head">
+                          <strong>{record.kind}</strong>
+                          <small>{new Date(record.createdAt).toLocaleString()}</small>
                         </div>
-                      ))}
-                    </div>
+                        <small>{record.filename}</small>
+                        <div className="wbx-inline-actions">
+                          <button type="button" className="wbx-mini" onClick={() => void restoreCheckpointFromRecord(record)}>Restore</button>
+                          <button type="button" className="wbx-mini" onClick={() => downloadBlob(record.blob, record.filename)}>Download</button>
+                          <button type="button" className="wbx-mini" onClick={() => navigator.clipboard.writeText(JSON.stringify(record.manifest, null, 2))}>Inspect</button>
+                          <button type="button" className="wbx-mini" onClick={() => removeCheckpoint(record.id)}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                    {!checkpoints.length ? <div className="wbx-empty">No checkpoints saved yet.</div> : null}
                   </div>
-                </div>
+                </Panel>
+              </section>
 
-                <div className="wbx-gallery">
-                  {generationItems.map((item) => (
-                    <button key={item.id} type="button" className={`wbx-gallery__item ${selectedGenerationId === item.id ? 'wbx-gallery__item--active' : ''}`} onClick={() => selectGeneration(item.id)}>
-                      <img src={item.src} alt={item.note} className="wbx-gallery__image" />
-                      <span className="wbx-gallery__label">{item.model}</span>
-                    </button>
-                  ))}
-                  {!generationItems.length ? <div className="wbx-empty">No generated candidates yet.</div> : null}
-                </div>
-              </Panel>
-            </section>
+              <section className="wbx-note-panel">
+                <Panel
+                  title="Workflow Note"
+                  note="This is the intended order for the workbench: load base image, define the cutout, stamp it, paint edit areas, then generate and checkpoint."
+                >
+                  <p className="wbx-workflow-note">Grid mode stays separate on the other tab, and the prompt cards on the left/right stay synced to the current base image, edit areas, and selected checkpoint.</p>
+                </Panel>
+              </section>
+            </div>
 
-            <section className="wbx-prompt-panel">
-              <Panel title="Prompt Pack" note="These fields stay in sync with the edit targets and image state.">
-                <div className="wbx-prompt-grid">
-                  <label className="wbx-field"><span>Excerpt</span><textarea className="wbx-textarea" value={excerpt} onChange={(event) => setExcerpt(event.target.value)} /></label>
-                  <label className="wbx-field"><span>Analysis</span><textarea className="wbx-textarea" value={analysis} onChange={(event) => setAnalysis(event.target.value)} /></label>
-                  <label className="wbx-field"><span>SD prompt</span><textarea className="wbx-textarea" value={sdPrompt} onChange={(event) => setSdPrompt(event.target.value)} /></label>
-                  <label className="wbx-field"><span>Strict prompt</span><textarea className="wbx-textarea wbx-textarea--job" value={promptBundle.strictPrompt} readOnly /></label>
-                  <label className="wbx-field"><span>Natural prompt</span><textarea className="wbx-textarea wbx-textarea--job" value={promptBundle.naturalPrompt} readOnly /></label>
-                </div>
-              </Panel>
-            </section>
-
-            <section className="wbx-checkpoints-panel">
-              <Panel
-                title="Checkpoints"
-                note="Approved generations are packaged into zip checkpoints that can be restored later."
-                actions={(
-                  <>
-                    <button type="button" className="wbx-mini" onClick={() => void saveCheckpoint('manual', selectedGeneration || null)}>Save checkpoint</button>
-                    <button type="button" className="wbx-mini" onClick={keepNewestCheckpoint} disabled={!checkpoints.length}>Keep newest only</button>
-                  </>
-                )}
-              >
-                <div className="wbx-checkpoint-list">
-                  {checkpoints.map((record) => (
-                    <div key={record.id} className="wbx-checkpoint">
-                      <div className="wbx-checkpoint__head">
-                        <strong>{record.kind}</strong>
-                        <small>{new Date(record.createdAt).toLocaleString()}</small>
-                      </div>
-                      <small>{record.filename}</small>
-                      <div className="wbx-inline-actions">
-                        <button type="button" className="wbx-mini" onClick={() => void restoreCheckpointFromRecord(record)}>Restore</button>
-                        <button type="button" className="wbx-mini" onClick={() => downloadBlob(record.blob, record.filename)}>Download</button>
-                        <button type="button" className="wbx-mini" onClick={() => navigator.clipboard.writeText(JSON.stringify(record.manifest, null, 2))}>Inspect</button>
-                        <button type="button" className="wbx-mini" onClick={() => removeCheckpoint(record.id)}>Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                  {!checkpoints.length ? <div className="wbx-empty">No checkpoints saved yet.</div> : null}
-                </div>
-              </Panel>
-            </section>
-          </>
+            <div className="wbx-column wbx-column--right">
+              {promptDetailCards.map((card) => (
+                <Panel key={card.title} title={card.title} note={card.note}>
+                  <textarea className="wbx-textarea wbx-textarea--job" value={card.value} readOnly />
+                  <div className="wbx-prompt-meta-row">
+                    {card.meta.map((item) => <span key={item} className="wbx-prompt-meta">{item}</span>)}
+                  </div>
+                </Panel>
+              ))}
+            </div>
+          </section>
         ) : (
           <section className="wbx-grid-tab">
             <Panel

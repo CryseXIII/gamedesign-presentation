@@ -35,6 +35,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 ### Latest delivered changes
 
+- `ImageWorkbench` now uses a true three-column desktop layout: left source/input and compact prompt snapshots, center workspace controls plus the four main cards, and right live Stable Diffusion / ChatGPT / Gemini prompt cards
 - `GameEngine` now registers all scenes directly in the Phaser config, removing the `ready`-callback scene-add race that could leave the first level unavailable after character select
 - `K` now fires the diamond-shot gate deactivation globally once the speedup is unlocked, and the time gate is stretched to full scene height so it actually blocks the route until removed
 - Zone 2 copper-stich portraits are now sized as tall portrait cards instead of square blocks, the brown intro underlay rectangles were removed, and the Scene 1 exit now uses a delayed fallback start so the transition is less fragile
@@ -50,6 +51,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 - `PlayerController` now tolerates missing animation frames at startup by falling back to frame 0 instead of crashing on `play`, which fixes the loading-screen hang on CT205 when the player sheets are still incomplete or stale
 - Image Workbench build is now live on CT205: rebuilt `dist/` was streamed into `/root/gamedesign-app/dist`, `gamedesign-prod.service` was restarted, and the public portal still returns `200 OK`
 - Image Workbench rebuilt around the requested workflow: main tab now has drag/drop base loading, a pan/zoom/right-drag cutout viewport with minimap, a FontAwesome stamp button, a modal cutout editor with color-by-stroke paint, right-click continuation, whole-stroke erase, undo/redo, save/close, edit-target generation, output gallery, and checkpoint zip export/import/restore; grid mode is now isolated into its own tab
+- Image Workbench desktop layout is now a deliberate 3-column workbench: left = base input + compact prompt previews, center = image editing workspace with the four main cards, edit areas, output, and checkpoints, right = live Stable Diffusion / ChatGPT / Gemini prompt cards
 - CT215 SillyTavern `SD Generate` now works again from the browser: CT201 Caddy adds CORS preflight/response headers on `sd-orchestrator.gamedesign.152.53.117.246.sslip.io`, the stale duplicate `orchestrator.service` on CT210 was disabled, and the browser now receives `POST /generate/planned` `200` responses with returned image data
 - Vision Portal restored as a dedicated multi-image upload page that POSTs to `/vision/analyze`; the dedicated `vision.gamedesign.152.53.117.246.sslip.io` host now exists again, is locked to Tailscale source ranges in Caddy, and is live on CT205/CT201
 - Portal now exposes Vision Portal, A1111, and ComfyUI links on the public portal too; Vision opens the same served app route in a new tab, and A1111/ComfyUI use direct Tailnet HTTP targets
