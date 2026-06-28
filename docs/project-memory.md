@@ -1,6 +1,6 @@
 # Project Memory
 
-Last updated: 2026-06-27 23:06 UTC (workbench upload-analysis copy flow)
+Last updated: 2026-06-28 00:15 UTC (workbench grid copy wheel fix)
 
 ## Project Objective
 
@@ -37,6 +37,7 @@ Create a portal-first browser app that exposes Gameron as a subpage, teaches gam
 
 - `ImageWorkbench` now auto-analyzes uploaded main images through `/vision/analyze`, fills the source / SD / ChatGPT / Gemini prompt fields from that result, exposes copy buttons for each prompt plus a copy-bundle action, and removes the old prompt snapshot / workflow-note clutter
 - Prompt generation now also carries cutout zoom, selection coordinates, and per-edit-area bounds into the copied bundle so the downstream prompts stay precise
+- The main input is now the first panel in the main grid, the four main-grid images are copyable as an A-D pack, the cutout selector wheel now captures zoom before page scroll, and the editor color advance now happens after paint strokes finish instead of on pointerdown
 - Portal launcher status is now env-only and explicitly blocks mixed-content fetches on the HTTPS portal, so HTTP launcher URLs fail fast with a clear warning instead of a browser fetch error
 - `portalTargets.js` now defaults A1111 and ComfyUI links to the public HTTPS hostnames, matching the current tailnet/public split better than the old raw HTTP IP links
 - `GameEngine` now registers all scenes directly in the Phaser config, removing the `ready`-callback scene-add race that could leave the first level unavailable after character select

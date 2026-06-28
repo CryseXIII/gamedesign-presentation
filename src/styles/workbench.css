@@ -189,6 +189,10 @@
   height: 100%;
 }
 
+.wbx-main-grid > .wbx-panel--span {
+  grid-column: 1 / -1;
+}
+
 .wbx-panel {
   padding: 1.1rem;
   border: 1px solid rgba(127, 184, 255, 0.16);
@@ -234,6 +238,7 @@
 .wbx-grid-cell {
   padding: 0.55rem 0.9rem;
   border-radius: 12px;
+  min-height: 2.35rem;
 }
 
 .wbx-mini {
@@ -241,6 +246,10 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  min-width: 7.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wbx-mini--file {
@@ -256,6 +265,10 @@
   font-size: 0.85rem;
   font-weight: 500;
   padding: 0.6rem 1.1rem;
+  min-width: 7.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wbx-button--primary,

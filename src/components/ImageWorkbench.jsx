@@ -3,6 +3,7 @@ import JSZip from 'jszip'
 import '../styles/workbench.css'
 
 const DEFAULT_ORCHESTRATOR_URL = 'https://sd-orchestrator.gamedesign.152.53.117.246.sslip.io'
+const DEFAULT_ANALYSIS_URL = (import.meta.env.VITE_VISION_ANALYZE_URL || 'https://vision.gamedesign.152.53.117.246.sslip.io/vision/analyze').trim()
 const DEFAULT_NOTIFICATION_URL = ''
 const SAMPLE_BASE_IMAGE = '/assets/bg_castle.png'
 const SAMPLE_EXCERPT = `The editor inspects the image, then selects one specific region for repair or regeneration while keeping the rest of the scene's mood, color, and composition intact.`
@@ -235,6 +236,12 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
   const cutoutLine = cutoutImage ? `Cutout image: ${cutoutImage.width}x${cutoutImage.height}` : 'Cutout image: none'
   const editMapLine = editMapImage ? `Edit map: ${editMapImage.width}x${editMapImage.height}` : 'Edit map: none'
   const baseLine = baseImage ? `Base image: ${baseImage.width}x${baseImage.height} (${baseImage.name})` : 'Base image: none'
+  const imagePackLines = [
+    `A: original base image (${baseImage ? `${baseImage.width}x${baseImage.height}` : 'none'}).`,
+    `B: base image with crop overlay at ${formatRect(cutoutRect)} and zoom ${formatZoom(viewerZoom)}.`,
+    `C: stamped cutout (${cutoutImage ? `${cutoutImage.width}x${cutoutImage.height}` : 'none'}) taken from A at the crop rect.`,
+    `D: colored edit map on top of C (${editMapImage ? `${editMapImage.width}x${editMapImage.height}` : 'none'}).`,
+  ].join('\n')
   const targetGuidance = editTargets.length ? `Target guidance:\n${targetSummary}` : 'Target guidance: none'
 
   const strictPrompt = [
@@ -247,6 +254,7 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
     zoomLine,
     cutoutLine,
     editMapLine,
+    `Image pack:\n${imagePackLines}`,
     `Source context:\n${sourceContext}`,
     `Cinematic summary:\n${cinematicSummary}`,
     `Stable Diffusion guidance:\n${sdSeed}`,
@@ -265,6 +273,7 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
     zoomLine,
     cutoutLine,
     editMapLine,
+    `Image pack:\n${imagePackLines}`,
     `Source context:\n${sourceContext}`,
     `Cinematic summary:\n${cinematicSummary}`,
     `Visual seed notes:\n${sdSeed}`,
@@ -281,6 +290,7 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
     baseLine,
     cropLine,
     zoomLine,
+    `Image pack:\n${imagePackLines}`,
     `Scene notes:\n${sourceContext}`,
     `Visual analysis:\n${cinematicSummary}`,
     `Visual seed notes:\n${sdSeed}`,
@@ -300,6 +310,12 @@ function makePromptBundle({ excerpt, analysis, sdPrompt, selectedModel, baseImag
     viewer_zoom: Number(viewerZoom) || 1,
     cutout_image: cutoutImage ? { width: cutoutImage.width, height: cutoutImage.height, name: cutoutImage.name } : null,
     edit_map_image: editMapImage ? { width: editMapImage.width, height: editMapImage.height, name: editMapImage.name } : null,
+    image_pack: {
+      A: baseImage ? { width: baseImage.width, height: baseImage.height, name: baseImage.name } : null,
+      B: cutoutRect ? { crop_rect: { x: Math.round(cutoutRect.x), y: Math.round(cutoutRect.y), w: Math.round(cutoutRect.w), h: Math.round(cutoutRect.h) }, zoom: Number(viewerZoom) || 1 } : null,
+      C: cutoutImage ? { width: cutoutImage.width, height: cutoutImage.height, name: cutoutImage.name } : null,
+      D: editMapImage ? { width: editMapImage.width, height: editMapImage.height, name: editMapImage.name } : null,
+    },
     edit_targets: editTargets.map((target) => ({
       id: target.id,
       label: target.label,
@@ -452,7 +468,7 @@ export default function ImageWorkbench({ onBack }) {
   const [showMiniMap, setShowMiniMap] = useState(true)
   const [viewerSize, setViewerSize] = useState({ width: 0, height: 0 })
 
-  const [promptCopyState, setPromptCopyState] = useState('Copy bundle')
+  const [copyStatusKey, setCopyStatusKey] = useState('')
 
   const baseDropRef = useRef(null)
   const viewerRef = useRef(null)
@@ -460,7 +476,7 @@ export default function ImageWorkbench({ onBack }) {
   const editorCanvasRef = useRef(null)
   const editorViewportRef = useRef(null)
   const viewerStateRef = useRef({ mode: null, pointerId: null, startPoint: null, startPan: null, startRect: null })
-  const editorStateRef = useRef({ mode: null, pointerId: null, startPoint: null, activeStroke: null, startTool: null, paintColor: null })
+  const editorStateRef = useRef({ mode: null, pointerId: null, startPoint: null, activeStroke: null, startTool: null, paintColor: null, advanceColor: false })
   const editorUndoRef = useRef([])
   const editorRedoRef = useRef([])
   const viewerTouchedRef = useRef(false)
@@ -650,7 +666,7 @@ export default function ImageWorkbench({ onBack }) {
   useEffect(() => {
     setModels(LOCAL_MODELS)
     setCurrentModel(LOCAL_MODELS[0].title)
-    setInventoryStatus('Using local model list. Click Rescan from Tailscale to load live inventory.')
+    setInventoryStatus('Local model list')
     if (!selectedModelTitle || !LOCAL_MODELS.some((model) => model.title === selectedModelTitle)) {
       setSelectedModelTitle(LOCAL_MODELS[0].title)
     }
@@ -703,19 +719,19 @@ export default function ImageWorkbench({ onBack }) {
   const promptDetailCards = [
     {
       title: 'Stable Diffusion Prompt',
-      note: 'Uses the current image analysis, crop, edit areas, and selected checkpoint.',
+      note: 'Uses the current image analysis, crop, edit areas, and the A-D image pack.',
       value: promptBundle.stableDiffusionPrompt,
       copyLabel: 'Copy SD prompt',
     },
     {
       title: 'ChatGPT Prompt',
-      note: 'Natural-language variant for prompt refinement and editing notes.',
+      note: 'Natural-language brief that explains the A-D image pack and local edits.',
       value: promptBundle.chatgptPrompt,
       copyLabel: 'Copy ChatGPT prompt',
     },
     {
       title: 'Gemini Prompt',
-      note: 'Natural-language variant for Gemini with the same crop and edit context.',
+      note: 'Natural-language brief that explains the A-D image pack for Gemini.',
       value: promptBundle.geminiPrompt,
       copyLabel: 'Copy Gemini prompt',
     },
@@ -757,17 +773,30 @@ export default function ImageWorkbench({ onBack }) {
 
   async function analyzeBaseImage(src, name, requestId) {
     const label = stripExtension(name) || 'main-image'
-    const baseUrl = orchestratorUrl.replace(/\/$/, '')
+    const preferredAnalysisUrl = DEFAULT_ANALYSIS_URL.replace(/\/$/, '')
+    const fallbackAnalysisUrl = `${orchestratorUrl.replace(/\/$/, '')}/vision/analyze`
     setAnalysisStatus('Analyzing main image...')
     try {
-      const response = await fetchJson(`${baseUrl}/vision/analyze`, {
-        method: 'POST',
-        body: JSON.stringify({
-          images: [src],
-          labels: [label],
-          query: IMAGE_ANALYSIS_QUERY,
-        }),
-      }, 240000)
+      let response
+      try {
+        response = await fetchJson(preferredAnalysisUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            images: [src],
+            labels: [label],
+            query: IMAGE_ANALYSIS_QUERY,
+          }),
+        }, 240000)
+      } catch {
+        response = await fetchJson(fallbackAnalysisUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            images: [src],
+            labels: [label],
+            query: IMAGE_ANALYSIS_QUERY,
+          }),
+        }, 240000)
+      }
 
       const item = Array.isArray(response?.results) ? response.results[0] || {} : (response || {})
       const detailBoxes = Array.isArray(item?.vision_layout?.detail_boxes) ? item.vision_layout.detail_boxes : []
@@ -966,9 +995,6 @@ export default function ImageWorkbench({ onBack }) {
     const isRight = event.button === 2
     const paintColor = COLOR_PALETTE[editorPaletteIndex % COLOR_PALETTE.length]
 
-    if (editorTool === 'paint' && !isRight) {
-      setEditorPaletteIndex((value) => value + 1)
-    }
     if (editorTool !== 'erase') setSelectedTargetId((current) => current || editTargets[0]?.id || '')
 
     pushEditorUndoSnapshot()
@@ -981,7 +1007,7 @@ export default function ImageWorkbench({ onBack }) {
       points: [{ x, y }],
     }
     setEditorDraftStroke(stroke)
-    editorStateRef.current = { mode: editorTool, pointerId: event.pointerId, startPoint: { x, y }, activeStroke: stroke, startTool: editorTool, paintColor }
+    editorStateRef.current = { mode: editorTool, pointerId: event.pointerId, startPoint: { x, y }, activeStroke: stroke, startTool: editorTool, paintColor, advanceColor: editorTool === 'paint' && !isRight }
     if (editorTool === 'paint') {
       setJobStatus(`Painting ${paintColor}`)
     } else {
@@ -1015,11 +1041,14 @@ export default function ImageWorkbench({ onBack }) {
 
     if (state.mode === 'paint') {
       setEditorStrokes((previous) => [...previous, stroke])
+      if (state.advanceColor) {
+        setEditorPaletteIndex((value) => value + 1)
+      }
     } else {
       setEditorStrokes((previous) => previous.filter((candidate) => !strokeIntersectsStroke(stroke, candidate, clamp(Number(editorBrush) || 18, 4, 72) * 0.9)))
     }
 
-    editorStateRef.current = { mode: null, pointerId: null, startPoint: null, activeStroke: null, startTool: null, paintColor: null }
+    editorStateRef.current = { mode: null, pointerId: null, startPoint: null, activeStroke: null, startTool: null, paintColor: null, advanceColor: false }
   }
 
   function undoEditor() {
@@ -1415,9 +1444,9 @@ export default function ImageWorkbench({ onBack }) {
     if (!navigator.clipboard?.writeText) return
     navigator.clipboard.writeText(text)
       .then(() => {
-        setPromptCopyState(label)
+        setCopyStatusKey(label)
         window.setTimeout(() => {
-          setPromptCopyState('Copy bundle')
+          setCopyStatusKey('')
         }, 1400)
       })
       .catch(() => {})
@@ -1425,6 +1454,73 @@ export default function ImageWorkbench({ onBack }) {
 
   function copyPromptBlock(text, label) {
     copyTextBlock(text, label)
+  }
+
+  function renderSelectionSnapshot() {
+    if (!baseImage) return ''
+    const canvas = document.createElement('canvas')
+    canvas.width = baseImage.width
+    canvas.height = baseImage.height
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(baseImage.img, 0, 0, canvas.width, canvas.height)
+    if (cutoutRect) {
+      ctx.save()
+      ctx.strokeStyle = 'rgba(127, 184, 255, 0.95)'
+      ctx.lineWidth = Math.max(3, Math.round(Math.min(canvas.width, canvas.height) * 0.006))
+      ctx.fillStyle = 'rgba(127, 184, 255, 0.12)'
+      ctx.fillRect(cutoutRect.x, cutoutRect.y, cutoutRect.w, cutoutRect.h)
+      ctx.strokeRect(cutoutRect.x, cutoutRect.y, cutoutRect.w, cutoutRect.h)
+      ctx.restore()
+    }
+    return canvas.toDataURL('image/png')
+  }
+
+  async function copyImageBundleToClipboard({ key, label, src, description }) {
+    if (!src) return
+    try {
+      if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+        const image = await loadImage(src)
+        const canvas = document.createElement('canvas')
+        canvas.width = image.naturalWidth
+        canvas.height = image.naturalHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(image, 0, 0)
+
+        const blob = await new Promise((resolve) => {
+          canvas.toBlob((nextBlob) => resolve(nextBlob), 'image/png')
+        })
+        if (!blob) throw new Error('Failed to build clipboard image')
+
+        const text = [
+          label,
+          `${image.naturalWidth}x${image.naturalHeight}`,
+          description,
+        ].filter(Boolean).join('\n')
+
+        const items = [new ClipboardItem({
+          'image/png': blob,
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        })]
+
+        await navigator.clipboard.write(items)
+      } else {
+        await navigator.clipboard.writeText([label, description].filter(Boolean).join('\n'))
+      }
+      setCopyStatusKey(key)
+      window.setTimeout(() => {
+        setCopyStatusKey('')
+      }, 1400)
+    } catch {
+      try {
+        await navigator.clipboard.writeText([label, description].filter(Boolean).join('\n'))
+        setCopyStatusKey(key)
+        window.setTimeout(() => {
+          setCopyStatusKey('')
+        }, 1400)
+      } catch {
+        // Ignore clipboard errors on unsupported browsers.
+      }
+    }
   }
 
   function copyBundleJson() {
@@ -1443,7 +1539,7 @@ export default function ImageWorkbench({ onBack }) {
         gemini: promptBundle.geminiPrompt,
       },
     }
-    copyTextBlock(JSON.stringify(bundle, null, 2), 'Copied bundle')
+    copyTextBlock(JSON.stringify(bundle, null, 2), 'bundle')
   }
 
   return (
@@ -1469,30 +1565,6 @@ export default function ImageWorkbench({ onBack }) {
         {activeTab === 'main' ? (
           <section className="wbx-workbench-layout">
             <div className="wbx-column wbx-column--left">
-              <Panel
-                title="Main Input"
-                note="Drop, upload, or paste the main image."
-                actions={(
-                  <label className="wbx-mini wbx-mini--file">
-                    Upload
-                    <input type="file" accept="image/*" onChange={(event) => {
-                      const file = event.target.files?.[0]
-                      if (file) void loadBaseImageFromFile(file)
-                    }} />
-                  </label>
-                )}
-              >
-                <div
-                  className="wbx-dropzone"
-                  ref={baseDropRef}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => void handleBaseDrop(event)}
-                >
-                  {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Drop an image here, choose Upload, or press Ctrl+V.</div>}
-                </div>
-                <p className="wbx-main-input__status">{analysisStatus}</p>
-              </Panel>
-
               <Panel
                 title="Source Context"
                 note="Editable scene brief, cinematic summary, and Stable Diffusion seed."
@@ -1548,12 +1620,55 @@ export default function ImageWorkbench({ onBack }) {
 
               <section className="wbx-main-grid">
                 <Panel
+                  title="Main Input"
+                  note="Drop, upload, or paste the main image."
+                  className="wbx-panel--span"
+                  actions={(
+                    <>
+                      <label className="wbx-mini wbx-mini--file">
+                        Upload
+                        <input type="file" accept="image/*" onChange={(event) => {
+                          const file = event.target.files?.[0]
+                          if (file) void loadBaseImageFromFile(file)
+                        }} />
+                      </label>
+                      <button type="button" className="wbx-mini" onClick={() => void copyImageBundleToClipboard({
+                        key: 'img-a',
+                        label: 'Image A - Main image',
+                        src: baseImageSrc || '',
+                        description: `Original base image${baseImage ? ` (${baseImage.width}x${baseImage.height})` : ''}`,
+                      })} disabled={!baseImageSrc}>Copy A</button>
+                    </>
+                  )}
+                >
+                  <div
+                    className="wbx-dropzone"
+                    ref={baseDropRef}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => void handleBaseDrop(event)}
+                  >
+                    {baseImage ? <img src={baseImage.src} alt="Base preview" className="wbx-fit-image" /> : <div className="wbx-empty">Drop an image here, choose Upload, or press Ctrl+V.</div>}
+                  </div>
+                  <p className="wbx-main-input__status">{analysisStatus}</p>
+                </Panel>
+
+                <Panel
                   title="Cutout Stamp Selector"
                   note="Left-drag pans, right-drag draws the cutout rectangle, mouse wheel zooms."
                   actions={(
-                    <button type="button" className="wbx-mini" onClick={() => setShowMiniMap((value) => !value)}>
-                      <i className={`fa-solid ${showMiniMap ? 'fa-eye' : 'fa-eye-slash'}`} />
-                    </button>
+                    <>
+                      <button type="button" className="wbx-mini" onClick={() => setShowMiniMap((value) => !value)}>
+                        <i className={`fa-solid ${showMiniMap ? 'fa-eye' : 'fa-eye-slash'}`} />
+                      </button>
+                      <button type="button" className="wbx-mini" onClick={() => void copyImageBundleToClipboard({
+                        key: 'img-b',
+                        label: 'Image B - Cutout selector',
+                        src: baseImageSrc ? renderSelectionSnapshot() : '',
+                        description: cutoutRect
+                          ? `Main image with crop overlay at ${formatRect(cutoutRect)} and zoom ${formatZoom(viewerZoom)}`
+                          : 'Main image with no crop selected yet',
+                      })} disabled={!baseImageSrc}>Copy B</button>
+                    </>
                   )}
                 >
                   <div
@@ -1564,7 +1679,7 @@ export default function ImageWorkbench({ onBack }) {
                     onPointerUp={(event) => endViewerInteraction(event)}
                     onPointerCancel={(event) => endViewerInteraction(event)}
                     onContextMenu={(event) => event.preventDefault()}
-                    onWheel={(event) => zoomViewer(event)}
+                    onWheelCapture={(event) => { event.preventDefault(); event.stopPropagation(); zoomViewer(event) }}
                   >
                     {baseImage ? (
                       <img
@@ -1622,6 +1737,16 @@ export default function ImageWorkbench({ onBack }) {
                 <Panel
                   title="Active Cutout Stamp"
                   note="Stamp the selected region into image 3, then reopen it in the editor if needed."
+                  actions={(
+                    <button type="button" className="wbx-mini" onClick={() => void copyImageBundleToClipboard({
+                      key: 'img-c',
+                      label: 'Image C - Stamped cutout',
+                      src: cutoutSrc || '',
+                      description: cutoutRect
+                        ? `Stamped crop from Image A at ${formatRect(cutoutRect)} with original crop size ${cutoutImage ? `${cutoutImage.width}x${cutoutImage.height}` : 'unknown'}`
+                        : 'No stamped cutout yet',
+                    })} disabled={!cutoutSrc}>Copy C</button>
+                  )}
                 >
                   <div className="wbx-mini-stack">
                     <button type="button" className="wbx-button wbx-button--primary" onClick={() => void stampCutout()} disabled={!cutoutRect || !baseImageSrc}>Stamp cutout</button>
@@ -1639,7 +1764,17 @@ export default function ImageWorkbench({ onBack }) {
                   title="Image With Colored Edit Areas"
                   note="Save from the editor to transfer the painted map here. Click the preview to reopen the editor."
                   actions={(
-                    <button type="button" className="wbx-mini" onClick={openEditor} disabled={!cutoutSrc}>Edit</button>
+                    <>
+                      <button type="button" className="wbx-mini" onClick={openEditor} disabled={!cutoutSrc}>Edit</button>
+                      <button type="button" className="wbx-mini" onClick={() => void copyImageBundleToClipboard({
+                        key: 'img-d',
+                        label: 'Image D - Edit map',
+                        src: editMapSrc || '',
+                        description: editMapSrc
+                          ? `Painted edit map on the stamped cutout. Use the target colors to localize edits.`
+                          : 'No edit map yet',
+                      })} disabled={!editMapSrc}>Copy D</button>
+                    </>
                   )}
                 >
                   <div className="wbx-preview-wrap wbx-preview-wrap--checker">
@@ -1680,7 +1815,7 @@ export default function ImageWorkbench({ onBack }) {
                   actions={(
                     <>
                       <button type="button" className="wbx-mini" onClick={() => void generatePreview()}>Generate</button>
-                      <button type="button" className="wbx-mini" onClick={copyBundleJson}>{promptCopyState}</button>
+                      <button type="button" className="wbx-mini" onClick={copyBundleJson}>{copyStatusKey === 'bundle' ? 'Copied' : 'Copy bundle'}</button>
                     </>
                   )}
                 >
@@ -1768,7 +1903,7 @@ export default function ImageWorkbench({ onBack }) {
                   key={card.title}
                   title={card.title}
                   note={card.note}
-                  actions={<button type="button" className="wbx-mini" onClick={() => copyPromptBlock(card.value, card.copyLabel)}>{promptCopyState === card.copyLabel ? 'Copied' : 'Copy'}</button>}
+                  actions={<button type="button" className="wbx-mini" onClick={() => copyPromptBlock(card.value, card.copyLabel)}>{copyStatusKey === card.copyLabel ? 'Copied' : 'Copy'}</button>}
                 >
                   <textarea className="wbx-textarea wbx-textarea--job" value={card.value} readOnly />
                 </Panel>
